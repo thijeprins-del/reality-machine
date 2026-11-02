@@ -22,8 +22,10 @@ declare global {
 }
 
 // Speelbare facties. De otters komen erbij zodra Lieuwe src/data/otters.ts en src/otters/ heeft.
-const FACTIES: Partial<Record<FactieId, { data: Factie; beeld: () => FactieBeeld }>> = {
-  muizen: { data: MUIZEN, beeld: muizenBeeld },
+// `paneel`: eigen bediening van een factie over de wereld (muizen: het stroomnet). Elke factie mag iets anders hebben.
+type Paneel = (staat: () => SpelStaat) => { werk(sec: number): void };
+const FACTIES: Partial<Record<FactieId, { data: Factie; beeld: () => FactieBeeld; paneel?: () => Promise<Paneel> }>> = {
+  muizen: { data: MUIZEN, beeld: muizenBeeld, paneel: async () => (await import('./muizen/paneel')).maakPaneel },
 };
 
 async function start(): Promise<void> {
@@ -69,19 +71,21 @@ async function start(): Promise<void> {
     stuur(staat, ids, kol, rij),
   );
   const balk = maakBalk();
+  const paneel = factie.paneel ? (await factie.paneel())(() => staat) : null;
 
   app.ticker.add((t) => {
     const sec = Math.min(0.1, t.deltaMS / 1000);
     stap(staat, factie.data, sec);
     besturing.werk(sec);
     beeld.werk(sec, besturing.selectie);
+    paneel?.werk(sec);
     const rest = Math.ceil(restTijd(staat));
     const v = staat.voorraad;
     const bezig = staat.werkers.filter((w) => w.taak !== 'rust').length;
     balk.zet([
       `Dimensie ${staat.dimensie} · stream over ${Math.floor(rest / 60)}:${String(rest % 60).padStart(2, '0')}`,
-      `Machine: energie ${staat.machine.energie}/${staat.machine.maxEnergie}`,
-      `Opslag: schroot ${v.schroot ?? 0} · hout ${v.hout ?? 0} · kristal ${v.kristal ?? 0}`,
+      `Machine: energie ${Math.floor(staat.machine.energie)}/${staat.machine.maxEnergie}`,
+      `Opslag: schroot ${Math.floor(v.schroot ?? 0)} · hout ${Math.floor(v.hout ?? 0)} · kristal ${Math.floor(v.kristal ?? 0)}`,
       `${factie.data.naam}: ${staat.werkers.length} (${bezig} aan het werk) · geselecteerd ${besturing.selectie.size}`,
     ]);
   });

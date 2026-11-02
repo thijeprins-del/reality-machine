@@ -14,7 +14,7 @@ Pak je een taak op: zet eerst je naam erachter in je PR. Klaar: `- [x] … (#PR)
 - [x] M0 Speelbare basis: startmenu met factiekeuze, kaart met grondstoffen, opslag en machine, 300 muizen
   in massa selecteren en laten graven (Thije)
 - [x] M0 Visuele proto: muizen, mech, fabriek, machines en kabels als sprites, scène op `?proto=muizen`
-- [ ] M1 Spellus en machine-energie (met K3/K4)
+- [ ] M1 Spellus en machine-energie (met K3/K4). Stroomnet + paneel: thije/energiepaneel (Thije)
 - [ ] M2 4 eenheden, loot-tabel, inbouwen/ontleden
 
 ## Otters (Lieuwe)
