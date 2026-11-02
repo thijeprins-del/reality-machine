@@ -59,6 +59,7 @@ export interface EnergieStaat {
   trendT: number;
   vorige: Record<Grondstof, number>;
   log: LogRegel[];
+  gemist: number;
 }
 
 const STATEN = new WeakMap<SpelStaat, EnergieStaat>();
@@ -85,6 +86,7 @@ export function energie(s: SpelStaat): EnergieStaat {
       trendT: 0,
       vorige: { schroot: v.schroot ?? 0, hout: v.hout ?? 0, kristal: v.kristal ?? 0 },
       log: [{ tekst: 'STROOMNET KLAAR. ZET EEN BRON AAN', kleur: 'groen' }],
+      gemist: s.gemist,
     };
     STATEN.set(s, e);
   }
@@ -174,6 +176,10 @@ export function stapEnergie(s: SpelStaat, sec: number, muis: EenheidSoort | unde
   m.energie = Math.floor(machine.krijgt * m.maxEnergie);
   if (!was && m.energie >= m.maxEnergie) log(e, 'MACHINE OP VOLLE STROOM. KLAAR VOOR DE STREAM', 'groen');
   if (was && m.energie < m.maxEnergie) log(e, 'MACHINE KRIJGT TE WEINIG STROOM', 'rood');
+  if (s.gemist !== e.gemist) {
+    e.gemist = s.gemist;
+    log(e, 'STREAM GEMIST! MACHINE HAD GEEN VOLLE STROOM', 'rood');
+  }
   if (muis?.werk) muis.werk.mijnSec = graafSec / (1 + G.lampenSneller * lampen.krijgt);
   e.nood = Math.max(0, e.nood - sec);
 

@@ -3,7 +3,17 @@
 Nog een skelet. Werk dit bij bij elke grote regelwijziging.
 
 ## Kern
-- Een dimensie duurt **4 minuten** (`src/data/dimensies.ts`), daarna komt de stream (sprong naar de volgende dimensie).
+- Een dimensie duurt **4 minuten** (`src/data/dimensies.ts`; nu even 1 minuut om mee te spelen), daarna komt de stream
+  (sprong naar de volgende dimensie).
+- **De transportring** (2 nov): een slecht geverfde, matte gele stippellijn om de machine (straal 14 tegels: binnen de
+  ring bouw je). Je land is een grove schijf die iets buiten de ring steekt, lomp in elke wereld geplakt (rotswand,
+  schaduw, naad, klemmen). Alles binnen de ring springt mee; daarbuiten liggen de grondstoffen, en die blijven achter.
+  Aanloop (laatste 12 s, alleen met volle stroom): bliksem van de machine naar de ring, schudden, de wereld wordt donker.
+  De sprong (`SPRONG_SEC` = 3,5 s): uit de wereld gerukt, de oude grond valt weg, even in het niets (tijd en werk staan
+  stil, het stroomnet loopt door), dan landen in de volgende wereld met eigen kleuren (roestduin, kristaltoendra, gifwoud,
+  magmaveld, zoutzee). Het spel begint ook in het niets. Muizen buiten de ring worden nu nog mee naar binnen getrokken.
+- **Stream gemist** (2 nov): heeft de machine op dat moment geen volle stroom, dan springt er niets (rode flits, vonken)
+  en begint de dimensie opnieuw. Volgens het plan verlies je dan; voorlopig vergevingsgezind om mee te spelen.
 - Om de stream te halen heeft de reality machine genoeg energie en heelheid nodig. Haal je hem niet: verloren.
 - Tech alleen uit loot: vondsten inbouwen of ontleden tot bouwplan. Geen techboom.
 - **Het spel draait om industrie:** een zo groot mogelijke fabriek met lange productieketens op je eiland.
@@ -18,7 +28,7 @@ Nog een skelet. Werk dit bij bij elke grote regelwijziging.
 
 ## Kaart en grondstoffen (basis, 2 nov)
 - Kaart van **44 x 44 tegels**: groot, maar net genoeg ruimte om te bouwen. Getallen in `src/data/dimensies.ts`.
-- In het midden de reality machine (4x4 tegels) en de opslag (2x2). 6 tegels rond de machine blijven leeg (bouwgrond).
+- In het midden de reality machine (4x4 tegels) en de opslag (2x2), binnen de gele ring (bouwgrond, geen grondstoffen).
 - Velden met ruwe grondstoffen eromheen: schroot (5 velden, 30 per tegel), hout (4, 25), kristal (2, 15, verder weg).
 - Werkers (eenheden met `werk`) graven een lading, sjouwen die naar de opslag en gaan terug, tot het veld op is;
   dan zoeken ze binnen 8 tegels verder. Rechte lijnen, alleen om de machine heen. Geen botsingen tussen werkers.

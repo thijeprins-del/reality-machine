@@ -1,4 +1,5 @@
 import { Application } from 'pixi.js';
+import { dimensieKleur } from './data/dimensies';
 import { MUIZEN } from './data/muizen';
 import { maakBesturing } from './kern/besturing';
 import { versieTekst } from './kern/omgeving';
@@ -83,8 +84,10 @@ async function start(): Promise<void> {
     const v = staat.voorraad;
     const bezig = staat.werkers.filter((w) => w.taak !== 'rust').length;
     balk.zet([
-      `Dimensie ${staat.dimensie} · stream over ${Math.floor(rest / 60)}:${String(rest % 60).padStart(2, '0')}`,
-      `Machine: energie ${Math.floor(staat.machine.energie)}/${staat.machine.maxEnergie}`,
+      staat.onderweg > 0
+        ? `In het niets · op weg naar ${dimensieKleur(staat.dimensie).naam}`
+        : `Dimensie ${staat.dimensie} · ${dimensieKleur(staat.dimensie).naam} · stream over ${Math.floor(rest / 60)}:${String(rest % 60).padStart(2, '0')}`,
+      `Machine: stroom ${Math.floor((100 * staat.machine.energie) / staat.machine.maxEnergie)}% (100% nodig bij de stream)${staat.gemist ? ` · stream ${staat.gemist}× gemist` : ''}`,
       `Opslag: schroot ${Math.floor(v.schroot ?? 0)} · hout ${Math.floor(v.hout ?? 0)} · kristal ${Math.floor(v.kristal ?? 0)}`,
       `${factie.data.naam}: ${staat.werkers.length} (${bezig} aan het werk) · geselecteerd ${besturing.selectie.size}`,
     ]);
