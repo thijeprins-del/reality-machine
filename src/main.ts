@@ -1,8 +1,13 @@
-import { Application, Assets, Sprite, Text } from 'pixi.js';
-import { naarScherm, tekenVeld } from './kern/iso';
+import { Application } from 'pixi.js';
+import { MUIZEN } from './data/muizen';
+import { maakBesturing } from './kern/besturing';
 import { versieTekst } from './kern/omgeving';
+import { kiesFactie, maakBalk } from './kern/scherm';
 import { nieuwSpel, restTijd, seedUitAdres, stap, stream, type SpelStaat } from './kern/spel';
-import muisUrl from '../assets/muizen/muis.svg?url';
+import type { Factie, FactieBeeld, FactieId } from './kern/types';
+import { stuur } from './kern/werkers';
+import { WereldBeeld } from './kern/wereldbeeld';
+import { muizenBeeld } from './muizen/beeld';
 
 declare global {
   interface Window {
@@ -11,63 +16,75 @@ declare global {
       stap: (sec: number) => void;
       zaai: (seed: number) => void;
       stream: () => void;
+      stuur: (ids: number[] | 'alle', kol: number, rij: number) => void;
     };
   }
 }
 
+// Speelbare facties. De otters komen erbij zodra Lieuwe src/data/otters.ts en src/otters/ heeft.
+const FACTIES: Partial<Record<FactieId, { data: Factie; beeld: () => FactieBeeld }>> = {
+  muizen: { data: MUIZEN, beeld: muizenBeeld },
+};
+
 async function start(): Promise<void> {
   const app = new Application();
-  await app.init({ resizeTo: window, background: 0x10131c, antialias: false });
+  await app.init({ resizeTo: window, background: 0x07080a, antialias: false });
   document.body.appendChild(app.canvas);
+  document.getElementById('versie')!.textContent = versieTekst();
 
-  let staat = nieuwSpel(seedUitAdres());
+  const adres = new URLSearchParams(location.search);
+  // Visuele proto's per factie: ?proto=muizen
+  if (adres.get('proto') === 'muizen') {
+    const { toonMuizenProto } = await import('./muizen/proto');
+    await toonMuizenProto(app);
+    return;
+  }
+
+  // ?factie=muizen slaat het menu over (handig voor de rooktest)
+  let id = adres.get('factie') as FactieId | null;
+  if (!id || !FACTIES[id])
+    id = await kiesFactie([
+      { id: 'muizen', naam: 'Muizen', regel: 'Honderden muizen, gigantische machines.', speelbaar: !!FACTIES.muizen },
+      { id: 'otters', naam: 'Otters', regel: FACTIES.otters ? 'Lieuwe' : 'Nog in de maak (Lieuwe).', speelbaar: !!FACTIES.otters },
+    ]);
+  const factie = FACTIES[id]!;
+
+  let staat = nieuwSpel(seedUitAdres(), factie.data);
   window.SPEL = {
     get staat() {
       return staat;
     },
-    stap: (sec) => stap(staat, sec),
+    stap: (sec) => stap(staat, factie.data, sec),
     zaai: (seed) => {
-      staat = nieuwSpel(seed);
+      staat = nieuwSpel(seed, factie.data);
     },
-    stream: () => stream(staat),
+    stream: () => stream(staat, factie.data),
+    stuur: (ids, kol, rij) => stuur(staat, ids === 'alle' ? staat.werkers.map((w) => w.id) : ids, kol, rij),
   };
 
-  const veld = tekenVeld(8, 8);
-  app.stage.addChild(veld);
-
-  const tex = await Assets.load(muisUrl);
-  tex.source.scaleMode = 'nearest';
-  const muis = new Sprite(tex);
-  muis.anchor.set(0.5, 1);
-  muis.scale.set(2);
-  const plek = naarScherm(3, 4);
-  muis.position.set(plek.x, plek.y + 4);
-  veld.addChild(muis);
-
-  const titel = new Text({
-    text: 'Reality Machine',
-    style: { fill: 0xe8ecf4, fontFamily: 'monospace', fontSize: 28 },
-  });
-  const klok = new Text({ text: '', style: { fill: 0x9fb4d8, fontFamily: 'monospace', fontSize: 16 } });
-  app.stage.addChild(titel, klok);
-
-  const plaats = () => {
-    veld.position.set(app.screen.width / 2, app.screen.height / 2 - 100);
-    titel.position.set(16, 12);
-    klok.position.set(16, 48);
-  };
-  plaats();
-  app.renderer.on('resize', plaats);
+  const beeld = new WereldBeeld(staat, factie.beeld());
+  await beeld.laad();
+  app.stage.addChild(beeld.wereld);
+  const besturing = maakBesturing(app, beeld.wereld, () => staat, (z) => beeld.zoom(z), (ids, kol, rij) =>
+    stuur(staat, ids, kol, rij),
+  );
+  const balk = maakBalk();
 
   app.ticker.add((t) => {
-    stap(staat, t.deltaMS / 1000);
+    const sec = Math.min(0.1, t.deltaMS / 1000);
+    stap(staat, factie.data, sec);
+    besturing.werk(sec);
+    beeld.werk(sec, besturing.selectie);
     const rest = Math.ceil(restTijd(staat));
-    const mm = Math.floor(rest / 60);
-    const ss = String(rest % 60).padStart(2, '0');
-    klok.text = `Dimensie ${staat.dimensie}  ·  stream over ${mm}:${ss}`;
+    const v = staat.voorraad;
+    const bezig = staat.werkers.filter((w) => w.taak !== 'rust').length;
+    balk.zet([
+      `Dimensie ${staat.dimensie} · stream over ${Math.floor(rest / 60)}:${String(rest % 60).padStart(2, '0')}`,
+      `Machine: energie ${staat.machine.energie}/${staat.machine.maxEnergie}`,
+      `Opslag: schroot ${v.schroot ?? 0} · hout ${v.hout ?? 0} · kristal ${v.kristal ?? 0}`,
+      `${factie.data.naam}: ${staat.werkers.length} (${bezig} aan het werk) · geselecteerd ${besturing.selectie.size}`,
+    ]);
   });
-
-  document.getElementById('versie')!.textContent = versieTekst();
 }
 
 start();

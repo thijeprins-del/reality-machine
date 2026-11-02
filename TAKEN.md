@@ -4,13 +4,16 @@ Pak je een taak op: zet eerst je naam erachter in je PR. Klaar: `- [x] … (#PR)
 
 ## Kern (samen)
 - [x] K1 Repo, uitrol, hello world met iso-veld en één sprite
-- [ ] K2 Eiland van de speler op het iso-veld, camera
+- [x] K2 Eiland van de speler op het iso-veld, camera (Thije)
 - [ ] K3 Eén dimensie met streamtimer en sprong
 - [ ] K4 Machine-energie en heelheid; verliezen bij gemiste stream
 - [ ] K5 Lopende banden: leggen, goederen bewegen, gebouwen in/uit (zie DESIGN.md, Logistiek)
 - [ ] K6 Recepten draaien in gebouwen; eind van de keten voedt de machine
 
 ## Muizen (Thije)
+- [x] M0 Speelbare basis: startmenu met factiekeuze, kaart met grondstoffen, opslag en machine, 300 muizen
+  in massa selecteren en laten graven (Thije)
+- [x] M0 Visuele proto: muizen, mech, fabriek, machines en kabels als sprites, scène op `?proto=muizen`
 - [ ] M1 Spellus en machine-energie (met K3/K4)
 - [ ] M2 4 eenheden, loot-tabel, inbouwen/ontleden
 

@@ -43,7 +43,8 @@ Versienummer en changelog: niet met de hand ophogen (dat botst bij twee mensen).
 
 ## Commando's
 - `npm run dev` devserver. `npm run snel` typecheck + build (±10 s; unit-tests komen erbij zodra er regels zijn). `npm test` = snel + rooktest (±30 s), vóór elke PR.
-- Testhaak: `window.SPEL` met `staat`, `stap(sec)` (regels zonder tekenen), `zaai(seed)`, `stream()` (forceer sprong).
+- Testhaak: `window.SPEL` met `staat`, `stap(sec)` (regels zonder tekenen), `zaai(seed)`, `stream()` (forceer sprong),
+  `stuur(ids | 'alle', kol, rij)` (opdracht zoals rechtsklik). `?factie=muizen` slaat het startmenu over.
   Toeval voor spelregels via seed (`?seed=123`); toeval alleen voor beeld mag `Math.random`.
 
 ## Beeld en stijl

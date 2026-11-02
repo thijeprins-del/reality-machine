@@ -16,6 +16,14 @@ Nog een skelet. Werk dit bij bij elke grote regelwijziging.
   Bandmechaniek zit in de kern; per factie verschilt alleen `BandSoort` (snelheid, kosten).
 - Winnen: de tegenstander zo meppen dat zijn machine de volgende stream niet haalt, vooral door zijn keten te breken.
 
+## Kaart en grondstoffen (basis, 2 nov)
+- Kaart van **44 x 44 tegels**: groot, maar net genoeg ruimte om te bouwen. Getallen in `src/data/dimensies.ts`.
+- In het midden de reality machine (4x4 tegels) en de opslag (2x2). 6 tegels rond de machine blijven leeg (bouwgrond).
+- Velden met ruwe grondstoffen eromheen: schroot (5 velden, 30 per tegel), hout (4, 25), kristal (2, 15, verder weg).
+- Werkers (eenheden met `werk`) graven een lading, sjouwen die naar de opslag en gaan terug, tot het veld op is;
+  dan zoeken ze binnen 8 tegels verder. Rechte lijnen, alleen om de machine heen. Geen botsingen tussen werkers.
+- Start: menu met factiekeuze. Een factie zonder data staat er wel, maar is niet te kiezen.
+
 ## Samenwerking facties
 Zelfde spelregels, ander gereedschap. De kern weet niets van muizen of otters; een factie is data plus één trucje.
 
@@ -33,7 +41,17 @@ Zelfde spelregels, ander gereedschap. De kern weet niets van muizen of otters; e
 
 ## Facties
 ### Muizen (Thije)
-Cyberpunk/dieselpunk, tech-heavy. Getallen in `src/data/muizen.ts` (nog te maken).
+Cyberpunk/dieselpunk, tech-heavy. Getallen in `src/data/muizen.ts`.
+
+Honderden muizen (start: **300**), en je krijgt er **nooit** nieuwe bij. Ze minen zelf: elke muis draagt 2 per keer
+en graaft 2,5 s. Je selecteert ze in massa (slepen, dubbelklik).
+
+Beeld: een grauwe, duistere industriewereld, niets vrolijks. De muizen zelf klein en heel pluizig (en vuil); hun
+robots, wapens en fabrieken gigantisch, hoekig en semi-3D (overcompensatie). Staal, legergroen en bruin, roest, olie
+en veel te veel kabels. Neon is het enige felle, en dat gloeit echt (gloedlaag).
+Schaal is belangrijk: geen of weinig gebouwen, vooral machines, ruim groter dan de muizen (machines 2x2 tegels,
+mech 3x3 en ruim tien keer zo hoog als een muis). Mechs menselijk van bouw, wapens over de top. Sprites komen uit
+`scripts/pixel/muizen.mjs`; bekijk ze samen met `?proto=muizen`.
 
 ### Otters (Lieuwe)
 Getallen in `src/data/otters.ts` (nog te maken).
