@@ -95,6 +95,7 @@ jobs:
             else
               # Nog geen spel op deze branch (bv. main vóór de eerste release).
               printf '<!doctype html><meta charset="utf-8"><title>Reality Machine</title><p>Reality Machine: binnenkort. <a href="./dev/">Naar DEV</a></p>\n' > "bouw/$env/index.html"
+              touch "bouw/$env/.binnenkort"
             fi
             echo "$env: build $BUILD_NUMBER (${sha:0:7})" > "bouw/$env/versie.txt"
           done
@@ -104,6 +105,13 @@ jobs:
           mkdir -p site
           if [ -d bouw/main ]; then cp -r bouw/main/. site/; fi
           if [ -d bouw/dev ]; then mkdir -p site/dev && cp -r bouw/dev/. site/dev/; fi
+          # Nog geen spel op main: de RELEASE-pagina wordt de teaser uit de dev-build (teaser/index.html),
+          # met de paden omgezet van /dev/teaser/ naar de wortel. De teaser zelf blijft ook op /dev/teaser/.
+          if [ -f bouw/main/.binnenkort ] && [ -f bouw/dev/teaser/index.html ]; then
+            sed -e 's#"\.\./assets/#"dev/assets/#g' -e 's#href="favicon.svg"#href="dev/teaser/favicon.svg"#' \
+              bouw/dev/teaser/index.html > site/index.html
+            rm -f site/.binnenkort
+          fi
           cat bouw/*/versie.txt | tee site/versies.txt
           rm -f site/versie.txt site/*/versie.txt
       - uses: actions/upload-pages-artifact@v3
