@@ -139,179 +139,166 @@ function tekenMuis(naam, variant) {
 }
 
 // ---------------------------------------------------------------------------
-// MECH "Grootbek": 3x3 tegels, menselijke bouw, ruim tien keer zo hoog als een muis.
-// De piloot is een gewone muis (zelfde pixelmaat) in een raampje in de borst.
-// Rechts een gatling met munitietrommel, links een houwitser met mondingsrem, op de schouders een railgun en een raketbak.
+// MECH "Grootbek": 3x3 tegels, een loper die kan lopen en mikken.
+// Vogelpoten: heup -> knie naar voren -> enkel terug -> voet met drie tenen en een hielspoor, zuigers langs elk deel.
+// Romp op een draaikrans (mikken = draaien), tegengewicht achterop, armen met ellebogen. Beide wapens mikken naar voren (+kol).
+// De piloot is een gewone muis (ware grootte) achter het raam voorin.
 function tekenMech() {
-  const d = new Doek(252, 244);
+  const d = new Doek(170, 228);
   const r = ruis(11);
-  const ax = 118, ay = 186;
+  const ax = 56, ay = 176;
   const g = isoPunt(ax, ay);
   const B = (k, rr, z, u, v, h, ramp, o = {}) => d.blokS(...g(k, rr, z), u, v, h, ramp, { r, ...o });
+  const S = (a, b, dik, ramp, o = {}) => d.staaf(a[0], a[1], b[0], b[1], dik, ramp, { r, ...o });
 
-  // --- rug: generator en uitlaten ---
-  const rug = B(5, 5, 118, 10, 10, 42, T.bruin);
-  for (const [k, rr, rad, h] of [[7.5, 7.5, 5, 34], [12, 6.5, 4, 26], [6.5, 12, 3, 20]]) {
-    const p = g(k, rr, 160);
-    d.cilinder(p[0], p[1], rad, h, T.roest, { r, open: true });
-    for (let j = 0; j < 6; j++) d.meng(p[0] - rad + Math.floor(r() * rad * 2), p[1] - h - 2 + Math.floor(r() * 5), K.roet, 0.8);
-  }
-
-  // --- benen ---
-  const been = (kc, rc) => {
-    B(kc - 5, rc - 4, 0, 10, 8, 7, T.staal); // voet
-    B(kc + 5, rc - 3, 0, 4, 6, 5, T.staal); // neus van de voet
-    B(kc - 4, rc + 4, 0, 6, 2, 5, T.staal);
-    d.bol(...g(kc, rc, 10), 6, T.staal);
-    const sch = B(kc - 3, rc - 3, 12, 6, 6, 40, T.olijf);
-    gevaar(d, [sch.P3[0], sch.P3[1] - 4], 6, 2, 'kol');
-    nagels(d, [sch.P3[0], sch.P3[1] - 36], 6, 2, 'kol', r);
-    const z = g(kc + 3.6, rc + 3.6, 14);
-    d.cilinder(z[0], z[1], 3, 34, T.chroom, { r });
-    d.veeg(z[0] - 2, z[1] - 20, 16, K.olie);
-    B(kc - 2, rc + 3, 36, 5, 2, 18, T.olijf); // kniebeschermer
-    d.bol(...g(kc, rc, 56), 8, T.staal);
-    const dij = B(kc - 3, rc - 3, 62, 6, 6, 28, T.staal);
-    B(kc - 3, rc + 3, 64, 6, 1, 24, T.olijf);
-    B(kc + 3, rc - 3, 64, 1, 6, 24, T.olijf);
-    return dij;
+  // --- een poot (rc = rij van de poot) ---
+  const poot = (rc) => {
+    const H = g(11, rc, 94), Kn = g(17, rc, 58), A = g(9, rc, 22), V = g(12, rc, 4);
+    // voet: tenen naar voren, hielspoor naar achter
+    S(V, g(5, rc, 2), 3, T.staal, { hoekig: true });
+    S(V, g(17, rc - 3, 1), 3, T.staal, { hoekig: true });
+    S(V, g(17, rc + 3, 1), 3, T.staal, { hoekig: true });
+    S(V, g(20, rc, 1), 4, T.staal, { hoekig: true });
+    for (const tk of [g(17, rc - 3, 1), g(17, rc + 3, 1), g(20, rc, 1)]) d.zet(tk[0] + 3, tk[1] + 1, T.staal[7]);
+    // middenvoet (enkel -> voet) en enkel
+    S(A, V, 5, T.olijf, { hoekig: true });
+    // scheen (knie -> enkel) met zuiger
+    S(Kn, A, 7, T.olijf, { hoekig: true });
+    S(g(16, rc + 1.5, 52), g(9, rc + 1.5, 26), 2, T.chroom);
+    d.bol(A[0], A[1], 6, T.staal);
+    // dij (heup -> knie) met zuiger
+    S(H, Kn, 9, T.olijf, { hoekig: true });
+    S(g(9, rc + 2, 84), g(15, rc + 2, 62), 2, T.chroom);
+    d.bol(Kn[0], Kn[1], 8, T.staal);
+    // kniebeschermer en strepen
+    B(17, rc - 2, 54, 3, 4, 12, T.olijf);
+    gevaar(d, [g(9, rc + 2.5, 22)[0] - 2, g(9, rc + 2.5, 22)[1] + 8], 2, 2, 'kol');
+    d.bol(H[0], H[1], 10, T.staal);
+    d.veeg(Kn[0] + 2, Kn[1] + 6, 10, K.olie);
   };
-  been(16, 8);
-  const linkerdij = been(8, 16);
-  tekst(d, [g(5, 20, 82)[0] + 2, g(5, 20, 82)[1]], 'M-07', 'kol', K.verf, r, 0.3);
 
-  // --- bekken, heupen, taille ---
-  B(7, 7, 88, 10, 10, 16, T.staal);
-  d.bol(...g(16.5, 8.5, 96), 8, T.staal);
-  d.bol(...g(8.5, 16.5, 96), 8, T.staal);
-  const t = g(12, 12, 104);
-  d.cilinder(t[0], t[1], 12, 10, T.staal, { r });
+  // --- achterste poot eerst ---
+  poot(6);
 
-  // --- borst met cockpit ---
-  const borst = B(5, 5, 112, 14, 14, 44, T.olijf);
-  const plL = B(5, 19, 116, 14, 1, 36, T.olijf);
-  const plR = B(19, 5, 116, 1, 14, 36, T.olijf);
-  nagels(d, [plL.P3[0], plL.P3[1] - 34], 14, 2, 'kol', r);
-  nagels(d, [plR.P1[0] - 1, plR.P1[1] - 34], 14, 2, 'rij', r);
-  for (let i = 0; i < 5; i++) streep(d, [plR.P1[0] - 5, plR.P1[1] - 10 - i * 4], 9, 'rij', T.staal[0]); // roosters
-  // cockpitraam met piloot (een gewone muis, dus piepklein)
-  const raam = g(8, 20, 126);
-  for (let s = 0; s < 8; s++) for (let j = 0; j < 12; j++) {
-    d.zet(raam[0] + 2 * s, raam[1] + s - j, T.glas[1 + (j > 9 ? 1 : 0)]);
-    d.zet(raam[0] + 2 * s + 1, raam[1] + s - j, T.glas[1 + (j > 9 ? 1 : 0)]);
+  // --- rechterarm met gatling (achter de romp) ---
+  const sR = g(11, 3, 134), eR = g(8, 2, 110), mR = g(16, 2, 114);
+  S(sR, eR, 6, T.staal, { hoekig: true });
+  S(eR, mR, 6, T.olijf, { hoekig: true });
+  d.bol(eR[0], eR[1], 5, T.staal);
+  const gat = B(15, -1, 104, 10, 6, 16, T.staal);
+  gevaar(d, [gat.P1[0] - 1, gat.P1[1] - 3], 6, 2, 'rij');
+  const lopen = [[0.5, 116], [3, 118], [1.5, 112], [4, 113], [0.5, 108], [3, 108]];
+  for (const [rr, z] of lopen) { const p = g(25, rr, z); d.buis(p[0], p[1], 22, 'kol', 2, T.staal, { loop: true, ringen: 7 }); }
+  B(38, -1, 104, 2, 6, 16, T.staal); // ring om de lopen
+  const trom = g(18, 2, 120);
+  d.cilinder(trom[0], trom[1], 9, 12, T.messing, { r });
+  d.bol(sR[0], sR[1], 9, T.olijf);
+
+  // --- tegengewicht/generator achterop met uitlaten ---
+  B(1, 7, 104, 6, 10, 36, T.bruin);
+  for (const [k, rr, rad, h] of [[3, 9, 4, 30], [3, 13, 3, 24], [3.5, 16, 2, 16]]) {
+    const p = g(k, rr, 140);
+    d.cilinder(p[0], p[1], rad, h, T.roest, { r, open: true });
+    for (let j = 0; j < 5; j++) d.meng(p[0] - rad + Math.floor(r() * rad * 2), p[1] - h - 2 + Math.floor(r() * 5), K.roet, 0.8);
   }
-  const px = raam[0] + 7, py = raam[1] - 1;
+
+  // --- bekken en draaikrans ---
+  B(8, 7, 86, 7, 10, 14, T.staal);
+  const krans = g(12, 12, 100);
+  d.cilinder(krans[0], krans[1], 14, 6, T.staal, { r });
+  for (let x = -13; x < 14; x += 3) d.zet(krans[0] + x, krans[1] + Math.round(Math.sqrt(Math.max(0, 1 - (x / 14) ** 2)) * 7) - 2, T.staal[1]);
+
+  // --- romp: compact en gepantserd, schuine neus naar voren ---
+  const romp = B(6, 6, 106, 12, 12, 30, T.olijf);
+  for (let t = 0; t < 6; t++) B(18 + t, 6.5, 108 + t * 2, 1, 11, 22 - t * 4, T.olijf); // schuine neus
+  nagels(d, [romp.P3[0], romp.P3[1] - 28], 12, 2, 'kol', r);
+  nagels(d, [romp.P3[0], romp.P3[1] - 3], 12, 2, 'kol', r);
+  for (let i = 0; i < 4; i++) streep(d, [g(6, 18, 112 + i * 4)[0] + 2, g(6, 18, 112 + i * 4)[1]], 6, 'kol', T.olijf[1]);
+  tekst(d, [g(12, 18, 126)[0], g(12, 18, 126)[1]], 'M-07', 'kol', K.verf, r, 0.3);
+  // cockpitraam op de neus (rechtervlak, kijkt naar voren)
+  const raam = g(19, 9, 126);
+  for (let s = 0; s < 6; s++) for (let j = 0; j < 8; j++) {
+    d.zet(raam[0] - 2 * s, raam[1] + s - j, T.glas[1]);
+    d.zet(raam[0] - 2 * s - 1, raam[1] + s - j, T.glas[1]);
+  }
+  const px = raam[0] - 8, py = raam[1] + 2;
   d.rect(px, py - 3, 4, 3, T.vacht[4]); d.rect(px + 1, py - 3, 2, 1, T.vacht[5]);
   d.zet(px, py - 5, T.vacht[3]); d.zet(px, py - 4, T.vacht[3]); d.zet(px + 3, py - 5, T.vacht[3]); d.zet(px + 3, py - 4, T.vacht[3]);
-  d.zet(px + 4, py - 2, K.neus);
-  B(8, 8, 156, 8, 8, 6, T.staal); // kraag
-
-  // --- hoofd: klein en gemeen, met vizier ---
-  const hoofd = B(10, 10, 162, 5, 5, 12, T.staal);
-  B(11, 11, 174, 3, 3, 2, T.staal);
-
-  // --- bovenarmen en schouderstukken ---
-  B(20, 4, 100, 5, 5, 34, T.staal);
-  B(4, 20, 100, 5, 5, 34, T.staal);
-  const schR = B(18, 2, 134, 9, 9, 24, T.olijf);
-  B(18.5, 2.5, 158, 8, 8, 5, T.olijf);
-  const schL = B(2, 18, 134, 9, 9, 24, T.olijf);
-  B(2.5, 18.5, 158, 8, 8, 5, T.olijf);
-  gevaar(d, [schR.P1[0] - 1, schR.P1[1] - 3], 9, 3, 'rij');
-  gevaar(d, [schL.P3[0], schL.P3[1] - 3], 9, 3, 'kol');
-
-  // --- railgun op de rechterschouder ---
-  B(18, 3, 163, 8, 6, 9, T.staal);
-  const rg = g(26, 6, 168);
-  d.buis(rg[0], rg[1], 30, 'kol', 4, T.staal, { loop: true, ringen: 4 });
-  // --- raketbak op de linkerschouder ---
-  const bak = B(3, 18, 163, 7, 8, 18, T.olijf);
+  // sensorkop bovenop, voorin
+  const kop = B(13, 9, 136, 5, 6, 8, T.staal);
+  // railgun bovenop (mikt mee met de romp)
+  B(7, 7, 136, 7, 4, 7, T.staal);
+  const rg = g(14, 9, 141);
+  d.buis(rg[0], rg[1], 24, 'kol', 3, T.staal, { loop: true, ringen: 4 });
+  // raketbak achter-links bovenop
+  const bak = B(5, 13, 136, 5, 5, 14, T.olijf);
   const gaten = [];
-  for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) {
-    const p = g(4.5 + i * 2, 26, 166 + j * 5);
-    d.rect(p[0], p[1] - 2, 2, 3, K.k0);
-    gaten.push([p[0] + 1, p[1] - 1]);
+  for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) {
+    const p = g(10, 14 + i * 2, 140 + j * 5);
+    d.rect(p[0] - 1, p[1] - 2, 2, 3, K.k0);
+    gaten.push([p[0], p[1] - 1]);
   }
 
-  // --- rechteronderarm: gatling met trommel ---
-  d.bol(...g(22.5, 6.5, 100), 7, T.staal);
-  const gat = B(19, 1, 76, 12, 10, 24, T.staal);
-  gevaar(d, [gat.P1[0] - 1, gat.P1[1] - 3], 9, 2, 'rij');
-  for (const [rr, z] of [[3.5, 94], [7, 96], [5, 90], [8.5, 90], [3, 86], [6.5, 84]]) {
-    const p = g(31, rr, z);
-    d.buis(p[0], p[1], 32, 'kol', 3, T.staal, { loop: true, ringen: 8 });
-  }
-  const p1 = g(29, 2.5, 82), p2 = g(29, 9, 82);
-  B(50, 2, 80, 3, 8, 18, T.staal); // ring om de lopen
-  const trom = g(24, 6, 100);
-  d.cilinder(trom[0], trom[1], 13, 16, T.messing, { r });
+  // --- voorste poot ---
+  poot(18);
 
-  // --- linkeronderarm: houwitser met mondingsrem ---
-  d.bol(...g(6.5, 22.5, 100), 7, T.staal);
-  const hou = B(1, 19, 74, 11, 10, 26, T.staal);
+  // --- linkerarm met houwitser (voor de romp) ---
+  const sL = g(11, 21, 132), eL = g(8, 22, 108), mL = g(15, 22, 110);
+  S(sL, eL, 6, T.staal, { hoekig: true });
+  S(eL, mL, 6, T.olijf, { hoekig: true });
+  d.bol(eL[0], eL[1], 5, T.staal);
+  const hou = B(13, 19, 100, 9, 7, 18, T.staal);
   gevaar(d, [hou.P3[0], hou.P3[1] - 3], 9, 2, 'kol');
-  const lp = g(6.5, 29, 87);
-  d.buis(lp[0], lp[1], 22, 'rij', 10, T.staal, { ringen: 6 });
-  const rem = B(0.5, 50, 72, 12, 6, 30, T.staal);
-  const mond = g(6.5, 56, 87);
-  for (let dy = -9; dy <= 9; dy++) for (let dx = -6; dx <= 6; dx++)
-    if ((dx * dx) / 36 + (dy * dy) / 81 <= 1) d.zet(mond[0] + dx, mond[1] + dy, dx * dx / 36 + dy * dy / 81 > 0.5 ? T.staal[2] : K.k0);
+  const lp = g(22, 22.5, 109);
+  d.buis(lp[0], lp[1], 14, 'kol', 7, T.staal, { ringen: 5 });
+  const rem = B(35, 18.5, 100, 4, 8, 18, T.staal);
+  const mond = g(39, 22.5, 109);
+  for (let dy = -6; dy <= 6; dy++) for (let dx = -4; dx <= 4; dx++)
+    if ((dx * dx) / 16 + (dy * dy) / 36 <= 1) d.zet(mond[0] + dx, mond[1] + dy, (dx * dx) / 16 + (dy * dy) / 36 > 0.5 ? T.staal[2] : K.k0);
+  d.bol(sL[0], sL[1], 9, T.olijf);
+  B(9, 19, 138, 5, 5, 4, T.olijf); // schouderplaat
 
   d.omlijn(K.lijn);
   d.vuil(0.05, K.olie, 0.45, r);
-  for (let i = 0; i < 18; i++) {
-    const p = r() < 0.5 ? g(5 + r() * 14, 20, 118 + r() * 30) : g(20, 5 + r() * 14, 118 + r() * 30);
-    d.veeg(p[0], p[1], 3 + Math.floor(r() * 8), r() < 0.6 ? T.roest[3] : K.olie);
+  for (let i = 0; i < 12; i++) {
+    const p = g(6 + r() * 12, 18, 108 + r() * 26);
+    d.veeg(p[0], p[1], 3 + Math.floor(r() * 7), r() < 0.6 ? T.roest[3] : K.olie);
   }
 
-  // --- kabels en slangen, heel veel ---
-  const P = (k, rr, z) => g(k, rr, z);
+  // --- kabels en slangen ---
   const lijst = [
-    [P(15, 5, 150), P(26, 6, 160), 10, T.messing[3], T.messing[5]], // munitie naar railgun
-    [P(13, 5, 130), P(23, 5, 110), 14, T.messing[3], T.messing[5]], // munitieband naar trommel
-    [P(19, 9, 118), P(21, 9, 96), 8, K.k0, K.k1],
-    [P(19, 12, 120), P(16, 10, 70), 14, K.kRood, K.kRoodL],
-    [P(19, 15, 118), P(9, 19, 70), 16, K.kGeel, K.kGeelL],
-    [P(15, 19, 118), P(8, 19, 60), 12, K.k0, K.k1],
-    [P(9, 19, 120), P(6, 24, 98), 10, K.kBlauw, K.kBlauwL],
-    [P(5, 15, 130), P(4, 24, 100), 12, K.k0, K.k1],
-    [P(12, 19, 116), P(13, 13, 96), 8, K.kRood, K.kRoodL],
-    [P(17, 8, 100), P(17, 10, 50), 10, K.k0, K.k1],
-    [P(8, 17, 100), P(10, 17, 50), 10, K.kRood, K.kRoodL],
-    [P(16, 9, 60), P(19, 11, 14), 8, K.kGeel, K.kGeelL],
-    [P(9, 16, 60), P(11, 19, 14), 8, K.k0, K.k1],
-    [P(12, 10, 172), P(19, 3, 166), 6, K.k0, K.k1],
-    [P(10, 12, 172), P(3, 19, 166), 6, K.kRood, K.kRoodL],
-    [P(30, 4, 98), P(44, 4, 102), 6, K.k0, K.k1],
-    [P(5, 29, 100), P(6, 44, 104), 6, K.kGeel, K.kGeelL],
-    [P(5, 6, 150), P(-4, 8, 0), 30, K.k0, K.k1], // sleepkabels
-    [P(6, 5, 140), P(2, -2, 0), 26, K.kRood, K.kRoodL],
+    [g(6, 8, 130), g(18, 2, 132), 10, T.messing[3], T.messing[5]], // munitie naar trommel
+    [g(6, 10, 136), g(9, 8, 143), 4, T.messing[3], T.messing[5]], // munitie naar railgun
+    [g(8, 17, 106), g(11, 18, 94), 6, K.k0, K.k1],
+    [g(10, 18, 108), g(16, 18, 60), 14, K.kRood, K.kRoodL],
+    [g(14, 18, 108), g(9, 19, 24), 18, K.kGeel, K.kGeelL],
+    [g(8, 7, 106), g(16, 6, 60), 14, K.k0, K.k1],
+    [g(6, 18, 120), g(8, 22, 110), 6, K.kBlauw, K.kBlauwL],
+    [g(6, 6, 120), g(8, 2, 112), 6, K.kRood, K.kRoodL],
+    [g(15, 19, 116), g(22, 21, 116), 5, K.k0, K.k1],
+    [g(14, 2, 118), g(24, 1, 120), 5, K.kGeel, K.kGeelL],
+    [g(13, 12, 144), g(18, 18, 120), 8, K.k0, K.k1],
+    [g(2, 9, 106), g(4, 12, 92), 6, K.k0, K.k1],
+    [g(2, 14, 106), g(9, 17, 96), 8, K.kRood, K.kRoodL],
   ];
   for (const [a, b, z, k, gl] of lijst) d.kabel(a[0], a[1], b[0], b[1], z, k, gl);
 
   // --- neon ---
-  d.neonLijn(isoPixels(g(10, 15, 168), 5, 'kol'), N.rood); // vizier
-  d.neonLijn(isoPixels(g(15, 15, 168), 5, 'rij').map(([x, y]) => [x - 1, y - 0]), N.rood);
-  d.neonLijn(isoPixels(raam, 8, 'kol').map(([x, y]) => [x, y - 12]), N.cyaan); // raamlijst
-  d.neonLijn(isoPixels(raam, 8, 'kol').map(([x, y]) => [x, y + 1]), N.cyaan);
+  d.neonLijn(isoPixels(g(18, 9, 141), 6, 'rij').map(([x, y]) => [x - 1, y]), N.rood); // vizier op de sensorkop
+  d.neonLijn(isoPixels([raam[0], raam[1] - 8], 6, 'rij'), N.cyaan);
+  d.neonLijn(isoPixels([raam[0], raam[1] + 1], 6, 'rij'), N.cyaan);
   d.licht(px + 1, py - 3, N.gif); d.licht(px + 3, py - 3, N.gif);
-  d.neonLijn(isoPixels(g(26, 6, 173), 30, 'kol'), N.cyaan); // railgun-rails
-  d.neonLijn(isoPixels(g(26, 6, 163), 30, 'kol').map(([x, y]) => [x, y + 1]), N.cyaan);
+  d.neonLijn(isoPixels(g(14, 9, 145), 24, 'kol'), N.cyaan); // railgun-rails
+  d.neonLijn(isoPixels(g(14, 9, 137), 24, 'kol').map(([x, y]) => [x, y + 1]), N.cyaan);
   for (const [x, y] of gaten) d.neon(x, y, N.rood, 1);
-  for (let i = 0; i < 5; i++) d.neon(...g(20, 6 + i * 2, 146), [N.gif, N.natrium, N.rood, N.gif, N.cyaan][i], 1);
-  d.neon(...g(13, 20, 148), N.natrium, 1);
-  d.neon(...g(7, 20, 148), N.gif, 1);
-  d.neonKabel(...P(8, 19, 114), ...P(19, 8, 114), 14, N.gif);
-  d.neonKabel(...P(19, 2, 98), ...P(28, 4, 98), 6, N.natrium);
-  for (const [x, y] of [[mond[0], mond[1]]]) { d.licht(x, y, N.natrium); d.licht(x + 1, y, N.natrium); d.licht(x, y + 1, N.rood); }
-  for (const [rr, z] of [[3.5, 94], [7, 96], [5, 90], [8.5, 90], [3, 86], [6.5, 84]]) {
-    const p = g(31 + 32, rr, z);
-    d.licht(p[0] + 1, p[1], N.natrium);
-  }
-  d.neon(...g(12.5, 12.5, 178), N.rood, 2); // baken op het hoofd
-  d.neon(...g(4, 19, 70), N.gif, 1);
-  d.neon(...g(19, 4, 70), N.gif, 1);
-  void p1; void p2; void hoofd; void borst; void rug; void linkerdij; void rem; void bak; void t;
+  for (let i = 0; i < 4; i++) d.neon(...g(10 + i * 2, 18, 132), [N.gif, N.natrium, N.rood, N.gif][i], 1);
+  d.neonKabel(...g(6, 18, 106), ...g(18, 18, 106), 8, N.gif);
+  d.neonKabel(...g(15, -1, 120), ...g(24, -1, 120), 5, N.natrium);
+  d.licht(mond[0], mond[1], N.natrium); d.licht(mond[0] + 1, mond[1], N.natrium); d.licht(mond[0], mond[1] + 1, N.rood);
+  for (const [rr, z] of lopen) { const p = g(25 + 22, rr, z); d.licht(p[0] + 1, p[1], N.natrium); }
+  for (const rc of [6, 18]) { d.neon(...g(17, rc + 2, 58), N.gif, 1); d.neon(...g(9, rc + 2, 22), N.natrium, 1); }
+  d.neon(...g(15, 11, 146), N.rood, 2);
+  void kop; void bak; void rem;
   bewaar('mech', d, ax, ay, 3);
 }
 

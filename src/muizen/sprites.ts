@@ -4,7 +4,7 @@
 export const MUIZEN_SPRITES = {
   'muis': { w: 18, h: 16, ankerX: 9, ankerY: 15, tegels: 0, gloed: true },
   'muis-monteur': { w: 18, h: 16, ankerX: 9, ankerY: 15, tegels: 0, gloed: true },
-  'mech': { w: 252, h: 244, ankerX: 118, ankerY: 186, tegels: 3, gloed: true },
+  'mech': { w: 170, h: 228, ankerX: 56, ankerY: 176, tegels: 3, gloed: true },
   'sjouwbot': { w: 128, h: 144, ankerX: 52, ankerY: 100, tegels: 2, gloed: true },
   'boor': { w: 88, h: 152, ankerX: 44, ankerY: 112, tegels: 2, gloed: true },
   'pers': { w: 96, h: 148, ankerX: 48, ankerY: 110, tegels: 2, gloed: true },

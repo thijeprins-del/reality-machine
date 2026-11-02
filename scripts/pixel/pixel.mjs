@@ -246,6 +246,31 @@ export class Doek {
         this.zet(ex + sx * dx + sx, Math.round(ey + dy), ramp[i]);
       }
   }
+
+  // Schuine balk tussen twee schermpunten (dij, scheen, arm). Licht van rechtsboven.
+  // o.hoekig: drie vlakke banden (pantserbalk) in plaats van rond.
+  staaf(x0, y0, x1, y1, r, ramp, o = {}) {
+    const n = ramp.length - 1;
+    const dx = x1 - x0, dy = y1 - y0, len2 = dx * dx + dy * dy || 1;
+    const L = [0.6, -0.8];
+    const kans = o.ruis ?? 0.08, rr = o.r ?? Math.random;
+    for (let y = Math.floor(Math.min(y0, y1) - r - 1); y <= Math.ceil(Math.max(y0, y1) + r + 1); y++)
+      for (let x = Math.floor(Math.min(x0, x1) - r - 1); x <= Math.ceil(Math.max(x0, x1) + r + 1); x++) {
+        const px = x + 0.5, py = y + 0.5;
+        let t = ((px - x0) * dx + (py - y0) * dy) / len2;
+        t = Math.max(0, Math.min(1, t));
+        const ox = px - (x0 + t * dx), oy = py - (y0 + t * dy);
+        const afst = Math.hypot(ox, oy);
+        if (afst > r) continue;
+        const l = (ox * L[0] + oy * L[1]) / r; // -1 .. 1
+        let i;
+        if (o.hoekig) i = l > 0.35 ? n - 1 : l > -0.3 ? Math.round(n * 0.55) : Math.round(n * 0.25);
+        else i = Math.round((0.5 + 0.45 * l) * (n - 1));
+        if (afst > r - 1 && l < 0) i -= 1;
+        if (rr() < kans) i += rr() < 0.5 ? -1 : 1;
+        this.zet(x, y, ramp[Math.max(0, Math.min(n, i))]);
+      }
+  }
   // Bol (scharnier, koepel). Glanspuntje rechtsboven.
   bol(cx, cy, r, ramp, o = {}) {
     const n = ramp.length - 1;
