@@ -7,6 +7,8 @@ Pak je een taak op: zet eerst je naam erachter in je PR. Klaar: `- [x] … (#PR)
 - [ ] K2 Eiland van de speler op het iso-veld, camera
 - [ ] K3 Eén dimensie met streamtimer en sprong
 - [ ] K4 Machine-energie en heelheid; verliezen bij gemiste stream
+- [ ] K5 Lopende banden: leggen, goederen bewegen, gebouwen in/uit (zie DESIGN.md, Logistiek)
+- [ ] K6 Recepten draaien in gebouwen; eind van de keten voedt de machine
 
 ## Muizen (Thije)
 - [ ] M1 Spellus en machine-energie (met K3/K4)
@@ -24,4 +26,5 @@ Pak je een taak op: zet eerst je naam erachter in je PR. Klaar: `- [x] … (#PR)
 - 30 nov–1 dec: buffer, alleen inleveren (deadline 1 dec 22:37)
 
 ## Later-lijst (niet bouwen tenzij alles af is)
+- Splitsers, bruggen en sorteerders voor banden
 - Online tweespeler, meer dan twee facties, opslaan midden in een run, verhaal
