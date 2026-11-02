@@ -63,7 +63,7 @@ export function maakPaneel(staat: () => SpelStaat): { werk(sec: number): void } 
 
   function maat(): void {
     const ps0 = Math.min((innerWidth * 0.78) / PW, (innerHeight * 0.5) / PH);
-    ps = ps0 >= 1 ? Math.floor(ps0) : ps0;
+    ps = ps0 >= 1 ? Math.floor(ps0 * 2) / 2 : ps0; // halve stappen: groot genoeg, nog scherp genoeg
     const dpr = Math.min(2, devicePixelRatio || 1);
     pv.style.width = `${Math.floor(PW * ps)}px`;
     pv.style.height = `${Math.floor(PH * ps)}px`;
