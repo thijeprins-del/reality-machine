@@ -1,0 +1,113 @@
+# Uitrol naar GitHub Pages, twee versies (versimpeld van Casus Romae):
+#   main → RELEASE  https://thijeprins.nl/reality-machine/
+#   dev  → DEV      https://thijeprins.nl/reality-machine/dev/
+# - Elke PR naar dev of main: job `controle` (npm run snel). Rood = niet mergen.
+# - Push op dev: de workflow start zichzelf op main, want uitrollen mag alleen vanaf main.
+# - Uitrollen bouwt main en dev en zet ze samen neer (Pages bewaart één site per repo).
+# - Wijzigingen die alleen docs raken (behalve HELP.md) rollen niet uit.
+name: Pages
+on:
+  pull_request:
+    branches: [dev, main]
+  push:
+    branches: [main, dev]
+    paths: ['**', '!**.md', 'HELP.md']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  controle:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: controle-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run snel
+
+  doorsturen:
+    if: github.event_name == 'push' && github.ref != 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - run: gh workflow run pages.yml --ref main -R "$GITHUB_REPOSITORY"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  uitrollen:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    steps:
+      - name: Commit per branch
+        id: sha
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for b in main dev; do
+            echo "$b=$(gh api "repos/$GITHUB_REPOSITORY/commits/$b" --jq .sha 2>/dev/null || true)" | tee -a "$GITHUB_OUTPUT"
+          done
+      # dev verandert bijna elke uitrol en wordt altijd gebouwd; main komt uit de cache zolang zijn commit gelijk is.
+      - uses: actions/cache@v4
+        with: { path: bouw/main, key: "site1-main-${{ steps.sha.outputs.main }}" }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Bouw wat nog niet in de cache zit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MAIN: ${{ steps.sha.outputs.main }}
+          DEV: ${{ steps.sha.outputs.dev }}
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: |
+          set -e
+          for env in main dev; do
+            if [ -f "bouw/$env/index.html" ]; then echo "$env: uit de cache"; continue; fi
+            v=${env^^}; sha=${!v}
+            if [ -z "$sha" ]; then echo "$env: branch bestaat niet, overgeslagen"; continue; fi
+            mkdir -p "src-$env" "bouw/$env"
+            (
+              cd "src-$env"
+              git init -q && git fetch -q --depth 1 "https://x-access-token:$GH_TOKEN@github.com/$GITHUB_REPOSITORY" "$sha" && git checkout -q FETCH_HEAD
+              if [ -f package.json ]; then
+                npm ci --no-audit --no-fund
+                GAME_ENV=$([ "$env" = main ] || echo "$env") COMMIT="$sha" npm run build
+              fi
+            )
+            if [ -d "src-$env/dist" ]; then
+              cp -r "src-$env/dist/." "bouw/$env/"
+            else
+              # Nog geen spel op deze branch (bv. main vóór de eerste release).
+              printf '<!doctype html><meta charset="utf-8"><title>Reality Machine</title><p>Reality Machine: binnenkort. <a href="./dev/">Naar DEV</a></p>\n' > "bouw/$env/index.html"
+            fi
+            echo "$env: build $BUILD_NUMBER (${sha:0:7})" > "bouw/$env/versie.txt"
+          done
+      - name: Zet de site samen
+        run: |
+          set -e
+          mkdir -p site
+          if [ -d bouw/main ]; then cp -r bouw/main/. site/; fi
+          if [ -d bouw/dev ]; then mkdir -p site/dev && cp -r bouw/dev/. site/dev/; fi
+          cat bouw/*/versie.txt | tee site/versies.txt
+          rm -f site/versie.txt site/*/versie.txt
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@v4
