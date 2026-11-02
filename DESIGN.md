@@ -10,14 +10,17 @@ Nog een skelet. Werk dit bij bij elke grote regelwijziging.
   Gevechten zijn bijzaak en kort.
 - Ketens: ruwe grondstof uit de dimensie → tussenproducten → eindproduct dat de machine voedt (`streamKosten`).
   Nieuwe gebouwen en recepten komen alleen uit loot, zo groeit de keten per dimensie.
-- Logistiek: één gedeelde eilandvoorraad, geen lopende banden (scope).
+- **Logistiek: lopende banden** (keuze Thije, 2 nov). Gebouwen nemen invoer van een band die erin loopt en zetten
+  uitvoer op een band die eruit wijst. De indeling van je eiland is de puzzel.
+  Klein houden: één goed per bandtegel, rechtdoor en bochten, geen splitsers, bruggen of sorteerders (later-lijst).
+  Bandmechaniek zit in de kern; per factie verschilt alleen `BandSoort` (snelheid, kosten).
 - Winnen: de tegenstander zo meppen dat zijn machine de volgende stream niet haalt, vooral door zijn keten te breken.
 
 ## Samenwerking facties
 Zelfde spelregels, ander gereedschap. De kern weet niets van muizen of otters; een factie is data plus één trucje.
 
 - **Vast (contract, `src/kern/types.ts`):** machine (energie, heelheid), ruwe grondstoffen (`schroot`, `hout`, `kristal`),
-  vorm van recepten, gebouwen, vondsten, loot-tabel en eenheden, en de haken van het trucje (`opTik`, `opStream`).
+  vorm van recepten, banden, gebouwen, vondsten, loot-tabel en eenheden, en de haken van het trucje (`opTik`, `opStream`).
   Wijzigen: kleine aparte PR, de ander kijkt binnen 12 uur.
 - **Vrij per factie:** de eigen ketens (tussenproducten, recepten, wat de machine eet), gebouwen, eenheden,
   alle getallen, de loot-tabel, het trucje. Asymmetrie zit vooral in de vorm van de ketens. Code in `src/<factie>/`,

@@ -5,7 +5,7 @@ import type { SpelStaat } from './spel';
 export type FactieId = 'muizen' | 'otters';
 
 // Goederen. Ruwe grondstoffen (uit dimensies) zijn voor beide facties dezelfde; tussenproducten en eindproducten
-// mag elke factie zelf verzinnen (gewoon een string, bv. 'tandwiel' of 'dambalk'). Alles ligt in één eilandvoorraad.
+// mag elke factie zelf verzinnen (gewoon een string, bv. 'tandwiel' of 'dambalk'). Goederen reizen over lopende banden.
 export type Grondstof = 'schroot' | 'hout' | 'kristal';
 export type Goed = Grondstof | (string & {});
 export type Voorraad = Partial<Record<Goed, number>>;
@@ -18,6 +18,25 @@ export interface Recept {
   in: Voorraad;
   uit: Voorraad;
   sec: number;
+}
+
+// Per factie: hoe snel en duur haar banden zijn. Asymmetrie mag hier (bv. snelle dure muizenbanden).
+export interface BandSoort {
+  naam: string;
+  tegelsPerSec: number;
+  kosten: Voorraad;
+}
+
+// Logistiek: lopende banden op de tegels van je eiland. De kern beweegt goederen; facties leveren alleen getallen.
+// Klein gehouden: één goed per bandtegel, rechtdoor of een bocht, geen splitsers (later-lijst).
+export type Richting = 'N' | 'O' | 'Z' | 'W';
+
+export interface Band {
+  x: number;
+  y: number;
+  naar: Richting; // waar de band heen loopt; een bocht ontstaat vanzelf als de vorige band er schuin op uitkomt
+  goed?: Goed; // wat er nu op ligt
+  voortgang: number; // 0..1 over deze tegel
 }
 
 // De reality machine. Betekent voor beide facties hetzelfde: de stream meet energie en heelheid.
@@ -45,6 +64,8 @@ export interface GebouwSoort {
   naam: string;
   hp: number;
   kosten: Voorraad;
+  breed: number; // tegels
+  diep: number;
   opbrengst?: Voorraad; // per minuut, voor oogstgebouwen zonder invoer
 }
 
@@ -80,6 +101,7 @@ export interface Factie {
   streamKosten: Voorraad; // wat de machine per stream verbruikt: het eind van de lange keten
   gebouwen: GebouwSoort[];
   recepten: Recept[];
+  band: BandSoort;
   startRecepten: string[]; // recept-id's die je vanaf het begin kent; de rest komt uit loot
   eenheden: EenheidSoort[];
   vondsten: VondstSoort[];
@@ -102,6 +124,10 @@ export interface Gebouw {
   hp: number;
   x: number;
   y: number;
+  recept?: string; // wat het nu maakt
+  // Een band die het gebouw in loopt is invoer, een band die eruit wijst is uitvoer. Buffer per goed:
+  binnen: Voorraad;
+  buiten: Voorraad;
 }
 
 export interface Vondst {
