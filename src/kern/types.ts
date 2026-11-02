@@ -47,6 +47,7 @@ export interface Machine {
   maxHeelheid: number;
 }
 
+// Elke factie heeft in `gebouwen` minstens de soorten 'machine' (de reality machine) en 'opslag' (de stockpile).
 // Een soort eenheid (de data). Een eenheid op het veld verwijst ernaar met `soort`.
 // Eenheden zijn bijzaak: het spel draait om industrie, gevechten zijn kort (vooral ketens van de ander saboteren).
 export interface EenheidSoort {
@@ -57,6 +58,7 @@ export interface EenheidSoort {
   bereik: number; // in tegels
   snelheid: number; // tegels per seconde
   kosten: Voorraad;
+  werk?: { draagt: number; mijnSec: number }; // kan grondstoffen halen: zoveel per keer, zo lang graven
 }
 
 export interface GebouwSoort {
@@ -104,6 +106,7 @@ export interface Factie {
   band: BandSoort;
   startRecepten: string[]; // recept-id's die je vanaf het begin kent; de rest komt uit loot
   eenheden: EenheidSoort[];
+  startEenheden: Partial<Record<string, number>>; // soort -> aantal bij de start (bv. honderden muizen)
   vondsten: VondstSoort[];
   loot: LootRegel[];
   trucje: Trucje;
@@ -134,4 +137,20 @@ export interface Vondst {
   soort: string;
   x: number;
   y: number;
+}
+
+// Beeld: de kern tekent, de factie levert de plaatjes. Sleutel = soort eenheid of gebouw.
+export interface SpriteInfo {
+  url: string;
+  gloedUrl?: string; // alleen de neonpixels, voor de gloedlaag
+  w: number;
+  h: number;
+  ankerX: number; // pixel die op de achterhoek van de tegel valt (eenheden: de voeten)
+  ankerY: number;
+  tegels: number; // 0 = eenheid, anders breedte in tegels
+}
+
+export interface FactieBeeld {
+  sprites: Record<string, SpriteInfo>;
+  lading?: Partial<Record<Grondstof, string>>; // sprite van een eenheid die deze grondstof draagt
 }

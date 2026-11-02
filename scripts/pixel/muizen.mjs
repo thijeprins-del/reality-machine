@@ -120,6 +120,17 @@ function tekenMuis(naam, variant) {
     d.lijn(ox + 5, oy + 6, ox + 8, oy + 3, T.staal[6]);
     d.zet(ox + 9, oy + 2, T.staal[5]); d.zet(ox + 8, oy + 2, T.staal[5]);
   }
+  // met lading: een bundeltje op de rug (links, want de muis kijkt naar rechts)
+  const lading = {
+    schroot: [T.staal[5], T.staal[3], T.roest[4], T.staal[6]],
+    hout: [T.bruin[6], T.bruin[4], T.bruin[3], T.bruin[7]],
+    kristal: [T.glas[4], T.glas[3], T.glas[5], T.glas[5]],
+  }[variant];
+  if (lading) {
+    for (let j = 0; j < 3; j++) for (let i = 0; i < 2; i++) d.zet(ox - 1 + i, oy + 3 + j, lading[(i + j) % 3]);
+    d.zet(ox, oy + 2, lading[3]);
+    if (variant === 'kristal') d.licht(ox - 1, oy + 3, N.magenta);
+  }
   // geen buitenlijn: net als de piloten, simpel en zacht
   d.licht(ox + 2, oy + 2, N.gif);
   d.licht(ox + 4, oy + 2, N.gif);
@@ -542,8 +553,96 @@ function tekenKabels() {
   bewaar('kabels', d, ax + 7, ay + 4 + 41 - 8, 2);
 }
 
+// ---------------------------------------------------------------------------
+// REALITY MACHINE (4x4 tegels): de toren waarmee het eiland door de dimensies springt. Het hoogste ding op de kaart.
+// Betonnen voet met trappen, een dikke messing kern met ringen, spoelen, een kroon met neon en veel te veel kabels.
+function tekenMachine() {
+  const d = new Doek(150, 330);
+  const r = ruis(77);
+  const ax = 75, ay = 258;
+  const g = schaal(isoPunt(ax, ay));
+  const B = (k, rr, z, u, v, h, ramp, o = {}) => d.blokS(...g(k, rr, z), u * F, v * F, h * F, ramp, { r, ...o });
+  // voet: twee lagen beton
+  const voet = B(0, 0, 0, 16, 16, 8, T.beton);
+  gevaar(d, [voet.P3[0], voet.P3[1] - 3], 32, 3, 'kol');
+  gevaar(d, [voet.P1[0] - 1, voet.P1[1] - 3], 32, 3, 'rij');
+  B(2, 2, 8, 12, 12, 6, T.staal);
+  // vier steunpoten op de hoeken
+  for (const [k, rr] of [[2.5, 2.5], [11.5, 2.5], [2.5, 11.5], [11.5, 11.5]]) B(k - 1, rr - 1, 14, 2, 2, 22, T.olijf);
+  const m = g(8, 8, 14);
+  // kern: dikke cilinder in stukken, steeds smaller
+  d.cilinder(m[0], m[1], 24, 30, T.staal, { r });
+  d.cilinder(m[0], m[1] - 30, 20, 40, T.messing, { r });
+  for (let i = 0; i < 40; i += 6)
+    for (let x = -20; x < 20; x++)
+      d.meng(m[0] + x, m[1] - 30 - i + Math.round(Math.sqrt(Math.max(0, 1 - ((x + 0.5) / 20) ** 2)) * 10), K.olie, 0.45);
+  d.cilinder(m[0], m[1] - 70, 26, 6, T.staal, { r }); // ring
+  d.cilinder(m[0], m[1] - 76, 16, 50, T.staal, { r });
+  d.cilinder(m[0], m[1] - 126, 22, 5, T.roest, { r }); // ring
+  d.cilinder(m[0], m[1] - 131, 11, 40, T.messing, { r });
+  d.cilinder(m[0], m[1] - 171, 16, 4, T.staal, { r });
+  d.cilinder(m[0], m[1] - 175, 4, 34, T.chroom, { r });
+  d.bol(m[0], m[1] - 214, 8, T.chroom);
+  // spoelen links en rechts op de onderste ring
+  for (const dx of [-30, 30]) {
+    d.cilinder(m[0] + dx, m[1] - 20, 6, 48, T.roest, { r });
+    for (let j = 0; j < 44; j += 3) for (let x = -6; x < 6; x++) d.zet(m[0] + dx + x, m[1] - 22 - j, T.messing[2 + (j % 2)]);
+    d.bol(m[0] + dx, m[1] - 72, 5, T.staal);
+  }
+  d.omlijn(K.lijn);
+  d.vuil(0.05, K.olie, 0.4, r);
+  // neon: buizen langs de kern, ringen, de kroon en de spoelen
+  for (const dx of [-14, -5, 6]) for (let j = 2; j < 38; j++) d.licht(m[0] + dx, m[1] - 30 - j + 8, N.cyaan);
+  for (let x = -10; x <= 10; x += 2) d.licht(m[0] + x, m[1] - 131 + Math.round(Math.sqrt(Math.max(0, 1 - (x / 11) ** 2)) * 5) - 2, N.magenta);
+  for (let j = 0; j < 30; j++) d.licht(m[0] - 1, m[1] - 178 - j, N.cyaan);
+  d.neon(m[0], m[1] - 216, N.magenta, 2);
+  for (const dx of [-30, 30]) d.neon(m[0] + dx, m[1] - 76, N.cyaan, 2);
+  d.neon(...g(16, 6, 6), N.natrium, 1);
+  d.neon(...g(6, 16, 6), N.rood, 1);
+  // kabels van de kroon en de spoelen naar de voet
+  for (const [a, b, z, k, gl] of [
+    [[m[0] - 16, m[1] - 120], [voet.P3[0] + 6, voet.P3[1] - 10], 20, K.k0, K.k1],
+    [[m[0] + 16, m[1] - 120], [voet.P1[0] - 6, voet.P1[1] - 10], 20, K.kRood, K.kRoodL],
+    [[m[0] - 30, m[1] - 70], g(4, 14, 8), 14, K.kGeel, K.kGeelL],
+    [[m[0] + 30, m[1] - 70], g(14, 4, 8), 14, K.kBlauw, K.kBlauwL],
+    [[m[0] - 8, m[1] - 170], [m[0] - 30, m[1] - 76], 10, K.k0, K.k1],
+    [[m[0] + 8, m[1] - 170], [m[0] + 30, m[1] - 76], 12, K.k0, K.k1],
+  ]) d.kabel(a[0], a[1], b[0], b[1], z, k, gl);
+  d.neonKabel(m[0] - 4, m[1] - 176, m[0] - 30, m[1] - 78, 8, N.gif);
+  tekst(d, [voet.P3[0] + 10, voet.P3[1] - 14], 'MK-07', 'kol', K.verf, r, 0.3);
+  bewaar('machine', d, ax, ay, 4);
+}
+
+// OPSLAG (2x2 tegels): de stockpile. Pallet met kratten, een berg schroot, een stapel planken en een kristalkist.
+function tekenOpslag() {
+  const d = new Doek(80, 80);
+  const r = ruis(88);
+  const ax = 40, ay = 44;
+  const g = schaal(isoPunt(ax, ay));
+  const B = (k, rr, z, u, v, h, ramp, o = {}) => d.blokS(...g(k, rr, z), u * F, v * F, h * F, ramp, { r, ...o });
+  B(0, 0, 0, 8, 8, 1, T.bruin); // vloer van planken
+  for (let s = 0; s < 16; s += 2) streep(d, g(s / 2, 0, 1), 16, 'rij', T.bruin[2]);
+  B(0.5, 0.5, 1, 3, 3, 4, T.olijf); // krat
+  B(0.5, 0.5, 5, 3, 3, 3, T.olijf);
+  B(4.5, 0.5, 1, 3, 2, 3, T.bruin); // planken
+  B(4.5, 0.5, 4, 3, 2, 1, T.bruin, { boven: 6 });
+  // schrootberg: losse brokken
+  for (let i = 0; i < 14; i++) {
+    const k = 1 + r() * 3, rr = 4.5 + r() * 2.5, z = 1 + Math.floor(r() * 3);
+    B(k, rr, z, 1, 1, 1 + Math.floor(r() * 2), r() < 0.4 ? T.roest : T.staal);
+  }
+  // kristalkist
+  const kist = B(5, 4.5, 1, 2.5, 2.5, 3, T.staal);
+  d.omlijn(K.lijn);
+  d.vuil(0.06, K.olie, 0.4, r);
+  d.neon(kist.P0[0], kist.P0[1] - 5, N.magenta, 1);
+  d.neon(...g(0.5, 3.6, 6), N.natrium, 1);
+  bewaar('opslag', d, ax, ay, 2);
+}
+
 tekenMuis('muis', 'gewoon');
 tekenMuis('muis-monteur', 'monteur');
+for (const g of ['schroot', 'hout', 'kristal']) tekenMuis(`muis-${g}`, g);
 tekenMech();
 tekenSjouwbot();
 tekenBoor();
@@ -552,6 +651,8 @@ tekenDynamo();
 tekenBand();
 tekenMast();
 tekenKabels();
+tekenMachine();
+tekenOpslag();
 
 const regels = Object.entries(ankers).map(
   ([n, a]) =>
