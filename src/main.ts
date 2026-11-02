@@ -32,6 +32,13 @@ async function start(): Promise<void> {
     stream: () => stream(staat),
   };
 
+  // Visuele proto's per factie: ?proto=muizen
+  if (new URLSearchParams(location.search).get('proto') === 'muizen') {
+    const { toonMuizenProto } = await import('./muizen/proto');
+    await toonMuizenProto(app);
+    return;
+  }
+
   const veld = tekenVeld(8, 8);
   app.stage.addChild(veld);
 

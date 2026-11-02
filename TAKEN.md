@@ -11,6 +11,7 @@ Pak je een taak op: zet eerst je naam erachter in je PR. Klaar: `- [x] … (#PR)
 - [ ] K6 Recepten draaien in gebouwen; eind van de keten voedt de machine
 
 ## Muizen (Thije)
+- [x] M0 Visuele proto: muizen, mech, fabriek, machines en kabels als sprites, scène op `?proto=muizen`
 - [ ] M1 Spellus en machine-energie (met K3/K4)
 - [ ] M2 4 eenheden, loot-tabel, inbouwen/ontleden
 

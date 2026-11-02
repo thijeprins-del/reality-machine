@@ -35,6 +35,11 @@ Zelfde spelregels, ander gereedschap. De kern weet niets van muizen of otters; e
 ### Muizen (Thije)
 Cyberpunk/dieselpunk, tech-heavy. Getallen in `src/data/muizen.ts` (nog te maken).
 
+Beeld: een grauwe, duistere industriewereld, niets vrolijks. De muizen zelf klein en heel pluizig (en vuil); hun
+robots, wapens en fabrieken gigantisch, hoekig en semi-3D (overcompensatie). Staal, legergroen en bruin, roest, olie
+en veel te veel kabels. Neon is het enige felle, en dat gloeit echt (gloedlaag). Sprites komen uit
+`scripts/pixel/muizen.mjs`; bekijk ze samen met `?proto=muizen`.
+
 ### Otters (Lieuwe)
 Getallen in `src/data/otters.ts` (nog te maken).
 
