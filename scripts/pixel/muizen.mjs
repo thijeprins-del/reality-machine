@@ -22,13 +22,14 @@ const T = {
   messing: ['#15100a', '#221a0f', '#312615', '#42341c', '#554424', '#6a552d', '#836b3a'],
   rubber: ['#08080a', '#0e0f11', '#151618', '#1d1f21', '#26282a', '#303234'],
   glas: ['#030506', '#060b0d', '#0a1316', '#0f1c20', '#16292e', '#2a4a50'],
-  vacht: ['#1f1b18', '#2f2a25', '#433c35', '#5a5148', '#71675c', '#887d70', '#9e9283'],
+  vacht: ['#3a3029', '#5e5047', '#857467', '#a99886', '#c8b9a6', '#e0d3c1', '#f2e9dc'], // licht en warm: schattig
 };
 const K = {
   lijn: '#060505',
   k0: '#0a0a0b', k1: '#1b1c1e', kRood: '#3a1312', kRoodL: '#521e1b', kGeel: '#3f3510', kGeelL: '#5a4c1c',
   kBlauw: '#141f2e', kBlauwL: '#213247',
-  gevaar: '#7a6418', verf: '#7c7a6a', olie: '#030303', roet: '#000000', neus: '#7a5052',
+  gevaar: '#7a6418', verf: '#7c7a6a', olie: '#030303', roet: '#000000', neus: '#d98b98', oorBinnen: '#c97f8c',
+  wang: '#e3a2a8', oog: '#0d0a0a',
 };
 // Neon: het enige felle in de wereld.
 const N = { cyaan: '#4ef2ff', gif: '#9dff2e', natrium: '#ff9a1f', rood: '#ff2a3a', magenta: '#ff2fb0' };
@@ -96,9 +97,10 @@ function tekst(d, p, woord, richting, kleur, r, schil = 0.25, neon = false) {
 const kabels = (d, lijst) => { for (const [a, b, c, e, z, k, g] of lijst) d.kabel(a, b, c, e, z, k, g); };
 
 // ---------------------------------------------------------------------------
-// MUIS: klein, heel pluizig, grauw en vuil. Neonbril die groen gloeit.
+// MUIS: klein, rond en heel pluizig. Schattig, geen rat: grote ronde kop en oren, grote glimogen, korte snuit,
+// lichte warme vacht, roze wangetjes. Neonbril op het voorhoofd die groen gloeit. Kijkt schuin naar rechts.
 function tekenMuis(naam, variant) {
-  const d = new Doek(18, 16);
+  const d = new Doek(20, 19);
   const r = ruis(variant === 'monteur' ? 7 : 3);
   const v = T.vacht;
   const blob = (cx, cy, rx, ry, pluis) => {
@@ -106,36 +108,53 @@ function tekenMuis(naam, variant) {
       for (let x = 0; x < d.w; x++) {
         const dx = (x + 0.5 - cx) / rx, dy = (y + 0.5 - cy) / ry;
         const dd = dx * dx + dy * dy;
-        if (dd <= 1 || (dd <= 1 + pluis && r() < 0.45)) {
-          const l = dx * 0.5 - dy * 0.9 + (r() - 0.5) * 0.7;
-          d.zet(x, y, v[Math.max(0, Math.min(6, Math.round(3 + l * 2.2)))]);
+        if (dd <= 1 || (dd <= 1 + pluis && r() < 0.4)) {
+          const l = dx * 0.35 - dy * 0.8 + (r() - 0.5) * 0.25;
+          d.zet(x, y, v[Math.max(1, Math.min(6, Math.round(4 + l * 1.8)))]);
         }
       }
   };
-  d.kabel(3, 12, 1, 8, 1, K.neus); // staart
-  d.rect(3, 7, 3, 4, T.bruin[3]); d.rect(3, 7, 3, 1, T.bruin[5]); // rugzakje
-  blob(8.5, 10, 5, 4.2, 0.6);
-  blob(10.5, 6.5, 3.6, 3.2, 0.55);
-  const oor = (cx, cy) => {
-    for (let y = -2; y <= 2; y++) for (let x = -2; x <= 2; x++) if (x * x + y * y <= 4.5) d.zet(cx + x, cy + y, v[3]);
-    d.zet(cx, cy, K.neus); d.zet(cx, cy + 1, K.neus); d.zet(cx - 1, cy - 1, v[5]);
+  // staartje: kort krulletje achter
+  d.zet(3, 15, K.neus); d.zet(2, 14, K.neus); d.zet(2, 13, K.neus); d.zet(3, 12, K.neus);
+  // oren: groot en rond, achter de kop
+  const oor = (cx, cy, rad) => {
+    for (let y = -3; y <= 3; y++) for (let x = -3; x <= 3; x++) {
+      const dd = x * x + y * y;
+      if (dd <= rad * rad) d.zet(cx + x, cy + y, dd <= (rad - 1.2) * (rad - 1.2) ? K.oorBinnen : v[3]);
+    }
   };
-  oor(8, 2);
-  oor(13, 3);
-  d.zet(9, 4, K.k0); d.zet(11, 4, K.k0); d.zet(13, 5, K.k0);
-  d.zet(12, 6, K.lijn); d.zet(14, 7, K.neus); d.zet(15, 6, v[2]); d.zet(15, 8, v[2]);
-  d.zet(7, 14, K.neus); d.zet(10, 14, K.neus);
-  for (let i = 0; i < 6; i++) d.meng(4 + Math.floor(r() * 10), 6 + Math.floor(r() * 8), K.olie, 0.4);
+  oor(6, 4, 3.2);
+  oor(14, 3, 3.2);
+  blob(9.5, 14.5, 3.8, 3.2, 0.5); // lijfje
+  blob(10, 9, 5, 4.4, 0.35); // grote kop
+  // ogen: groot, zwart, met glimpje
+  for (const ox of [8, 12]) {
+    d.zet(ox, 9, K.oog); d.zet(ox, 10, K.oog); d.zet(ox + 1, 9, K.oog); d.zet(ox + 1, 10, K.oog);
+    d.zet(ox, 9, '#f4f0ea');
+  }
+  // snuitje en wangetjes
+  d.zet(11, 11, K.neus); d.zet(10, 12, v[2]); d.zet(11, 12, v[2]);
+  d.zet(7, 11, K.wang); d.zet(14, 11, K.wang);
+  // pootjes en armpjes
+  d.zet(7, 18, K.neus); d.zet(8, 18, K.neus); d.zet(11, 18, K.neus); d.zet(12, 18, K.neus);
+  d.zet(13, 15, v[5]); d.zet(13, 14, v[5]);
+  // neonbril op het voorhoofd
+  d.zet(8, 6, K.k0); d.zet(10, 6, K.k0); d.zet(11, 6, K.k0); d.zet(13, 6, K.k0); d.zet(14, 6, K.k0);
   if (variant === 'monteur') {
-    d.lijn(11, 12, 16, 7, T.staal[6]);
-    d.zet(16, 6, T.staal[5]); d.zet(17, 7, T.staal[5]); d.zet(17, 6, T.staal[7]);
+    // te grote moersleutel in de armpjes
+    d.lijn(12, 17, 18, 11, T.staal[6]);
+    d.zet(18, 10, T.staal[5]); d.zet(19, 11, T.staal[5]); d.zet(19, 10, T.staal[7]); d.zet(17, 10, T.staal[5]);
+    d.zet(13, 15, v[6]);
+  } else {
+    // rugzakje met een kabeltje
+    d.rect(3, 11, 3, 4, T.bruin[3]); d.rect(3, 11, 3, 1, T.bruin[5]);
   }
   d.omlijn(K.lijn);
-  d.kabel(3, 10, 0, 15, 1, K.k0);
-  d.licht(10, 4, N.gif);
-  d.licht(12, 4, N.gif);
-  d.licht(4, 9, N.rood);
-  bewaar(naam, d, 9, 15, 0);
+  if (variant !== 'monteur') d.kabel(3, 14, 0, 18, 1, K.k0);
+  d.licht(9, 6, N.gif);
+  d.licht(12, 6, N.gif);
+  if (variant !== 'monteur') d.licht(4, 12, N.rood);
+  bewaar(naam, d, 10, 18, 0);
 }
 
 // ---------------------------------------------------------------------------
