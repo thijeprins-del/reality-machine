@@ -32,29 +32,29 @@ interface Plek {
   spiegel?: boolean; // band en kabels: kol-richting wordt rij-richting
 }
 
-// Een productieketen: fabriek -> band -> pers, dynamo en masten met kabels, een sjouwbot en een mech op wacht.
+// Geen gebouwen, alleen machines: boortoren -> band -> pers, dynamo en masten met kabels, een sjouwbot
+// en een reusachtige mech. De muizen staan ertussen op ware grootte, zodat je de schaal ziet.
 const SCENE: Plek[] = [
-  { naam: 'fabriek', kol: 1, rij: 1 },
+  { naam: 'boor', kol: 1, rij: 1 },
   { naam: 'band', kol: 3, rij: 2 },
   { naam: 'band', kol: 4, rij: 2 },
-  { naam: 'pers', kol: 5, rij: 2 },
-  { naam: 'mast', kol: 1, rij: 4 },
-  { naam: 'mast', kol: 1, rij: 6 },
-  { naam: 'kabels', kol: 1, rij: 4, spiegel: true },
-  { naam: 'dynamo', kol: 2, rij: 6 },
+  { naam: 'pers', kol: 5, rij: 1 },
+  { naam: 'dynamo', kol: 1, rij: 5 },
+  { naam: 'mast', kol: 1, rij: 8 },
+  { naam: 'mast', kol: 3, rij: 8 },
+  { naam: 'kabels', kol: 1, rij: 8 },
   { naam: 'mast', kol: 8, rij: 1 },
-  { naam: 'mast', kol: 8, rij: 3 },
-  { naam: 'kabels', kol: 8, rij: 1, spiegel: true },
-  { naam: 'mast', kol: 6, rij: 1 },
-  { naam: 'kabels', kol: 6, rij: 1 },
-  { naam: 'sjouwbot', kol: 6, rij: 4 },
-  { naam: 'mech', kol: 5, rij: 6 },
-  { naam: 'muis-monteur', kol: 5.6, rij: 3.6 },
+  { naam: 'mast', kol: 10, rij: 1 },
+  { naam: 'kabels', kol: 8, rij: 1 },
+  { naam: 'sjouwbot', kol: 4, rij: 6 },
+  { naam: 'mech', kol: 8, rij: 5 },
+  { naam: 'muis-monteur', kol: 4.6, rij: 3.6 },
   { naam: 'muis', kol: 3.4, rij: 3.5 },
-  { naam: 'muis', kol: 2.4, rij: 4.6 },
-  { naam: 'muis', kol: 8.4, rij: 6.2 },
-  { naam: 'muis-monteur', kol: 4.6, rij: 8.6 },
-  { naam: 'muis', kol: 1.7, rij: 8.3 },
+  { naam: 'muis', kol: 2.6, rij: 4.4 },
+  { naam: 'muis', kol: 10.6, rij: 9.4 },
+  { naam: 'muis-monteur', kol: 8.4, rij: 9.2 },
+  { naam: 'muis', kol: 6.4, rij: 9.9 },
+  { naam: 'muis', kol: 3.4, rij: 10.6 },
 ];
 
 export async function toonMuizenProto(app: Application): Promise<void> {
@@ -63,7 +63,7 @@ export async function toonMuizenProto(app: Application): Promise<void> {
   app.stage.addChild(wereld);
 
   // grond: grauw en donker (de kern tekent groen gras, hier filteren we dat weg)
-  const veld = tekenVeld(10, 10);
+  const veld = tekenVeld(12, 12);
   const grauw = new ColorMatrixFilter();
   grauw.desaturate();
   const donker = new ColorMatrixFilter();
@@ -155,7 +155,7 @@ export async function toonMuizenProto(app: Application): Promise<void> {
     // ruime rand, anders snijdt het filter de gloed recht af
     blur.padding = 30 * zoom;
     blur2.padding = 90 * zoom;
-    wereld.position.set(Math.round(app.screen.width / 2), Math.round(app.screen.height / 2 - 150 * zoom));
+    wereld.position.set(Math.round(app.screen.width / 2), Math.round(app.screen.height / 2 - 60 * zoom));
   };
   plaats();
   app.renderer.on('resize', plaats);
