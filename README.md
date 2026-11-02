@@ -10,6 +10,12 @@ dimensie. Muizen tegen otters. Strategie en economie, isometrisch.
 Team: Thije (muizen, kern) en Lieuwe (otters). Werkafspraken: [CLAUDE.md](CLAUDE.md). Ontwerp: [DESIGN.md](DESIGN.md).
 Taken: [TAKEN.md](TAKEN.md).
 
+## Teaser
+- `teaser/` is een losse pagina naast het spel: een levend diorama met de echte sprites dat steeds van dimensie springt.
+  Online op https://thijeprins.nl/reality-machine/dev/teaser/ en, zolang `main` nog geen spel heeft, ook als RELEASE-pagina.
+- `?kaart` geeft een compacte versie voor een iframe (de kaart op thijeprins.nl), `?og` een stilstaand beeld.
+- Het deelplaatje `public/teaser/og.png` maak je opnieuw met `npm run build && node scripts/teaser-og.mjs`.
+
 ## Zelf draaien
 ```
 npm install
