@@ -1,0 +1,22 @@
+{
+  "name": "reality-machine",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Reality Machine - strategiespel voor GitHub Game Off 2026 (thema SHIFT)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc -p .",
+    "snel": "tsc -p . && vite build",
+    "test": "npm run snel && node test/smoke.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.5"
+  },
+  "dependencies": {
+    "pixi.js": "8.22.0"
+  }
+}
