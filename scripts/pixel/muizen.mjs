@@ -101,19 +101,20 @@ const kabels = (d, lijst) => { for (const [a, b, c, e, z, k, g] of lijst) d.kabe
 // ronde kop met grote oren, twee oogjes, roze neusje en wangetjes, lichte warme vacht.
 // Een piepklein neonbrilletje op het voorhoofd gloeit groen. Getekend als pixelkaart.
 const MUIS_KAART = [
-  '.mm.....mm.',
-  'mppm...mppm',
-  'mppmLgLmppm',
-  '.mLLLLLLLm.',
-  '.LLkLLLkLm.',
-  '.LwLLnLLwm.',
-  '..mLLLLLm..',
-  '.mLLLLLLLmt',
-  '.mLLLLLLdm.',
-  '..p.....p..',
+  '.mmm.....mmm.',
+  'mpppm...mpppm',
+  'mpppmLgLmpppm',
+  '.mppLLLLLppm.',
+  '..mLLLLLLLm..',
+  '..LLkLLLkLm..',
+  '..LwLLnLLwm..',
+  '...mLLLLLm...',
+  '..mLLLLLLLmt.',
+  '..mLLLLLLdm..',
+  '...p.....p...',
 ];
 function tekenMuis(naam, variant) {
-  const d = new Doek(15, 12);
+  const d = new Doek(17, 13);
   const v = T.vacht;
   const kleur = { m: v[3], L: v[5], d: v[2], p: K.neus, k: K.oog, w: K.wang, n: K.neus, t: K.neus, g: v[5] };
   const ox = 1, oy = 1;
@@ -122,19 +123,35 @@ function tekenMuis(naam, variant) {
       if (c === '.') return;
       let k = kleur[c];
       // licht van linksboven: bovenste rijen lichter, rechtsonder donkerder
-      if (c === 'L' && (y >= 7 || x >= 8)) k = v[4];
-      if (c === 'L' && y <= 3 && x <= 4) k = v[6];
+      if (c === 'L' && (y >= 8 || x >= 9)) k = v[4];
+      if (c === 'L' && y <= 4 && x <= 5) k = v[6];
       d.zet(ox + x, oy + y, k);
     }),
   );
   if (variant === 'monteur') {
     // te grote moersleutel
-    d.lijn(ox + 8, oy + 8, ox + 12, oy + 4, T.staal[6]);
-    d.zet(ox + 13, oy + 3, T.staal[5]); d.zet(ox + 12, oy + 3, T.staal[5]); d.zet(ox + 13, oy + 4, T.staal[5]);
+    d.lijn(ox + 9, oy + 9, ox + 13, oy + 5, T.staal[6]);
+    d.zet(ox + 14, oy + 4, T.staal[5]); d.zet(ox + 13, oy + 4, T.staal[5]); d.zet(ox + 14, oy + 5, T.staal[5]);
   }
   d.omlijn(K.lijn);
-  d.licht(ox + 5, oy + 2, N.gif); // neonbrilletje
-  bewaar(naam, d, ox + 5, oy + 10, 0);
+  d.licht(ox + 6, oy + 2, N.gif); // neonbrilletje
+  bewaar(naam, d, ox + 6, oy + 11, 0);
+}
+
+
+// Muis op ware grootte in een voertuig plakken (kop = alleen de bovenste 6 rijen).
+// (x, y) = linksboven. clip(x, y) bepaalt waar hij zichtbaar is (bv. alleen achter glas). Geeft de brilpixel terug.
+function plakMuis(d, x, y, kop, clip = () => true) {
+  const m = new Doek(15, 13);
+  const v = T.vacht;
+  const kleur = { m: v[3], L: v[5], d: v[2], p: K.neus, k: K.oog, w: K.wang, n: K.neus, t: K.neus, g: v[5] };
+  MUIS_KAART.slice(0, kop ? 8 : MUIS_KAART.length).forEach((regel, j) =>
+    [...regel].forEach((c, i) => { if (c !== '.') m.zet(1 + i, 1 + j, kleur[c]); }),
+  );
+  m.omlijn(K.lijn);
+  for (let j = 0; j < m.h; j++) for (let i = 0; i < m.w; i++)
+    if (m.vol(i, j) && clip(x + i - 1, y + j - 1)) d.zet(x + i - 1, y + j - 1, m.get(i, j));
+  return [x + 6, y + 2];
 }
 
 // ---------------------------------------------------------------------------
@@ -217,14 +234,14 @@ function tekenMech() {
   for (let i = 0; i < 4; i++) streep(d, [g(6, 18, 112 + i * 4)[0] + 2, g(6, 18, 112 + i * 4)[1]], 6, 'kol', T.olijf[1]);
   tekst(d, [g(12, 18, 126)[0], g(12, 18, 126)[1]], 'M-07', 'kol', K.verf, r, 0.3);
   // cockpitraam op de neus (rechtervlak, kijkt naar voren)
-  const raam = g(19, 9, 126);
-  for (let s = 0; s < 6; s++) for (let j = 0; j < 8; j++) {
+  const raam = g(19, 8.5, 127);
+  for (let s = 0; s < 7; s++) for (let j = 0; j < 12; j++) {
     d.zet(raam[0] - 2 * s, raam[1] + s - j, T.glas[1]);
     d.zet(raam[0] - 2 * s - 1, raam[1] + s - j, T.glas[1]);
   }
-  const px = raam[0] - 8, py = raam[1] + 2;
-  d.rect(px, py - 3, 4, 3, T.vacht[4]); d.rect(px + 1, py - 3, 2, 1, T.vacht[5]);
-  d.zet(px, py - 5, T.vacht[3]); d.zet(px, py - 4, T.vacht[3]); d.zet(px + 3, py - 5, T.vacht[3]); d.zet(px + 3, py - 4, T.vacht[3]);
+  const glas = T.glas[1];
+  const isGlas = (x, y) => { const c = d.get(x, y); return c[0] === parseInt(glas.slice(1, 3), 16) && c[1] === parseInt(glas.slice(3, 5), 16); };
+  const bril = plakMuis(d, raam[0] - 12, raam[1] - 7, true, isGlas);
   // sensorkop bovenop, voorin
   const kop = B(13, 9, 136, 5, 6, 8, T.staal);
   // railgun bovenop (mikt mee met de romp)
@@ -286,9 +303,9 @@ function tekenMech() {
 
   // --- neon ---
   d.neonLijn(isoPixels(g(18, 9, 141), 6, 'rij').map(([x, y]) => [x - 1, y]), N.rood); // vizier op de sensorkop
-  d.neonLijn(isoPixels([raam[0], raam[1] - 8], 6, 'rij'), N.cyaan);
-  d.neonLijn(isoPixels([raam[0], raam[1] + 1], 6, 'rij'), N.cyaan);
-  d.licht(px + 1, py - 3, N.gif); d.licht(px + 3, py - 3, N.gif);
+  d.neonLijn(isoPixels([raam[0], raam[1] - 12], 7, 'rij'), N.cyaan);
+  d.neonLijn(isoPixels([raam[0], raam[1] + 1], 7, 'rij'), N.cyaan);
+  if (isGlas(bril[0], bril[1]) || true) d.licht(bril[0], bril[1], N.gif);
   d.neonLijn(isoPixels(g(14, 9, 145), 24, 'kol'), N.cyaan); // railgun-rails
   d.neonLijn(isoPixels(g(14, 9, 137), 24, 'kol').map(([x, y]) => [x, y + 1]), N.cyaan);
   for (const [x, y] of gaten) d.neon(x, y, N.rood, 1);
@@ -395,8 +412,7 @@ function tekenPers() {
   d.omlijn(K.lijn);
   d.vuil(0.06, K.olie, 0.4, r);
   d.veeg(c[0], c[1] - 8, 16, K.olie);
-  const mu = [hok[0] - 4, hok[1] - 2];
-  d.rect(mu[0], mu[1] - 3, 3, 3, T.vacht[4]); d.zet(mu[0], mu[1] - 4, T.vacht[3]); d.zet(mu[0] + 2, mu[1] - 4, T.vacht[3]);
+  const mu = plakMuis(d, hok[0] - 10, hok[1] - 21, true);
   for (const [a, b, z, k, gl] of [
     [g(8, 0, 44), g(8.5, 1, 4), 12, K.k0, K.k1],
     [g(0, 8, 44), g(0, 9, 3), 10, K.kRood, K.kRoodL],
@@ -407,7 +423,7 @@ function tekenPers() {
   d.neon(...g(0, 0, 50), N.natrium, 2);
   d.neon(top.P2[0], top.P2[1] - 6, N.gif, 2);
   d.neon(...g(4, 8, 44), N.rood, 2);
-  d.licht(mu[0] + 1, mu[1] - 3, N.gif);
+  d.licht(mu[0], mu[1], N.gif);
   d.neonLijn(isoPixels(g(1, 8, 2), 12, 'kol'), N.natrium);
   bewaar('pers', d, ax, ay, 2);
 }
@@ -475,10 +491,8 @@ function tekenSjouwbot() {
   d.omlijn(K.lijn);
   d.vuil(0.06, K.olie, 0.45, r);
   // muis op het stoeltje: ware grootte
-  const mu = g(6.5, 5.5, 13);
-  d.rect(mu[0] - 2, mu[1] - 5, 5, 5, T.vacht[4]); d.rect(mu[0] - 1, mu[1] - 5, 3, 1, T.vacht[5]);
-  d.zet(mu[0] - 2, mu[1] - 7, T.vacht[3]); d.zet(mu[0] - 2, mu[1] - 6, T.vacht[3]);
-  d.zet(mu[0] + 2, mu[1] - 7, T.vacht[3]); d.zet(mu[0] + 2, mu[1] - 6, T.vacht[3]);
+  const zit = g(6.5, 5.5, 13);
+  const mu = plakMuis(d, zit[0] - 6, zit[1] - 10, false);
   for (const [a, b, z, k, gl] of [
     [[kast.P0[0] - 2, kast.P0[1] - 20], [m[0], m[1] - 24], 6, K.k0, K.k1],
     [[kast.P1[0] - 2, kast.P1[1] - 12], [fl[0] + 6, fl[1] - 8], 8, K.kRood, K.kRoodL],
@@ -489,7 +503,7 @@ function tekenSjouwbot() {
   d.neon(m[0], m[1] - 44, N.natrium, 2);
   d.neon(...g(4.5, 6.5, 18), N.gif, 2);
   d.neon(...g(4.5, 4, 14), N.rood, 1);
-  d.licht(mu[0] - 1, mu[1] - 4, N.gif); d.licht(mu[0] + 1, mu[1] - 4, N.gif);
+  d.licht(mu[0], mu[1], N.gif);
   d.neon(kist.P2[0], kist.P2[1] - 6, N.cyaan, 1);
   bewaar('sjouwbot', d, ax, ay, 2);
 }
