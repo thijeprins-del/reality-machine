@@ -2,7 +2,8 @@
 // De factie levert de plaatjes (FactieBeeld); de kern weet niet welke factie het is.
 import { Assets, BlurFilter, ColorMatrixFilter, Container, Graphics, Sprite, type Texture } from 'pixi.js';
 import { naarScherm, TEGEL_B, TEGEL_H } from './iso';
-import type { Blok } from './kaart';
+import { dimensieKleur, DIMENSIE_DUUR_SEC, THUIS, type DimensieKleur } from '../data/dimensies';
+import type { Blok, Kaart } from './kaart';
 import type { SpelStaat } from './spel';
 import { hash01 } from './toeval';
 import type { FactieBeeld, SpriteInfo } from './types';
@@ -44,6 +45,11 @@ export class WereldBeeld {
   private werkers: Stuk[] = [];
   private afzettingen = new Map<number, Stuk>();
   private t = 0;
+  private dimensie = 0; // welke dimensie nu getekend is
+  private grond = new Container(); // grond, gloeiende vlekken en de ring; nieuw bij elke dimensie
+  private grondGloed = new Container();
+  private ringGloed = new Graphics();
+  private flits = document.createElement('div');
 
   constructor(
     private staat: SpelStaat,
@@ -60,7 +66,7 @@ export class WereldBeeld {
       ]),
     );
     const k = this.staat.kaart;
-    this.wereld.addChild(tekenGrond(k.breed, k.diep), this.markering, this.dingen);
+    this.wereld.addChild(this.grond, this.markering, this.dingen);
     this.dingen.sortableChildren = true;
 
     const fel = (f: number) => {
@@ -74,13 +80,13 @@ export class WereldBeeld {
     this.waas2.blendMode = 'add';
     this.waas2.alpha = 0.8;
     this.wereld.addChild(this.waas2, this.waas, this.scherp);
+    this.grondGloed.blendMode = 'add';
+    this.scherp.addChild(this.grondGloed);
+    this.waas.addChild(this.ringGloed);
 
-    for (const a of k.afzettingen) {
-      const naam = `${a.goed}-${a.variant + 1}`;
-      const st = this.maak(naam);
-      this.zetGebouw(st, a.x, a.y, 1, (hash01(a.id) < 0.5 ? 1 : -1) as 1 | -1);
-      this.afzettingen.set(a.id, st);
-    }
+    Object.assign(this.flits.style, { position: 'fixed', inset: '0', background: '#fff', opacity: '0', pointerEvents: 'none', zIndex: '9' });
+    document.body.appendChild(this.flits);
+    this.nieuweDimensie();
     for (const [naam, b] of [['machine', k.machine], ['opslag', k.opslag]] as [string, Blok][]) {
       const st = this.maak(naam);
       this.zetGebouw(st, b.x, b.y, b.breed, 1);
@@ -96,8 +102,42 @@ export class WereldBeeld {
     this.blur2.padding = 90 * z;
   }
 
+  // Bij de stream: nieuwe grond in de kleuren van de nieuwe wereld, nieuwe grondstoffen, en een witte flits.
+  private nieuweDimensie(): void {
+    const k: Kaart = this.staat.kaart;
+    this.dimensie = this.staat.dimensie;
+    for (const st of this.afzettingen.values()) for (const d of st.delen) d.destroy();
+    this.afzettingen.clear();
+    for (const c of [...this.grond.removeChildren(), ...this.grondGloed.removeChildren()]) c.destroy();
+    const kleur = dimensieKleur(this.dimensie);
+    const [grond, gloed] = tekenGrond(k, kleur);
+    this.grond.addChild(grond, tekenRing(k));
+    this.grondGloed.addChild(gloed);
+    this.ringGloed.clear();
+    tekenRing(k, this.ringGloed);
+    for (const a of k.afzettingen) {
+      const naam = `${a.goed}-${a.variant + 1}`;
+      const st = this.maak(naam);
+      this.zetGebouw(st, a.x, a.y, 1, (hash01(a.id) < 0.5 ? 1 : -1) as 1 | -1);
+      this.afzettingen.set(a.id, st);
+    }
+    // flits: meteen wit, dan langzaam weg
+    this.flits.style.transition = 'none';
+    this.flits.style.opacity = '1';
+    requestAnimationFrame(() => {
+      this.flits.style.transition = 'opacity 0.9s ease-out';
+      this.flits.style.opacity = '0';
+    });
+  }
+
   werk(sec: number, selectie: Set<number>): void {
     this.t += sec;
+    if (this.staat.dimensie !== this.dimensie) this.nieuweDimensie();
+    // de ring laadt op in de laatste 10 seconden voor de stream
+    const rest = DIMENSIE_DUUR_SEC - this.staat.tijd;
+    const laad = Math.max(0, 1 - rest / 10);
+    this.ringGloed.alpha = laad * (0.6 + 0.4 * Math.sin(this.t * (6 + laad * 20)));
+    this.grondGloed.alpha = 0.7 + 0.3 * Math.sin(this.t * 1.7);
     const hapering = Math.random() < 0.015 ? 0.35 : 1;
     this.waas.alpha = (0.85 + 0.15 * Math.sin(this.t * 2.1) * Math.sin(this.t * 7.3)) * hapering;
 
@@ -185,29 +225,65 @@ export class WereldBeeld {
   }
 }
 
-// Grauwe grond: donkere tegels met wat vlekken, en een rand aarde en rots aan de voorkant van het eiland.
-function tekenGrond(breed: number, diep: number): Graphics {
+// Grond: binnen de ring je eigen grauwe tegels, erbuiten de kleuren van de wereld. Vlekken die gloeien (lava, gif,
+// kristal) gaan ook in de gloedlaag. Aan de voorkant een rand aarde en rots.
+function tekenGrond(k: Kaart, wereld: DimensieKleur): [Graphics, Graphics] {
   const g = new Graphics();
-  const kleuren = [0x1d1e1c, 0x21221f, 0x1a1b19, 0x242521, 0x1f1d1a];
+  const gl = new Graphics();
+  const { breed, diep } = k;
   for (let rij = 0; rij < diep; rij++)
     for (let kol = 0; kol < breed; kol++) {
       const { x, y } = naarScherm(kol, rij);
-      const h = hash01(rij * 1000 + kol);
-      g.poly([x, y - TEGEL_H / 2, x + TEGEL_B / 2, y, x, y + TEGEL_H / 2, x - TEGEL_B / 2, y]).fill(
-        kleuren[Math.floor(h * kleuren.length)],
-      );
-      // een vlek olie of een steentje hier en daar
-      if (h > 0.85) g.rect(x - 6 + Math.round(h * 40) % 12, y - 2, 4, 2).fill(0x121210);
-      else if (h < 0.08) g.rect(x - 4 + Math.round(h * 300) % 10, y, 2, 2).fill(0x34342f);
+      const thuis = Math.hypot(kol - k.ring.x, rij - k.ring.y) <= k.ring.r;
+      const p = thuis ? THUIS : wereld;
+      const h = hash01(rij * 1000 + kol + (thuis ? 0 : k.afzettingen.length * 7919));
+      g.poly([x, y - TEGEL_H / 2, x + TEGEL_B / 2, y, x, y + TEGEL_H / 2, x - TEGEL_B / 2, y]).fill(p.grond[Math.floor(h * p.grond.length)]);
+      const v = hash01(h * 1e6);
+      if (v < p.vlekKans) {
+        const vx = x - 8 + Math.round(v * 400) % 14, vy = y - 2 + Math.round(v * 900) % 4;
+        g.rect(vx, vy, 4 + Math.round(v * 77) % 6, 2).fill(p.vlek);
+        if (p.vlekGloeit) gl.rect(vx, vy, 4 + Math.round(v * 77) % 6, 2).fill(p.vlek);
+      } else if (h < 0.06) g.rect(x - 4 + Math.round(h * 300) % 10, y, 2, 2).fill(0x34342f);
     }
   const dikte = 40;
   for (let i = 0; i < breed; i++) {
     const { x, y } = naarScherm(i, diep - 1);
-    g.poly([x - TEGEL_B / 2, y, x, y + TEGEL_H / 2, x, y + TEGEL_H / 2 + dikte, x - TEGEL_B / 2, y + dikte]).fill(0x1f1813);
+    g.poly([x - TEGEL_B / 2, y, x, y + TEGEL_H / 2, x, y + TEGEL_H / 2 + dikte, x - TEGEL_B / 2, y + dikte]).fill(wereld.rand[0]);
   }
   for (let i = 0; i < diep; i++) {
     const { x, y } = naarScherm(breed - 1, i);
-    g.poly([x, y + TEGEL_H / 2, x + TEGEL_B / 2, y, x + TEGEL_B / 2, y + dikte, x, y + TEGEL_H / 2 + dikte]).fill(0x16110d);
+    g.poly([x, y + TEGEL_H / 2, x + TEGEL_B / 2, y, x + TEGEL_B / 2, y + dikte, x, y + TEGEL_H / 2 + dikte]).fill(wereld.rand[1]);
+  }
+  return [g, gl];
+}
+
+// De transportring: slecht geverfde gele streepjes, op pixelmaat. Verf mist hier en daar, kleur wisselt, randen rafelen.
+// Met `gloed` erbij: dezelfde streepjes in neon voor de gloedlaag (de ring laadt op voor de stream).
+function tekenRing(k: Kaart, gloed?: Graphics): Graphics {
+  const g = gloed ?? new Graphics();
+  const { x: cx, y: cy, r } = k.ring;
+  const omtrek = 2 * Math.PI * r;
+  const streepjes = Math.round(omtrek / 1.6);
+  const verf = [0xb8941c, 0xc9a224, 0xa88618, 0xd4ae2a, 0x9c7c16];
+  for (let s = 0; s < streepjes; s++) {
+    const h = hash01(s * 31 + 7);
+    const a0 = (s / streepjes) * Math.PI * 2 + (h - 0.5) * 0.03;
+    const lang = (0.95 + h * 0.35) / r; // in radialen
+    const stappen = Math.round(lang * r * 18);
+    for (let i = 0; i <= stappen; i++) {
+      const a = a0 + (i / stappen) * lang;
+      for (let j = -2; j <= 2; j++) {
+        const rr = r + j * 0.07 + (hash01(s * 1000 + i) - 0.5) * 0.05;
+        const p = naarScherm(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr);
+        const px = Math.round(p.x / PIXEL) * PIXEL, py = Math.round(p.y / PIXEL) * PIXEL;
+        const ruis = hash01(s * 7919 + i * 31 + j);
+        const rand = Math.abs(j) === 2 || i === 0 || i === stappen;
+        if (ruis < (rand ? 0.45 : 0.1)) continue; // afgebladderd
+        if (gloed) {
+          if (ruis > 0.5) g.rect(px, py, PIXEL, PIXEL).fill(0xffd23f);
+        } else g.rect(px, py, PIXEL, PIXEL).fill({ color: verf[Math.floor(ruis * verf.length)], alpha: 0.7 + ruis * 0.3 });
+      }
+    }
   }
   return g;
 }

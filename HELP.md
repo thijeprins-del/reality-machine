@@ -8,6 +8,11 @@ Kies je factie. De muizen zijn speelbaar; de otters volgen nog.
 Je begint met je reality machine (de grote toren), een opslag ernaast en honderden muizen. Meer muizen krijg je
 niet, dus zuinig zijn. Rond de machine liggen velden met schroot, hout (dode bomen) en kristal.
 
+## De gele ring en de stream
+Om je machine ligt een gele ring van geverfde streepjes. Elke minuut komt de stream: alles binnen de ring springt naar
+een nieuwe wereld, met andere kleuren en nieuwe grondstoffen. Wat buiten de ring ligt, blijft achter. Vlak voor de
+sprong gaat de ring gloeien.
+
 ## Besturing
 - **Slepen** met de linkermuisknop: muizen selecteren. Met **shift** erbij. **Dubbelklik**: alle muizen in beeld.
 - **Rechtsklik** op een veld grondstoffen: de geselecteerde muizen gaan graven en sjouwen alles naar de opslag,

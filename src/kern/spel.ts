@@ -1,5 +1,6 @@
 import { DIMENSIE_DUUR_SEC } from '../data/dimensies';
-import { maakKaart, type Kaart } from './kaart';
+import { binnenRing, maakKaart, type Kaart } from './kaart';
+import { hash01 } from './toeval';
 import type { Factie, FactieId, Machine, Voorraad } from './types';
 import { maakWerkers, stapWerkers, type Werker } from './werkers';
 
@@ -48,10 +49,35 @@ export function stap(s: SpelStaat, f: Factie, sec: number): void {
   }
 }
 
+// De stream: alles binnen de gele ring springt naar de volgende dimensie. Daar liggen nieuwe grondstoffen.
 export function stream(s: SpelStaat, f?: Factie): void {
   s.dimensie += 1;
   s.tijd = 0;
+  verhuis(s);
   f?.trucje.opStream?.(s);
+}
+
+function verhuis(s: SpelStaat): void {
+  s.kaart = maakKaart(s); // zelfde machine en opslag, nieuwe velden
+  const r = s.kaart.ring;
+  for (const w of s.werkers) {
+    // wat ze droegen gaat mee de opslag in; opdrachten in de oude wereld vervallen
+    if (w.lading) s.voorraad[w.lading.goed] = (s.voorraad[w.lading.goed] ?? 0) + w.lading.n;
+    w.lading = null;
+    w.bron = -1;
+    w.via = null;
+    w.taak = 'rust';
+    w.klok = 0;
+    if (!binnenRing(s.kaart, w.x, w.y)) {
+      // wie buiten de ring stond, wordt mee naar binnen getrokken (nu nog vergevingsgezind)
+      const hoek = Math.atan2(w.y - r.y, w.x - r.x);
+      const af = r.r - 1 - hash01(w.id) * 1.5;
+      w.x = r.x + Math.cos(hoek) * af;
+      w.y = r.y + Math.sin(hoek) * af;
+    }
+    w.doelX = w.x;
+    w.doelY = w.y;
+  }
 }
 
 export function restTijd(s: SpelStaat): number {

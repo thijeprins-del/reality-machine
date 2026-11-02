@@ -3,7 +3,13 @@
 Nog een skelet. Werk dit bij bij elke grote regelwijziging.
 
 ## Kern
-- Een dimensie duurt **4 minuten** (`src/data/dimensies.ts`), daarna komt de stream (sprong naar de volgende dimensie).
+- Een dimensie duurt **4 minuten** (`src/data/dimensies.ts`; nu even 1 minuut om mee te spelen), daarna komt de stream
+  (sprong naar de volgende dimensie).
+- **De transportring** (2 nov): een slecht geverfde gele stippellijn om de machine (straal 7,5 tegels). Alles binnen de ring
+  springt mee; daarbuiten liggen de grondstoffen, en die blijven achter. In de laatste 10 seconden laadt de ring op (gloed).
+  Bij de sprong: witte flits, nieuwe kaart met nieuwe velden, en de wereld buiten de ring krijgt eigen kleuren
+  (roestduin, kristaltoendra, gifwoud, magmaveld, zoutzee). Muizen buiten de ring worden nu nog mee naar binnen
+  getrokken; wat ze droegen gaat de opslag in.
 - Om de stream te halen heeft de reality machine genoeg energie en heelheid nodig. Haal je hem niet: verloren.
 - Tech alleen uit loot: vondsten inbouwen of ontleden tot bouwplan. Geen techboom.
 - **Het spel draait om industrie:** een zo groot mogelijke fabriek met lange productieketens op je eiland.
@@ -18,7 +24,7 @@ Nog een skelet. Werk dit bij bij elke grote regelwijziging.
 
 ## Kaart en grondstoffen (basis, 2 nov)
 - Kaart van **44 x 44 tegels**: groot, maar net genoeg ruimte om te bouwen. Getallen in `src/data/dimensies.ts`.
-- In het midden de reality machine (4x4 tegels) en de opslag (2x2). 6 tegels rond de machine blijven leeg (bouwgrond).
+- In het midden de reality machine (4x4 tegels) en de opslag (2x2), binnen de gele ring (bouwgrond, geen grondstoffen).
 - Velden met ruwe grondstoffen eromheen: schroot (5 velden, 30 per tegel), hout (4, 25), kristal (2, 15, verder weg).
 - Werkers (eenheden met `werk`) graven een lading, sjouwen die naar de opslag en gaan terug, tot het veld op is;
   dan zoeken ze binnen 8 tegels verder. Rechte lijnen, alleen om de machine heen. Geen botsingen tussen werkers.
