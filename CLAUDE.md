@@ -19,7 +19,8 @@ Code-namen mogen Engels of Nederlands, maar per map consequent.
 | `src/data/` | samen | getallen per factie in eigen bestand: `muizen.ts`, `otters.ts`, `dimensies.ts` |
 | `assets/muizen/`, `assets/otters/`, `assets/wereld/` | per factie / samen | sprites (PNG of SVG) |
 
-- Een factie praat met de kern alleen via de types in `src/kern/types.ts` (`Factie`, `Eenheid`, `Vondst`, `Gebouw`).
+- Een factie praat met de kern alleen via `src/kern/types.ts` (`Factie` met eenheden, gebouwen, loot en `trucje`).
+  Afspraken over asymmetrie en balans: DESIGN.md, "Samenwerking facties". Getallen van de ander niet zelf aanpassen.
   Nieuw veld nodig? Kleine aparte PR op `src/kern/types.ts`, eerst mergen, dan je factiewerk.
 - Werk je in de map van de ander: alleen als die erom vraagt, en zeg het in de PR-titel.
 
