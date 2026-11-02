@@ -24,12 +24,16 @@ jobs:
       cancel-in-progress: true
     steps:
       - uses: actions/checkout@v4
+      # main heeft vóór de eerste release nog geen spel (geen package.json): dan valt er niets te controleren.
       - uses: actions/setup-node@v4
+        if: hashFiles('package-lock.json') != ''
         with:
           node-version: 22
           cache: npm
       - run: npm ci --no-audit --no-fund
+        if: hashFiles('package-lock.json') != ''
       - run: npm run snel
+        if: hashFiles('package-lock.json') != ''
 
   doorsturen:
     if: github.event_name == 'push' && github.ref != 'refs/heads/main'
