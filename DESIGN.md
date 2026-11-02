@@ -5,11 +5,15 @@ Nog een skelet. Werk dit bij bij elke grote regelwijziging.
 ## Kern
 - Een dimensie duurt **4 minuten** (`src/data/dimensies.ts`; nu even 1 minuut om mee te spelen), daarna komt de stream
   (sprong naar de volgende dimensie).
-- **De transportring** (2 nov): een slecht geverfde gele stippellijn om de machine (straal 7,5 tegels). Alles binnen de ring
-  springt mee; daarbuiten liggen de grondstoffen, en die blijven achter. In de laatste 10 seconden laadt de ring op (gloed).
-  Bij de sprong: witte flits, nieuwe kaart met nieuwe velden, en de wereld buiten de ring krijgt eigen kleuren
-  (roestduin, kristaltoendra, gifwoud, magmaveld, zoutzee). Muizen buiten de ring worden nu nog mee naar binnen
-  getrokken; wat ze droegen gaat de opslag in.
+- **De transportring** (2 nov): een slecht geverfde, matte gele stippellijn om de machine (straal 14 tegels: binnen de
+  ring bouw je). Je land is een grove schijf die iets buiten de ring steekt, lomp in elke wereld geplakt (rotswand,
+  schaduw, naad, klemmen). Alles binnen de ring springt mee; daarbuiten liggen de grondstoffen, en die blijven achter.
+  Aanloop (laatste 12 s, alleen met volle stroom): bliksem van de machine naar de ring, schudden, de wereld wordt donker.
+  De sprong (`SPRONG_SEC` = 3,5 s): uit de wereld gerukt, de oude grond valt weg, even in het niets (tijd en werk staan
+  stil, het stroomnet loopt door), dan landen in de volgende wereld met eigen kleuren (roestduin, kristaltoendra, gifwoud,
+  magmaveld, zoutzee). Het spel begint ook in het niets. Muizen buiten de ring worden nu nog mee naar binnen getrokken.
+- **Stream gemist** (2 nov): heeft de machine op dat moment geen volle stroom, dan springt er niets (rode flits, vonken)
+  en begint de dimensie opnieuw. Volgens het plan verlies je dan; voorlopig vergevingsgezind om mee te spelen.
 - Om de stream te halen heeft de reality machine genoeg energie en heelheid nodig. Haal je hem niet: verloren.
 - Tech alleen uit loot: vondsten inbouwen of ontleden tot bouwplan. Geen techboom.
 - **Het spel draait om industrie:** een zo groot mogelijke fabriek met lange productieketens op je eiland.

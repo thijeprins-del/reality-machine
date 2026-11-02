@@ -1,6 +1,6 @@
 // De kaart van een dimensie: de machine en de opslag in het midden, velden met grondstoffen eromheen.
 import { KAART_BREED, KAART_DIEP, RING_STRAAL, VELDEN } from '../data/dimensies';
-import { volgende } from './toeval';
+import { hash01, volgende } from './toeval';
 import type { Grondstof } from './types';
 
 export interface Afzetting {
@@ -32,6 +32,16 @@ export function binnenRing(k: Kaart, x: number, y: number): boolean {
   return Math.hypot(x - k.ring.x, y - k.ring.y) <= k.ring.r;
 }
 
+// Je eigen land: een grove schijf die buiten de ring steekt, alsof hij lomp in de wereld is geplakt.
+// Straal op hoek `hoek` (radialen). Altijd dezelfde vorm: het is steeds hetzelfde stuk land.
+export function schijfStraal(k: Kaart, hoek: number): number {
+  const n = 28;
+  const f = ((hoek / (Math.PI * 2)) % 1 + 1) % 1 * n;
+  const i = Math.floor(f), t = f - i;
+  const a = hash01(i * 97 + 13), b = hash01(((i + 1) % n) * 97 + 13);
+  return k.ring.r + 1.1 + 1.6 * (a + (b - a) * t * t * (3 - 2 * t));
+}
+
 export function maakKaart(staat: { toeval: number }): Kaart {
   const breed = KAART_BREED;
   const diep = KAART_DIEP;
@@ -45,7 +55,7 @@ export function maakKaart(staat: { toeval: number }): Kaart {
   const bezet = new Uint8Array(breed * diep);
   const vrij = (x: number, y: number) =>
     x >= 1 && y >= 1 && x < breed - 1 && y < diep - 1 && !bezet[y * diep + x] &&
-    Math.hypot(x - ring.x, y - ring.y) > ring.r + 1.5; // grondstoffen alleen buiten de ring
+    Math.hypot(x - ring.x, y - ring.y) > ring.r + 3.5; // grondstoffen alleen buiten de ring en de schijf
 
   const afzettingen: Afzetting[] = [];
   const r = () => volgende(staat);

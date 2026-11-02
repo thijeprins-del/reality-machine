@@ -3,19 +3,24 @@ import type { Grondstof } from '../kern/types';
 
 export const DIMENSIE_DUUR_SEC = 60; // even 1 minuut om mee te spelen (Thije, 2 nov); het plan was 4 minuten
 
-// De kaart van een dimensie: groot, maar net genoeg ruimte om te bouwen.
-export const KAART_BREED = 44;
-export const KAART_DIEP = 44;
+// De sprong: de schijf wordt uit de wereld gerukt, hangt even in het niets, en landt dan in de volgende.
+// Zo lang staat de tijd en het werk stil (het stroomnet loopt door).
+export const SPRONG_SEC = 3.5;
+
+// De kaart van een dimensie: de schijf in het midden, ruim wereld eromheen.
+export const KAART_BREED = 64;
+export const KAART_DIEP = 64;
 
 // De transportring: een slecht geverfde gele stippellijn om de machine. Alles binnen de ring springt mee naar de
 // volgende dimensie; de grondstoffen liggen erbuiten en blijven achter.
-export const RING_STRAAL = 7.5; // tegels vanaf het midden van de machine
+// Binnen de ring bouw je, dus hij is ruim (Thije, 2 nov). De schijf eronder steekt er grof en ongelijk buiten.
+export const RING_STRAAL = 14; // tegels vanaf het midden van de machine
 
 // Velden met grondstoffen: hoeveel velden, hoeveel tegels per veld, hoeveel per tegel, hoe ver van de machine.
 export const VELDEN: Record<Grondstof, { aantal: number; tegels: [number, number]; perTegel: number; afstand: [number, number] }> = {
-  schroot: { aantal: 5, tegels: [6, 11], perTegel: 30, afstand: [10, 16] },
-  hout: { aantal: 4, tegels: [5, 9], perTegel: 25, afstand: [10, 18] },
-  kristal: { aantal: 2, tegels: [3, 6], perTegel: 15, afstand: [14, 19] },
+  schroot: { aantal: 7, tegels: [6, 11], perTegel: 30, afstand: [19, 25] },
+  hout: { aantal: 6, tegels: [5, 9], perTegel: 25, afstand: [19, 27] },
+  kristal: { aantal: 3, tegels: [3, 6], perTegel: 15, afstand: [23, 28] },
 };
 
 // Elke dimensie ziet er echt anders uit. Binnen de ring blijft je eigen grauwe grond; erbuiten de kleuren van de wereld.

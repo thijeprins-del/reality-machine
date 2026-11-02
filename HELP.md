@@ -10,8 +10,10 @@ niet, dus zuinig zijn. Rond de machine liggen velden met schroot, hout (dode bom
 
 ## De gele ring en de stream
 Om je machine ligt een gele ring van geverfde streepjes. Elke minuut komt de stream: alles binnen de ring springt naar
-een nieuwe wereld, met andere kleuren en nieuwe grondstoffen. Wat buiten de ring ligt, blijft achter. Vlak voor de
-sprong gaat de ring gloeien.
+een nieuwe wereld, met andere kleuren en nieuwe grondstoffen. Wat buiten de ring ligt, blijft achter. Binnen de ring
+bouw je. De sprong lukt alleen als de machine op dat moment volle stroom krijgt: dan slaat de bliksem in de ring, wordt
+je land uit de wereld gerukt en landt het na een paar tellen in het niets in de volgende wereld. Geen volle stroom:
+stream gemist.
 
 ## Besturing
 - **Slepen** met de linkermuisknop: muizen selecteren. Met **shift** erbij. **Dubbelklik**: alle muizen in beeld.
