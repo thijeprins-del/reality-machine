@@ -19,7 +19,7 @@ niet, dus zuinig zijn. Rond de machine liggen velden met schroot, hout (dode bom
 Linksonder zit het controlepaneel van de muizen. Elke knop doet iets; wijs iets aan en het logboek legt het uit.
 - **Bronnen**: de dynamo stookt schroot, de ketel hout, de reactor kristal, allemaal uit je opslag. Hendel = aan/uit
   (toetsen **1 2 3**), draaiknop = laag/midden/hoog (**shift** + 1 2 3): meer stroom, maar ook meer hitte en brandstof.
-- **Verbruikers** (toetsen **4 5 6**): de machine laadt energie, de koeling haalt hitte weg, de lampen laten muizen
+- **Verbruikers** (toetsen **4 5 6**): de machine moet volle stroom krijgen als de stream komt, de koeling haalt hitte weg, de lampen laten muizen
   sneller graven.
 - Te weinig stroom: alles draait trager en na 3 seconden slaat de **zekering** door (klik erop of **Z**).
   Te veel stroom: wat over is wordt hitte. Op 100 hitte valt iets uit tot het is afgekoeld.

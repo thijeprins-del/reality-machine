@@ -358,9 +358,9 @@ export function maakPaneel(staat: () => SpelStaat): { werk(sec: number): void } 
       let f = 0, info = '', kleur = KL.cyaan, hulp = '';
       if (c.id === 'machine') {
         f = m.energie / m.maxEnergie;
-        kleur = f >= 1 ? KL.groen : KL.cyaan;
-        info = `ENERGIE ${Math.floor(m.energie)}/${m.maxEnergie} HITTE ${Math.round(c.hitte)}`;
-        hulp = 'MACHINE: LAADT DE ENERGIE VOOR DE STREAM';
+        kleur = f >= 1 ? KL.groen : KL.rood;
+        info = f >= 1 ? `KLAAR VOOR SPRONG HITTE ${Math.round(c.hitte)}` : `STROOM ${Math.round(f * 100)}% HITTE ${Math.round(c.hitte)}`;
+        hulp = 'MACHINE: MOET VOLLE STROOM HEBBEN ALS DE STREAM KOMT';
       } else if (c.id === 'koeling') {
         f = c.krijgt;
         info = c.krijgt > 0 ? `-${(MUIZEN_ENERGIE.koeling * c.krijgt).toFixed(1)} HITTE/S OP ALLES` : 'STIL';

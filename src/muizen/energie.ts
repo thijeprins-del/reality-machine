@@ -17,7 +17,6 @@ export interface BronData {
 export interface EnergieGetallen {
   bronnen: BronData[];
   vraag: { machine: number; koeling: number; lampen: number }; // kW
-  machineLaadtPerSec: number; // energie per seconde bij volle stroom
   koeling: number; // hitte per seconde eraf bij volle stroom
   lampenSneller: number; // 0.6 = muizen graven 60% sneller bij volle stroom
   zekeringSec: number; // zo lang houdt de zekering een tekort vol
@@ -169,11 +168,12 @@ export function stapEnergie(s: SpelStaat, sec: number, muis: EenheidSoort | unde
   }
 
   // wat de verbruikers doen
+  // De machine laadt niet op: hij moet gewoon genoeg stroom krijgen op het moment van de stream.
   const m = s.machine;
-  if (machine.krijgt > 0 && m.energie < m.maxEnergie) {
-    m.energie = Math.min(m.maxEnergie, m.energie + machine.krijgt * G.machineLaadtPerSec * sec);
-    if (m.energie >= m.maxEnergie) log(e, 'MACHINE VOL. KLAAR VOOR DE STREAM', 'groen');
-  }
+  const was = m.energie >= m.maxEnergie;
+  m.energie = Math.floor(machine.krijgt * m.maxEnergie);
+  if (!was && m.energie >= m.maxEnergie) log(e, 'MACHINE OP VOLLE STROOM. KLAAR VOOR DE STREAM', 'groen');
+  if (was && m.energie < m.maxEnergie) log(e, 'MACHINE KRIJGT TE WEINIG STROOM', 'rood');
   if (muis?.werk) muis.werk.mijnSec = graafSec / (1 + G.lampenSneller * lampen.krijgt);
   e.nood = Math.max(0, e.nood - sec);
 

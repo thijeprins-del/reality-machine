@@ -15,7 +15,6 @@ export const MUIZEN_ENERGIE: EnergieGetallen = {
     { id: 'reactor', naam: 'REACTOR', brandstof: 'kristal', kleur: '#4ef2ff', stroom: [5, 8, 11], verbruik: [0.04, 0.07, 0.11], warmte: [3, 5.5, 9] },
   ],
   vraag: { machine: 6, koeling: 2, lampen: 3 },
-  machineLaadtPerSec: 0.5, // 0 -> 100 energie in ruim 3 minuten bij volle stroom
   koeling: 4.5,
   lampenSneller: 0.6,
   zekeringSec: 3,
@@ -25,7 +24,7 @@ export const MUIZEN_ENERGIE: EnergieGetallen = {
 export const MUIZEN: Factie = {
   id: 'muizen',
   naam: 'Muizen',
-  startMachine: { energie: 20, maxEnergie: 100, heelheid: 100, maxHeelheid: 100 },
+  startMachine: { energie: 0, maxEnergie: 100, heelheid: 100, maxHeelheid: 100 },
   startVoorraad: { schroot: 40, hout: 20, kristal: 0 },
   streamKosten: {}, // nog te bepalen (K4, K6)
   gebouwen: [

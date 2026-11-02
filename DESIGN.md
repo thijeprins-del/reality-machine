@@ -55,7 +55,7 @@ mech 3x3 en ruim tien keer zo hoog als een muis). Mechs menselijk van bouw, wape
 
 **Stroomnet (trucje van de muizen, 2 nov):** alleen de muizen beheren stroom; de otters krijgen iets anders.
 Bronnen verbranden grondstof uit de opslag: dynamo (schroot, 3/5/7 kW), ketel (hout, 2/3/4), reactor (kristal, 5/8/11).
-Verbruikers: machine (6 kW, laadt 0,5 energie/s), koeling (2 kW, -4,5 hitte/s op alles), lampen (3 kW, muizen graven
+Verbruikers: machine (6 kW; laadt niet op, moet bij de stream volle stroom krijgen), koeling (2 kW, -4,5 hitte/s op alles), lampen (3 kW, muizen graven
 tot 60% sneller). Tekort: alles naar rato trager, zekering slaat door na 3 s. Overschot wordt hitte; op 100 storing
 tot onder 35. Bediening via een pixelart-paneel linksonder (`src/muizen/paneel.ts`), regels in `src/muizen/energie.ts`,
 getallen in `MUIZEN_ENERGIE` (`src/data/muizen.ts`).
