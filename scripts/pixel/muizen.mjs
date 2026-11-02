@@ -97,64 +97,44 @@ function tekst(d, p, woord, richting, kleur, r, schil = 0.25, neon = false) {
 const kabels = (d, lijst) => { for (const [a, b, c, e, z, k, g] of lijst) d.kabel(a, b, c, e, z, k, g); };
 
 // ---------------------------------------------------------------------------
-// MUIS: klein, rond en heel pluizig. Schattig, geen rat: grote ronde kop en oren, grote glimogen, korte snuit,
-// lichte warme vacht, roze wangetjes. Neonbril op het voorhoofd die groen gloeit. Kijkt schuin naar rechts.
+// MUIS: echt klein (zo'n 10 pixels, de mech is een kind van ruim 17 muizen hoog). Schattig, geen rat:
+// ronde kop met grote oren, twee oogjes, roze neusje en wangetjes, lichte warme vacht.
+// Een piepklein neonbrilletje op het voorhoofd gloeit groen. Getekend als pixelkaart.
+const MUIS_KAART = [
+  '.mm.....mm.',
+  'mppm...mppm',
+  'mppmLgLmppm',
+  '.mLLLLLLLm.',
+  '.LLkLLLkLm.',
+  '.LwLLnLLwm.',
+  '..mLLLLLm..',
+  '.mLLLLLLLmt',
+  '.mLLLLLLdm.',
+  '..p.....p..',
+];
 function tekenMuis(naam, variant) {
-  const d = new Doek(20, 19);
-  const r = ruis(variant === 'monteur' ? 7 : 3);
+  const d = new Doek(15, 12);
   const v = T.vacht;
-  const blob = (cx, cy, rx, ry, pluis) => {
-    for (let y = 0; y < d.h; y++)
-      for (let x = 0; x < d.w; x++) {
-        const dx = (x + 0.5 - cx) / rx, dy = (y + 0.5 - cy) / ry;
-        const dd = dx * dx + dy * dy;
-        if (dd <= 1 || (dd <= 1 + pluis && r() < 0.4)) {
-          const l = dx * 0.35 - dy * 0.8 + (r() - 0.5) * 0.25;
-          d.zet(x, y, v[Math.max(1, Math.min(6, Math.round(4 + l * 1.8)))]);
-        }
-      }
-  };
-  // staartje: kort krulletje achter
-  d.zet(3, 15, K.neus); d.zet(2, 14, K.neus); d.zet(2, 13, K.neus); d.zet(3, 12, K.neus);
-  // oren: groot en rond, achter de kop
-  const oor = (cx, cy, rad) => {
-    for (let y = -3; y <= 3; y++) for (let x = -3; x <= 3; x++) {
-      const dd = x * x + y * y;
-      if (dd <= rad * rad) d.zet(cx + x, cy + y, dd <= (rad - 1.2) * (rad - 1.2) ? K.oorBinnen : v[3]);
-    }
-  };
-  oor(6, 4, 3.2);
-  oor(14, 3, 3.2);
-  blob(9.5, 14.5, 3.8, 3.2, 0.5); // lijfje
-  blob(10, 9, 5, 4.4, 0.35); // grote kop
-  // ogen: groot, zwart, met glimpje
-  for (const ox of [8, 12]) {
-    d.zet(ox, 9, K.oog); d.zet(ox, 10, K.oog); d.zet(ox + 1, 9, K.oog); d.zet(ox + 1, 10, K.oog);
-    d.zet(ox, 9, '#f4f0ea');
-  }
-  // snuitje en wangetjes
-  d.zet(11, 11, K.neus); d.zet(10, 12, v[2]); d.zet(11, 12, v[2]);
-  d.zet(7, 11, K.wang); d.zet(14, 11, K.wang);
-  // pootjes en armpjes
-  d.zet(7, 18, K.neus); d.zet(8, 18, K.neus); d.zet(11, 18, K.neus); d.zet(12, 18, K.neus);
-  d.zet(13, 15, v[5]); d.zet(13, 14, v[5]);
-  // neonbril op het voorhoofd
-  d.zet(8, 6, K.k0); d.zet(10, 6, K.k0); d.zet(11, 6, K.k0); d.zet(13, 6, K.k0); d.zet(14, 6, K.k0);
+  const kleur = { m: v[3], L: v[5], d: v[2], p: K.neus, k: K.oog, w: K.wang, n: K.neus, t: K.neus, g: v[5] };
+  const ox = 1, oy = 1;
+  MUIS_KAART.forEach((regel, y) =>
+    [...regel].forEach((c, x) => {
+      if (c === '.') return;
+      let k = kleur[c];
+      // licht van linksboven: bovenste rijen lichter, rechtsonder donkerder
+      if (c === 'L' && (y >= 7 || x >= 8)) k = v[4];
+      if (c === 'L' && y <= 3 && x <= 4) k = v[6];
+      d.zet(ox + x, oy + y, k);
+    }),
+  );
   if (variant === 'monteur') {
-    // te grote moersleutel in de armpjes
-    d.lijn(12, 17, 18, 11, T.staal[6]);
-    d.zet(18, 10, T.staal[5]); d.zet(19, 11, T.staal[5]); d.zet(19, 10, T.staal[7]); d.zet(17, 10, T.staal[5]);
-    d.zet(13, 15, v[6]);
-  } else {
-    // rugzakje met een kabeltje
-    d.rect(3, 11, 3, 4, T.bruin[3]); d.rect(3, 11, 3, 1, T.bruin[5]);
+    // te grote moersleutel
+    d.lijn(ox + 8, oy + 8, ox + 12, oy + 4, T.staal[6]);
+    d.zet(ox + 13, oy + 3, T.staal[5]); d.zet(ox + 12, oy + 3, T.staal[5]); d.zet(ox + 13, oy + 4, T.staal[5]);
   }
   d.omlijn(K.lijn);
-  if (variant !== 'monteur') d.kabel(3, 14, 0, 18, 1, K.k0);
-  d.licht(9, 6, N.gif);
-  d.licht(12, 6, N.gif);
-  if (variant !== 'monteur') d.licht(4, 12, N.rood);
-  bewaar(naam, d, 10, 18, 0);
+  d.licht(ox + 5, oy + 2, N.gif); // neonbrilletje
+  bewaar(naam, d, ox + 5, oy + 10, 0);
 }
 
 // ---------------------------------------------------------------------------
