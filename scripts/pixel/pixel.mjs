@@ -271,6 +271,33 @@ export class Doek {
         this.zet(x, y, ramp[Math.max(0, Math.min(n, i))]);
       }
   }
+
+  // Hoekig pantserdeel tussen twee schermpunten: taps (ra -> rb), platte uiteinden, twee vlakken met een rug.
+  // Licht van rechtsboven. o.naden: om de hoeveel pixels een plaatnaad dwars over het deel.
+  prisma(x0, y0, x1, y1, ra, rb, ramp, o = {}) {
+    const n = ramp.length - 1;
+    const dx = x1 - x0, dy = y1 - y0, len = Math.hypot(dx, dy) || 1;
+    const nx = -dy / len, ny = dx / len;
+    const licht = Math.sign(nx * 0.6 + ny * -0.8) || 1; // welke kant naar het licht wijst
+    const kans = o.ruis ?? 0.1, rr = o.r ?? Math.random;
+    const pt = [
+      [x0 + nx * ra, y0 + ny * ra], [x1 + nx * rb, y1 + ny * rb],
+      [x1 - nx * rb, y1 - ny * rb], [x0 - nx * ra, y0 - ny * ra],
+    ];
+    this.veelhoek(pt, (x, y) => {
+      const px = x + 0.5 - x0, py = y + 0.5 - y0;
+      const t = Math.max(0, Math.min(1, (px * dx + py * dy) / (len * len)));
+      const rad = ra + (rb - ra) * t;
+      const s = ((px * nx + py * ny) / rad) * licht; // -1 (schaduwkant) .. 1 (lichtkant)
+      let i;
+      if (Math.abs(s) < 0.12) i = n - 1; // rug
+      else if (s > 0) i = s > 0.8 ? Math.round(n * 0.55) : Math.round(n * 0.7);
+      else i = s < -0.8 ? Math.round(n * 0.15) : Math.round(n * 0.3);
+      if (o.naden && Math.round(t * len) % o.naden === 0 && t > 0.05 && t < 0.95) i = Math.max(0, i - 2);
+      if (rr() < kans) i += rr() < 0.5 ? -1 : 1;
+      return ramp[Math.max(0, Math.min(n, i))];
+    });
+  }
   // Bol (scharnier, koepel). Glanspuntje rechtsboven.
   bol(cx, cy, r, ramp, o = {}) {
     const n = ramp.length - 1;

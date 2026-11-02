@@ -151,30 +151,32 @@ function tekenMech() {
   const B = (k, rr, z, u, v, h, ramp, o = {}) => d.blokS(...g(k, rr, z), u, v, h, ramp, { r, ...o });
   const S = (a, b, dik, ramp, o = {}) => d.staaf(a[0], a[1], b[0], b[1], dik, ramp, { r, ...o });
 
-  // --- een poot (rc = rij van de poot) ---
+  // --- een poot (rc = rij van de poot): hoekige pantserdelen en blokvormige scharnieren ---
+  const Pr = (a, b, ra, rb, ramp, o = {}) => d.prisma(a[0], a[1], b[0], b[1], ra, rb, ramp, { r, ...o });
   const poot = (rc) => {
-    const H = g(11, rc, 94), Kn = g(17, rc, 58), A = g(9, rc, 22), V = g(12, rc, 4);
-    // voet: tenen naar voren, hielspoor naar achter
-    S(V, g(5, rc, 2), 3, T.staal, { hoekig: true });
-    S(V, g(17, rc - 3, 1), 3, T.staal, { hoekig: true });
-    S(V, g(17, rc + 3, 1), 3, T.staal, { hoekig: true });
-    S(V, g(20, rc, 1), 4, T.staal, { hoekig: true });
-    for (const tk of [g(17, rc - 3, 1), g(17, rc + 3, 1), g(20, rc, 1)]) d.zet(tk[0] + 3, tk[1] + 1, T.staal[7]);
-    // middenvoet (enkel -> voet) en enkel
-    S(A, V, 5, T.olijf, { hoekig: true });
-    // scheen (knie -> enkel) met zuiger
-    S(Kn, A, 7, T.olijf, { hoekig: true });
-    S(g(16, rc + 1.5, 52), g(9, rc + 1.5, 26), 2, T.chroom);
-    d.bol(A[0], A[1], 6, T.staal);
-    // dij (heup -> knie) met zuiger
-    S(H, Kn, 9, T.olijf, { hoekig: true });
-    S(g(9, rc + 2, 84), g(15, rc + 2, 62), 2, T.chroom);
-    d.bol(Kn[0], Kn[1], 8, T.staal);
-    // kniebeschermer en strepen
-    B(17, rc - 2, 54, 3, 4, 12, T.olijf);
-    gevaar(d, [g(9, rc + 2.5, 22)[0] - 2, g(9, rc + 2.5, 22)[1] + 8], 2, 2, 'kol');
-    d.bol(H[0], H[1], 10, T.staal);
-    d.veeg(Kn[0] + 2, Kn[1] + 6, 10, K.olie);
+    const H = g(11, rc, 94), Kn = g(17, rc, 58), A = g(9, rc, 22), V = g(12, rc, 5);
+    // voet: platte zool, drie klauwtenen naar voren en een hielspoor
+    B(9.5, rc - 2.5, 0, 6, 5, 4, T.staal);
+    Pr(g(10, rc, 4), g(4, rc, 1), 3, 1, T.staal);
+    Pr(g(14, rc - 1.5, 3), g(19, rc - 4, 0), 3, 1, T.staal);
+    Pr(g(14, rc + 1.5, 3), g(19, rc + 4, 0), 3, 1, T.staal);
+    Pr(g(15, rc, 3), g(22, rc, 0), 4, 1, T.staal);
+    // middenvoet en enkelblok
+    Pr(A, V, 5, 4, T.olijf, { naden: 7 });
+    B(8, rc - 2, 17, 2, 4, 10, T.staal);
+    // scheen (knie -> enkel) met zuiger erlangs
+    S(g(16, rc + 2, 50), g(9, rc + 2, 26), 2, T.chroom);
+    Pr(Kn, A, 8, 5, T.olijf, { naden: 9 });
+    gevaar(d, [g(12, rc + 2.5, 36)[0] - 3, g(12, rc + 2.5, 36)[1]], 2, 2, 'kol');
+    // dij (heup -> knie), breed bij de heup, met zuiger
+    S(g(9, rc + 2.5, 86), g(15, rc + 2.5, 62), 2, T.chroom);
+    Pr(H, Kn, 11, 7, T.olijf, { naden: 10 });
+    // knieblok met beschermplaat
+    B(15.5, rc - 2.5, 52, 3, 5, 12, T.staal);
+    B(18, rc - 2, 50, 2, 4, 16, T.olijf);
+    // heupblok
+    B(9, rc - 3, 88, 4, 6, 14, T.staal);
+    d.veeg(Kn[0] + 2, Kn[1] + 8, 10, K.olie);
   };
 
   // --- achterste poot eerst ---
@@ -182,9 +184,9 @@ function tekenMech() {
 
   // --- rechterarm met gatling (achter de romp) ---
   const sR = g(11, 3, 134), eR = g(8, 2, 110), mR = g(16, 2, 114);
-  S(sR, eR, 6, T.staal, { hoekig: true });
-  S(eR, mR, 6, T.olijf, { hoekig: true });
-  d.bol(eR[0], eR[1], 5, T.staal);
+  Pr(sR, eR, 7, 5, T.staal, { naden: 8 });
+  Pr(eR, mR, 6, 6, T.olijf, { naden: 8 });
+  B(7, 0.5, 105, 3, 3, 8, T.staal);
   const gat = B(15, -1, 104, 10, 6, 16, T.staal);
   gevaar(d, [gat.P1[0] - 1, gat.P1[1] - 3], 6, 2, 'rij');
   const lopen = [[0.5, 116], [3, 118], [1.5, 112], [4, 113], [0.5, 108], [3, 108]];
@@ -244,9 +246,9 @@ function tekenMech() {
 
   // --- linkerarm met houwitser (voor de romp) ---
   const sL = g(11, 21, 132), eL = g(8, 22, 108), mL = g(15, 22, 110);
-  S(sL, eL, 6, T.staal, { hoekig: true });
-  S(eL, mL, 6, T.olijf, { hoekig: true });
-  d.bol(eL[0], eL[1], 5, T.staal);
+  Pr(sL, eL, 7, 5, T.staal, { naden: 8 });
+  Pr(eL, mL, 6, 6, T.olijf, { naden: 8 });
+  B(7, 20.5, 103, 3, 3, 8, T.staal);
   const hou = B(13, 19, 100, 9, 7, 18, T.staal);
   gevaar(d, [hou.P3[0], hou.P3[1] - 3], 9, 2, 'kol');
   const lp = g(22, 22.5, 109);
