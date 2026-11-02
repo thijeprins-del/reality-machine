@@ -4,10 +4,21 @@ import type { SpelStaat } from './spel';
 
 export type FactieId = 'muizen' | 'otters';
 
-// Grondstoffen zijn voor beide facties dezelfde, zodat loot en dimensies niet per factie dubbel hoeven.
-// Asymmetrie zit in wat je ermee doet, niet in de namen.
+// Goederen. Ruwe grondstoffen (uit dimensies) zijn voor beide facties dezelfde; tussenproducten en eindproducten
+// mag elke factie zelf verzinnen (gewoon een string, bv. 'tandwiel' of 'dambalk'). Alles ligt in één eilandvoorraad.
 export type Grondstof = 'schroot' | 'hout' | 'kristal';
-export type Voorraad = Record<Grondstof, number>;
+export type Goed = Grondstof | (string & {});
+export type Voorraad = Partial<Record<Goed, number>>;
+
+// Een stap in een productieketen: een gebouw zet `in` om in `uit` in `sec` seconden.
+// Lange ketens = veel recepten achter elkaar. Het eind van de keten voedt de machine (`streamKosten`).
+export interface Recept {
+  id: string;
+  gebouw: string; // soort gebouw dat dit recept draait
+  in: Voorraad;
+  uit: Voorraad;
+  sec: number;
+}
 
 // De reality machine. Betekent voor beide facties hetzelfde: de stream meet energie en heelheid.
 export interface Machine {
@@ -18,6 +29,7 @@ export interface Machine {
 }
 
 // Een soort eenheid (de data). Een eenheid op het veld verwijst ernaar met `soort`.
+// Eenheden zijn bijzaak: het spel draait om industrie, gevechten zijn kort (vooral ketens van de ander saboteren).
 export interface EenheidSoort {
   soort: string;
   naam: string;
@@ -25,15 +37,15 @@ export interface EenheidSoort {
   schade: number;
   bereik: number; // in tegels
   snelheid: number; // tegels per seconde
-  kosten: Partial<Voorraad>;
+  kosten: Voorraad;
 }
 
 export interface GebouwSoort {
   soort: string;
   naam: string;
   hp: number;
-  kosten: Partial<Voorraad>;
-  opbrengst?: Partial<Voorraad>; // per minuut
+  kosten: Voorraad;
+  opbrengst?: Voorraad; // per minuut, voor oogstgebouwen zonder invoer
 }
 
 // Een vondst kun je inbouwen (direct effect) of ontleden (bouwplan of grondstoffen). Tech komt alleen hiervandaan.
@@ -41,8 +53,8 @@ export interface VondstSoort {
   soort: string;
   naam: string;
   waarde: number;
-  inbouwen?: string; // soort eenheid/gebouw/effect dat vrijkomt
-  ontleden?: Partial<Voorraad>;
+  inbouwen?: string; // gebouw of recept dat vrijkomt: zo groeien de ketens, alleen via loot
+  ontleden?: Voorraad;
 }
 
 // Kans per vondst, per dimensie-index (0 = alle dimensies).
@@ -65,8 +77,11 @@ export interface Factie {
   naam: string;
   startMachine: Machine;
   startVoorraad: Voorraad;
-  eenheden: EenheidSoort[];
+  streamKosten: Voorraad; // wat de machine per stream verbruikt: het eind van de lange keten
   gebouwen: GebouwSoort[];
+  recepten: Recept[];
+  startRecepten: string[]; // recept-id's die je vanaf het begin kent; de rest komt uit loot
+  eenheden: EenheidSoort[];
   vondsten: VondstSoort[];
   loot: LootRegel[];
   trucje: Trucje;
