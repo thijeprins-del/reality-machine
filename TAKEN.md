@@ -5,7 +5,7 @@ Pak je een taak op: zet eerst je naam erachter in je PR. Klaar: `- [x] … (#PR)
 ## Kern (samen)
 - [x] K1 Repo, uitrol, hello world met iso-veld en één sprite
 - [x] K2 Eiland van de speler op het iso-veld, camera (Thije)
-- [ ] K3 Eén dimensie met streamtimer en sprong
+- [ ] K3 Eén dimensie met streamtimer en sprong: transportring, sprong door het niets, 5 werelden (Thije)
 - [ ] K4 Machine-energie en heelheid; verliezen bij gemiste stream
 - [ ] K5 Lopende banden: leggen, goederen bewegen, gebouwen in/uit (zie DESIGN.md, Logistiek)
 - [ ] K6 Recepten draaien in gebouwen; eind van de keten voedt de machine
