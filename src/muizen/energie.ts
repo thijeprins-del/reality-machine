@@ -1,6 +1,9 @@
 // Energiebeheer van de muizen (alleen muizen, de otters hebben iets anders).
-// Bronnen verbranden grondstof uit de opslag en leveren stroom; verbruikers krijgen die stroom.
-// Te weinig stroom: de zekering slaat door. Te veel: de rest wordt hitte. Op 100 hitte valt iets uit tot het is afgekoeld.
+// Het draait om keuzes, niet om alles overeind houden:
+// - Bronnen verbranden grondstof uit de opslag. Stand LAAG, NORMAAL of OVERLADEN.
+// - Overladen geeft flink meer stroom, maar de bron wordt heet. Een hete bron levert daarna een tijd minder
+//   (bij 100 hitte nog maar de helft, en dan springt hij terug naar NORMAAL). Niets gaat stuk.
+// - Verbruikers staan op volgorde: bij een tekort krijgen de bovensten eerst, de onderste valt uit.
 // Puur regels, geen tekenen en geen Math.random. Getallen in src/data/muizen.ts (MUIZEN_ENERGIE).
 import type { EenheidSoort, Grondstof, Trucje, Voorraad } from '../kern/types';
 import type { SpelStaat } from '../kern/spel';
@@ -10,40 +13,38 @@ import { betaal, kostTekst } from './kosten';
 export interface BronData {
   id: string;
   naam: string;
+  kort: string;
   brandstof: Grondstof;
   kleur: string;
-  stroom: [number, number, number]; // kW per stand (laag, midden, hoog)
+  stroom: [number, number, number]; // kW per stand (laag, normaal, overladen)
   verbruik: [number, number, number]; // grondstof per seconde per stand
-  warmte: [number, number, number]; // hitte per seconde per stand
   mk: number; // waarmee je begint: 0 = nog niet gebouwd, 1..3
   bouw: Voorraad[]; // bouw[i] = kosten om naar MK i+1 te gaan
+  loot?: boolean; // alleen uit loot
 }
 export interface EnergieGetallen {
   bronnen: BronData[];
-  mkMaal: { stroom: number[]; verbruik: number[]; warmte: number[] }; // per MK (index mk - 1)
-  vraag: { machine: number; koeling: number; lampen: number }; // kW
-  koeling: number; // hitte per seconde eraf bij volle stroom
-  lampenSneller: number; // 0.6 = muizen graven 60% sneller bij volle stroom
-  zekeringSec: number; // zo lang houdt de zekering een tekort vol
-  storingTot: number; // na storing pas weer bruikbaar onder deze hitte
+  mkMaal: { stroom: number[]; verbruik: number[] };
+  overladen: { hitte: number; af: number; afKoeling: number; zwakTot: number };
+  vraag: { machine: number; koeling: number; lampen: number };
+  lampenSneller: number;
 }
+
+export const STANDEN = ['LAAG', 'NORMAAL', 'OVERLADEN'] as const;
 
 export interface Bron extends BronData {
   aan: boolean;
   stand: 0 | 1 | 2;
-  hitte: number;
-  storing: boolean;
+  hitte: number; // 0..100: van overladen; maakt de bron tijdelijk zwakker
   levert: number;
   toets: string;
 }
-export type VerbruikerId = 'machine' | 'koeling' | 'lampen' | 'industrie';
+export type VerbruikerId = 'machine' | 'industrie' | 'lampen' | 'koeling';
 export interface Verbruiker {
   id: VerbruikerId;
   naam: string;
   vraag: number;
   aan: boolean;
-  hitte: number;
-  storing: boolean;
   krijgt: number; // 0..1: deel van de gevraagde stroom dat aankomt
   toets: string;
 }
@@ -53,11 +54,10 @@ export interface LogRegel {
 }
 export interface EnergieStaat {
   bronnen: Bron[];
-  verbruikers: Verbruiker[];
+  verbruikers: Verbruiker[]; // op volgorde van voorrang
   aanbod: number;
   vraag: number;
-  zekering: { heel: boolean; spanning: number };
-  nood: number; // seconden tot de noodstop weer kan
+  tekort: VerbruikerId | null; // wie als eerste te weinig kreeg
   hist: { a: number; v: number; h: number[] }[];
   histT: number;
   trend: Record<Grondstof, number>;
@@ -75,23 +75,22 @@ export function energie(s: SpelStaat): EnergieStaat {
   if (!e) {
     const v = s.voorraad;
     e = {
-      bronnen: G.bronnen.map((b, i) => ({ ...b, mk: b.mk, aan: false, stand: 1, hitte: 0, storing: false, levert: 0, toets: String(i + 1) })),
+      bronnen: G.bronnen.map((b, i) => ({ ...b, aan: b.mk > 0, stand: 1, hitte: 0, levert: 0, toets: String(i + 1) })),
       verbruikers: [
-        { id: 'machine', naam: 'MACHINE', vraag: G.vraag.machine, aan: false, hitte: 0, storing: false, krijgt: 0, toets: '4' },
-        { id: 'koeling', naam: 'KOELING', vraag: G.vraag.koeling, aan: false, hitte: 0, storing: false, krijgt: 0, toets: '5' },
-        { id: 'lampen', naam: 'LAMPEN', vraag: G.vraag.lampen, aan: false, hitte: 0, storing: false, krijgt: 0, toets: '6' },
-        { id: 'industrie', naam: 'INDUSTRIE', vraag: 0, aan: true, hitte: 0, storing: false, krijgt: 0, toets: '7' },
+        { id: 'machine', naam: 'MACHINE', vraag: G.vraag.machine, aan: false, krijgt: 0, toets: '4' },
+        { id: 'industrie', naam: 'INDUSTRIE', vraag: 0, aan: true, krijgt: 0, toets: '5' },
+        { id: 'lampen', naam: 'LAMPEN', vraag: G.vraag.lampen, aan: false, krijgt: 0, toets: '6' },
+        { id: 'koeling', naam: 'KOELING', vraag: G.vraag.koeling, aan: false, krijgt: 0, toets: '7' },
       ],
       aanbod: 0,
       vraag: 0,
-      zekering: { heel: true, spanning: 0 },
-      nood: 0,
+      tekort: null,
       hist: [],
       histT: 0,
       trend: { schroot: 0, hout: 0, kristal: 0 },
       trendT: 0,
       vorige: { schroot: v.schroot ?? 0, hout: v.hout ?? 0, kristal: v.kristal ?? 0 },
-      log: [{ tekst: 'STROOMNET KLAAR. ZET EEN BRON AAN', kleur: 'groen' }],
+      log: [{ tekst: 'ZET DE HOUTBRANDER AAN (1)', kleur: 'groen' }],
       gemist: s.gemist,
     };
     STATEN.set(s, e);
@@ -100,27 +99,30 @@ export function energie(s: SpelStaat): EnergieStaat {
 }
 
 export function log(e: EnergieStaat, tekst: string, kleur: LogRegel['kleur'] = 'amber'): void {
+  if (e.log[0]?.tekst === tekst) return;
   e.log.unshift({ tekst, kleur });
   if (e.log.length > 40) e.log.pop();
 }
 
 const GRONDSTOFFEN: Grondstof[] = ['schroot', 'hout', 'kristal'];
-
-// Wat een bron levert, stookt en aan hitte maakt, met zijn MK erbij.
 const rond = (n: number) => Math.round(n * 10) / 10;
-export const stroomVan = (b: Bron, stand = b.stand) => (b.mk ? rond(b.stroom[stand] * G.mkMaal.stroom[b.mk - 1]) : 0);
-export const verbruikVan = (b: Bron, stand = b.stand) => (b.mk ? b.verbruik[stand] * G.mkMaal.verbruik[b.mk - 1] : 0);
-const warmteVan = (b: Bron) => (b.mk ? b.warmte[b.stand] * G.mkMaal.warmte[b.mk - 1] : 0);
 export const MAX_MK = 3;
+
+// Wat een bron levert en stookt, met zijn MK en zijn hitte erbij.
+export const zwakte = (b: Bron) => 1 - (1 - G.overladen.zwakTot) * (b.hitte / 100);
+export const stroomVan = (b: Bron, stand: number = b.stand) => (b.mk ? rond(b.stroom[stand] * G.mkMaal.stroom[b.mk - 1] * (stand === 2 ? 1 : zwakte(b))) : 0);
+export const verbruikVan = (b: Bron, stand: number = b.stand) => (b.mk ? b.verbruik[stand] * G.mkMaal.verbruik[b.mk - 1] : 0);
+export const verbruiker = (s: SpelStaat, id: VerbruikerId) => energie(s).verbruikers.find((c) => c.id === id)!;
 
 export function stapEnergie(s: SpelStaat, sec: number, muis: EenheidSoort | undefined, graafSec: number): void {
   const e = energie(s);
   const v = s.voorraad;
+  const koeling = verbruiker(s, 'koeling');
 
   let aanbod = 0;
   for (const b of e.bronnen) {
     b.levert = 0;
-    if (b.aan && !b.storing) {
+    if (b.aan && b.mk) {
       const kost = verbruikVan(b) * sec;
       if ((v[b.brandstof] ?? 0) >= kost) {
         v[b.brandstof] = (v[b.brandstof] ?? 0) - kost;
@@ -130,75 +132,48 @@ export function stapEnergie(s: SpelStaat, sec: number, muis: EenheidSoort | unde
         log(e, `${b.brandstof.toUpperCase()} OP: ${b.naam} VALT STIL`, 'rood');
       }
     }
+    // hitte: alleen van overladen. Daarna koelt hij af, sneller met koeling.
+    if (b.levert > 0 && b.stand === 2) {
+      b.hitte = Math.min(100, b.hitte + G.overladen.hitte * sec);
+      if (b.hitte >= 100) {
+        b.stand = 1;
+        log(e, `${b.naam} TE HEET: TERUG NAAR NORMAAL, EVEN ZWAKKER`, 'amber');
+      }
+    } else b.hitte = Math.max(0, b.hitte - (koeling.krijgt > 0 ? G.overladen.afKoeling * koeling.krijgt + G.overladen.af : G.overladen.af) * sec);
     aanbod += b.levert;
   }
-  const ind = e.verbruikers.find((c) => c.id === 'industrie')!;
-  ind.vraag = industrieVraag(s);
-  let vraag = 0;
-  for (const c of e.verbruikers) if (c.aan && !c.storing) vraag += c.vraag;
   aanbod = rond(aanbod);
-  vraag = rond(vraag);
-  const net = e.zekering.heel;
-  const ratio = vraag > 0 ? Math.min(1, aanbod / vraag) : 1;
+
+  // verbruikers op volgorde: wie boven staat krijgt eerst
+  verbruiker(s, 'industrie').vraag = industrieVraag(s);
+  let rest = aanbod;
+  let vraag = 0;
+  e.tekort = null;
+  for (const c of e.verbruikers) {
+    if (!c.aan || c.vraag <= 0) {
+      c.krijgt = c.aan ? 1 : 0;
+      continue;
+    }
+    vraag += c.vraag;
+    const krijgt = Math.min(1, Math.max(0, rest / c.vraag));
+    c.krijgt = krijgt > 0.999 ? 1 : krijgt;
+    if (c.krijgt < 1 && !e.tekort) e.tekort = c.id;
+    rest = Math.max(0, rest - c.vraag);
+  }
   e.aanbod = aanbod;
-  e.vraag = vraag;
-  for (const c of e.verbruikers) c.krijgt = c.aan && !c.storing && net ? ratio : 0;
+  e.vraag = rond(vraag);
 
-  // zekering
-  if (net && aanbod > 0 && aanbod < vraag - 0.01) { // zonder bron die draait slaat er niets door
-    e.zekering.spanning += sec * (1 + (1 - ratio) * 2);
-    if (e.zekering.spanning >= G.zekeringSec) {
-      e.zekering.heel = false;
-      e.zekering.spanning = G.zekeringSec;
-      log(e, 'ZEKERING DOORGESLAGEN! KLIK RESET (Z)', 'rood');
-    }
-  } else e.zekering.spanning = Math.max(0, e.zekering.spanning - sec * 1.5);
-
-  // hitte: ongebruikte stroom wordt hitte, koeling haalt het weg
-  const over = Math.max(0, aanbod - (net ? Math.min(aanbod, vraag) : 0));
-  const actief = e.bronnen.filter((b) => b.levert > 0).length || 1;
-  const [machine, koeling, lampen] = (['machine', 'koeling', 'lampen'] as const).map((id) => e.verbruikers.find((c) => c.id === id)!);
-  const koel = koeling.krijgt * G.koeling + (e.nood > 7 ? 30 : 0);
-  for (const b of e.bronnen) {
-    let d = b.levert > 0 ? warmteVan(b) + (over * 0.35) / actief - 1 : -6;
-    d -= koel;
-    b.hitte = Math.min(100, Math.max(0, b.hitte + d * sec));
-    if (b.hitte >= 100 && !b.storing) {
-      b.storing = true;
-      log(e, `${b.naam} OVERVERHIT: STORING`, 'rood');
-    }
-    if (b.storing && b.hitte < G.storingTot) {
-      b.storing = false;
-      log(e, `${b.naam} AFGEKOELD`, 'groen');
-    }
-  }
-  for (const c of [machine, lampen]) {
-    let d = c.krijgt > 0 ? (c.id === 'machine' ? 1.7 : 1.2) * c.krijgt - 0.8 : -5;
-    d -= koel;
-    c.hitte = Math.min(100, Math.max(0, c.hitte + d * sec));
-    if (c.hitte >= 100 && !c.storing) {
-      c.storing = true;
-      log(e, `${c.naam} OVERVERHIT: STORING`, 'rood');
-    }
-    if (c.storing && c.hitte < G.storingTot) {
-      c.storing = false;
-      log(e, `${c.naam} AFGEKOELD`, 'groen');
-    }
-  }
-
-  // wat de verbruikers doen
   // De machine laadt niet op: hij moet gewoon genoeg stroom krijgen op het moment van de stream.
   const m = s.machine;
   const was = m.energie >= m.maxEnergie;
-  m.energie = Math.floor(machine.krijgt * m.maxEnergie);
+  m.energie = Math.floor(verbruiker(s, 'machine').krijgt * m.maxEnergie);
   if (!was && m.energie >= m.maxEnergie) log(e, 'MACHINE OP VOLLE STROOM. KLAAR VOOR DE STREAM', 'groen');
   if (was && m.energie < m.maxEnergie) log(e, 'MACHINE KRIJGT TE WEINIG STROOM', 'rood');
   if (s.gemist !== e.gemist) {
     e.gemist = s.gemist;
     log(e, 'STREAM GEMIST! MACHINE HAD GEEN VOLLE STROOM', 'rood');
   }
-  if (muis?.werk) muis.werk.mijnSec = graafSec / (1 + G.lampenSneller * lampen.krijgt);
-  e.nood = Math.max(0, e.nood - sec);
+  if (muis?.werk) muis.werk.mijnSec = graafSec / (1 + G.lampenSneller * verbruiker(s, 'lampen').krijgt);
 
   // trend en geschiedenis voor het paneel
   e.trendT += sec;
@@ -220,8 +195,7 @@ export function stapEnergie(s: SpelStaat, sec: number, muis: EenheidSoort | unde
 // ---- bediening (vanuit het paneel of toetsen) ----
 export function zetBron(s: SpelStaat, b: Bron): void {
   const e = energie(s);
-  if (!b.mk) return log(e, `${b.naam} IS NOG NIET GEBOUWD. KLIK + OM TE BOUWEN`, 'rood');
-  if (b.storing) return log(e, `${b.naam} IN STORING. EERST AFKOELEN`, 'rood');
+  if (!b.mk) return log(e, b.loot ? `${b.naam}: ALLEEN UIT LOOT` : `${b.naam} IS NOG NIET GEBOUWD. KLIK +`, 'rood');
   if (!b.aan && (s.voorraad[b.brandstof] ?? 0) < 0.5) return log(e, `GEEN ${b.brandstof.toUpperCase()} IN DE OPSLAG`, 'rood');
   b.aan = !b.aan;
   log(e, `${b.naam} ${b.aan ? 'AAN' : 'UIT'}`);
@@ -229,40 +203,30 @@ export function zetBron(s: SpelStaat, b: Bron): void {
 export function draaiKnop(s: SpelStaat, b: Bron): void {
   if (!b.mk) return log(energie(s), `${b.naam} IS NOG NIET GEBOUWD`, 'rood');
   b.stand = ((b.stand + 1) % 3) as 0 | 1 | 2;
-  log(energie(s), `${b.naam} STAND ${['LAAG', 'MIDDEN', 'HOOG'][b.stand]}: ${stroomVan(b)} KW`);
+  log(energie(s), `${b.naam} ${STANDEN[b.stand]}: ${stroomVan(b)} KW`, b.stand === 2 ? 'amber' : 'groen');
 }
-// Bouwen (MK 0 -> 1) of upgraden (MK 1 -> 2 -> 3): meer stroom, maar ook meer brandstof en hitte.
-export const upgradeKosten = (b: Bron): Voorraad | null => (b.mk < MAX_MK ? b.bouw[b.mk] : null);
+// Bouwen (MK 0 -> 1) of upgraden (MK 1 -> 2 -> 3): meer stroom, maar ook meer brandstof.
+export const upgradeKosten = (b: Bron): Voorraad | null => (b.mk < MAX_MK && !b.loot ? b.bouw[b.mk] : null);
 export function upgradeBron(s: SpelStaat, b: Bron): void {
   const e = energie(s);
+  if (b.loot && !b.mk) return log(e, `${b.naam}: ALLEEN UIT LOOT`, 'rood');
   const k = upgradeKosten(b);
   if (!k) return log(e, `${b.naam} IS AL MK${MAX_MK}`);
   if (!betaal(s.voorraad, k)) return log(e, `${b.naam} MK${b.mk + 1} KOST ${kostTekst(k)}`, 'rood');
   b.mk++;
-  log(e, b.mk === 1 ? `${b.naam} GEBOUWD! HENDEL OM AAN TE ZETTEN` : `${b.naam} NU MK${b.mk}: TOT ${stroomVan(b, 2)} KW`, 'groen');
+  log(e, b.mk === 1 ? `${b.naam} GEBOUWD! HENDEL OM AAN TE ZETTEN` : `${b.naam} NU MK${b.mk}: ${stroomVan(b, 1)} KW NORMAAL`, 'groen');
 }
 export function zetVerbruiker(s: SpelStaat, c: Verbruiker): void {
-  const e = energie(s);
-  if (c.storing) return log(e, `${c.naam} IN STORING. EERST AFKOELEN`, 'rood');
   c.aan = !c.aan;
-  log(e, `${c.naam} ${c.aan ? 'AAN' : 'UIT'}`);
+  log(energie(s), `${c.naam} ${c.aan ? 'AAN' : 'UIT'}`);
 }
-export function resetZekering(s: SpelStaat): void {
+// Een verbruiker een plek omhoog in de voorrang.
+export function omhoog(s: SpelStaat, c: Verbruiker): void {
   const e = energie(s);
-  if (e.zekering.heel) return log(e, 'ZEKERING IS HEEL');
-  e.zekering.heel = true;
-  e.zekering.spanning = 0;
-  log(e, 'ZEKERING VERVANGEN', 'groen');
-}
-export function noodstop(s: SpelStaat): void {
-  const e = energie(s);
-  if (e.nood > 0) return log(e, 'NOODSTOP LAADT NOG OP', 'rood');
-  for (const x of [...e.bronnen, ...e.verbruikers]) {
-    x.aan = false;
-    x.hitte = Math.max(0, x.hitte - 40);
-  }
-  e.nood = 10;
-  log(e, 'NOODSTOP! ALLES UIT, STOOM AFGEBLAZEN', 'rood');
+  const i = e.verbruikers.indexOf(c);
+  if (i <= 0) return;
+  [e.verbruikers[i - 1], e.verbruikers[i]] = [e.verbruikers[i], e.verbruikers[i - 1]];
+  log(e, `VOORRANG: ${c.naam} VOOR ${e.verbruikers[i].naam}`, 'cyaan');
 }
 
 // Het trucje van de muizen: elke tik het stroomnet bijwerken.

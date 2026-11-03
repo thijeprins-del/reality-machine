@@ -25,6 +25,7 @@ export const MUIZEN_SPRITES = {
   'last-kristal': { w: 18, h: 16, ankerX: 9, ankerY: 13, tegels: 0, gloed: true },
   'hoop-kristal': { w: 28, h: 24, ankerX: 14, ankerY: 19, tegels: 0, gloed: true },
   'stapel': { w: 80, h: 60, ankerX: 40, ankerY: 28, tegels: 2, gloed: true },
+  'houtbrander': { w: 88, h: 130, ankerX: 44, ankerY: 90, tegels: 2, gloed: true },
 } as const;
 
 export type MuizenSprite = keyof typeof MUIZEN_SPRITES;

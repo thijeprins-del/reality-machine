@@ -5,8 +5,9 @@ import type { WereldBeeld } from '../kern/wereldbeeld';
 import { maakBouwen } from './bouwen';
 import type { Grondstof } from '../kern/types';
 import { MUIZEN_ENERGIE } from '../data/muizen';
-import { draaiKnop, energie, MAX_MK, noodstop, resetZekering, stroomVan, upgradeBron, upgradeKosten, verbruikVan, zetBron, zetVerbruiker, type Bron, type EnergieStaat } from './energie';
+import { draaiKnop, energie, MAX_MK, omhoog, STANDEN, stroomVan, upgradeBron, upgradeKosten, verbruikVan, zetBron, zetVerbruiker, zwakte, type Bron, type EnergieStaat } from './energie';
 import { industrie, industrieVraag, opslagMax } from './industrie';
+import { werk } from './werk';
 import { kanBetalen, kostTekst } from './kosten';
 
 const kw = (n: number) => (Math.abs(n % 1) > 0.05 ? n.toFixed(1) : String(Math.round(n)));
@@ -17,7 +18,7 @@ const OMTREK: [number, number][] = [[0, 0], [184, 0], [244, 60], [476, 60], [484
 const MOD: Record<string, [number, number, number, number, string]> = {
   bronnen: [4, 6, 178, 98, 'BRONNEN'],
   voorraad: [4, 108, 178, 44, 'OPSLAG'],
-  nood: [4, 156, 74, 52, 'NOOD'],
+  muizen: [4, 156, 178, 52, 'MUIZEN'],
   net: [186, 64, 142, 100, 'STROOMNET'],
   verbruik: [332, 64, 148, 100, 'VERBRUIKERS'],
   log: [186, 168, 294, 40, 'LOGBOEK'],
@@ -56,7 +57,7 @@ interface Hit { x: number; y: number; w: number; h: number; doe: (() => void) | 
 export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(sec: number): void } {
   const pv = doek(PW, PH);
   pv.id = 'paneel';
-  pv.setAttribute('aria-label', 'Controlepaneel van de muizen: bronnen, opslag, stroomnet, verbruikers, logboek en noodstop');
+  pv.setAttribute('aria-label', 'Controlepaneel van de muizen: bronnen, opslag, muizen, stroomnet, verbruikers en logboek');
   Object.assign(pv.style, { position: 'fixed', left: '0', bottom: '0', zIndex: '5', pointerEvents: 'none', display: 'block' });
   document.body.appendChild(pv);
   const pvc = pv.getContext('2d')!;
@@ -159,13 +160,6 @@ export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(
         lx += 4;
       }
     }
-    // ventilatierooster tussen noodknop en logboek
-    for (let y = 160; y < 204; y += 3) {
-      c.fillStyle = '#0b0c0c';
-      c.fillRect(86, y, 92, 2);
-      c.fillStyle = '#383b3a';
-      c.fillRect(86, y + 2, 92, 1);
-    }
     // een paar kabels over de plaat
     c.strokeStyle = '#07070a';
     c.lineWidth = 1;
@@ -198,7 +192,7 @@ export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(
       }
     const hoeken = [-Math.PI * 0.8, -Math.PI / 2, -Math.PI * 0.2];
     for (let i = 1; i <= 5; i++) G(Math.round(cx + Math.cos(hoeken[stand]) * i), Math.round(cy + Math.sin(hoeken[stand]) * i), 1, 1, kleur);
-    ['L', 'M', 'H'].forEach((l, i) =>
+    ['L', 'N', 'O'].forEach((l, i) =>
       txt(l, Math.round(cx + Math.cos(hoeken[i]) * 10) - 1, Math.round(cy + Math.sin(hoeken[i]) * 10) - 2, i === stand ? kleur : KL.dim, 1, i === stand),
     );
   }
@@ -214,37 +208,45 @@ export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(
 
   function bron(s: SpelStaat, b: Bron, cx: number, cy: number, knipper: boolean): void {
     verzonken(cx, cy, 54, 88, '#101111');
-    txt(b.naam, cx + 3, cy + 3, KL.label);
-    const lamp = b.storing ? (knipper ? KL.rood : '#300') : b.levert > 0 ? (b.hitte > 85 ? KL.amber : KL.groen) : '#1d1f1e';
-    if (b.storing || b.levert > 0) G(cx + 46, cy + 3, 5, 5, lamp);
+    txt(b.kort, cx + 3, cy + 3, KL.label);
+    const over = b.stand === 2 && b.levert > 0;
+    const lamp = over ? (knipper ? KL.amber : '#402000') : b.levert > 0 ? KL.groen : '#1d1f1e';
+    if (b.levert > 0) G(cx + 46, cy + 3, 5, 5, lamp);
     else R(cx + 46, cy + 3, 5, 5, lamp);
-    hit(cx + 2, cy + 1, 50, 9, null, `${b.naam}: ${b.brandstof.toUpperCase()} UIT DE OPSLAG WORDT STROOM`);
-    hendel(cx + 3, cy + 11, b.aan, b.kleur, b.storing);
+    hit(cx + 2, cy + 1, 30, 9, null, `${b.naam}: ${b.brandstof.toUpperCase()} UIT DE OPSLAG WORDT STROOM`);
+    hendel(cx + 3, cy + 11, b.aan, b.kleur, false);
     hit(cx + 3, cy + 11, 14, 32, () => zetBron(s, b), `HENDEL: ${b.naam} AAN/UIT (TOETS ${b.toets})`);
-    knop(cx + 28, cy + 25, b.stand, b.kleur);
-    hit(cx + 18, cy + 13, 21, 23, () => draaiKnop(s, b), `KNOP L/M/H: MEER STROOM, HITTE EN ${b.brandstof.toUpperCase()}`);
+    knop(cx + 28, cy + 25, b.stand, b.stand === 2 ? KL.amber : b.kleur);
+    hit(cx + 18, cy + 13, 21, 23, () => draaiKnop(s, b), `KNOP LAAG/NORMAAL/OVERLADEN (SHIFT+${b.toets}). OVERLADEN = VEEL STROOM, DAARNA EVEN ZWAKKER`);
     hitteBalk(cx + 45, cy + 11, 6, 50, b.hitte);
-    txt(String(Math.round(b.hitte)).padStart(3, ' '), cx + 40, cy + 64, b.hitte > 85 ? KL.rood : KL.label);
+    txt(String(Math.round(b.hitte)).padStart(3, ' '), cx + 40, cy + 64, b.hitte > 60 ? KL.amber : KL.label);
+    hit(cx + 42, cy + 11, 11, 58, null, `HITTE VAN OVERLADEN: NU ${Math.round(zwakte(b) * 100)}% KRACHT. KOELT VANZELF AF`);
     // upgradeknop naast de naam: + = er kan een MK bij
     const up = upgradeKosten(b);
     const kan = !!up && kanBetalen(s.voorraad, up);
     verzonken(cx + 34, cy + 1, 9, 9, '#070707');
     if (up) txt('+', cx + 37, cy + 3, kan ? KL.geel : KL.dim, 1, kan);
     else txt(String(b.mk), cx + 37, cy + 3, KL.groen, 1, true);
-    hit(cx + 34, cy + 1, 9, 9, () => upgradeBron(s, b), up ? `UPGRADE NAAR MK${b.mk + 1}: ${kostTekst(up)}. MEER STROOM, MEER HITTE` : `${b.naam} IS MK${MAX_MK}, HET MAXIMUM`);
-    hit(cx + 42, cy + 11, 11, 58, null, `HITTE ${b.naam}: OP 100 STORING, TOT HIJ ONDER ${MUIZEN_ENERGIE.storingTot} IS`);
+    hit(cx + 34, cy + 1, 9, 9, () => upgradeBron(s, b), up ? `UPGRADE NAAR MK${b.mk + 1}: ${kostTekst(up)}. MEER STROOM, MEER BRANDSTOF` : `${b.naam} IS MK${MAX_MK}, HET MAXIMUM`);
     verzonken(cx + 3, cy + 46, 36, 15, '#050806');
     const lev = kw(b.levert);
-    txt(b.levert > 0 ? `+${lev}` : '--', cx + 6, cy + 49, b.levert > 0 ? KL.groen : '#173014', lev.length > 2 ? 1 : 2, b.levert > 0);
-    hit(cx + 3, cy + 46, 36, 15, null, `${b.naam} LEVERT NU ${lev} KW (STAND: ${kw(stroomVan(b))} KW)`);
+    txt(b.levert > 0 ? `+${lev}` : '--', cx + 6, cy + 49, b.levert > 0 ? (over ? KL.amber : KL.groen) : '#173014', lev.length > 2 ? 1 : 2, b.levert > 0);
+    hit(cx + 3, cy + 46, 36, 15, null, `${b.naam} LEVERT NU ${lev} KW. ${STANDEN.map((n, i) => `${n[0]} ${kw(stroomVan(b, i as 0 | 1 | 2))}`).join(' ')}`);
     R(cx + 3, cy + 65, 4, 4, GRONDSTOFKLEUR[b.brandstof]);
     txt(`-${verbruikVan(b).toFixed(2).replace(/^0/, '')}/S`, cx + 9, cy + 65, b.aan ? KL.amber : KL.dim);
-    const status = b.storing ? 'STORING' : !b.aan ? 'UIT' : b.hitte > 85 ? 'HEET!' : 'DRAAIT';
-    txt(status, cx + 3, cy + 77, b.storing ? KL.rood : !b.aan ? KL.dim : b.hitte > 85 ? KL.amber : KL.groen, 1, b.storing || b.aan);
+    const zwak = b.hitte > 3 && b.stand !== 2;
+    const status = !b.aan ? 'UIT' : over ? 'OVER!' : zwak ? `ZWAK${Math.round(zwakte(b) * 100)}` : 'DRAAIT';
+    txt(status, cx + 3, cy + 77, !b.aan ? KL.dim : over ? KL.amber : zwak ? KL.geel : KL.groen, 1, b.aan);
     if (b.mk) txt(`MK${b.mk}`, cx + 39, cy + 77, KL.stencil);
     else {
-      // nog niet gebouwd: een lege plek met een bouwknop
-      R(cx + 1, cy + 10, 52, 77, 'rgba(8,9,9,.86)');
+      // nog niet gebouwd: een lege plek met een bouwknop (of alleen uit loot)
+      R(cx + 1, cy + 10, 52, 77, 'rgba(8,9,9,.88)');
+      if (b.loot) {
+        txt('ALLEEN', cx + 15, cy + 30, KL.dim);
+        txt('UIT LOOT', cx + 11, cy + 38, KL.magenta, 1, true);
+        hit(cx + 1, cy + 10, 52, 77, null, `${b.naam}: KRIJG JE ALLEEN UIT LOOT`);
+        return;
+      }
       const k = b.bouw[0];
       const kan2 = kanBetalen(s.voorraad, k);
       txt('NIET', cx + 19, cy + 24, KL.dim);
@@ -274,7 +276,7 @@ export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(
       else R(10, y + 1, 5, 5, GRONDSTOFKLEUR[g]);
       txt(g, 18, y + 1, KL.label);
       const w = Math.floor(s.voorraad[g] ?? 0);
-      const max = opslagMax(s);
+      const max = opslagMax(s, g);
       txt(String(w).padStart(3, '0'), 50, y + 1, w < 4 ? (knipper ? KL.rood : '#501010') : w >= max ? (knipper ? KL.rood : KL.amber) : '#ffe08a', 1, true);
       txt(`/${max}`, 62, y + 1, KL.dim);
       // vulmeter
@@ -282,29 +284,28 @@ export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(
       G(80, y + 6, Math.round((26 * Math.min(w, max)) / max), 1, w >= max ? KL.rood : GRONDSTOFKLEUR[g]);
       const tr = e.trend[g];
       txt(`${tr >= 0 ? '+' : ''}${tr.toFixed(2)}/S`, 110, y + 1, tr > 0.01 ? KL.groen : tr < -0.01 ? KL.rood : KL.dim);
-      hit(8, y - 1, 170, 10, null, w >= max ? `${g.toUpperCase()} VOL! STAPELPLAATS (O) GEEFT +120` : `${g.toUpperCase()} IN DE OPSLAG, MAX ${max}. MUIZEN OF BOOR + BAND`);
+      hit(8, y - 1, 170, 10, null, w >= max ? `${g.toUpperCase()} VOL! ZET EEN STAPEL VOOR ${g.toUpperCase()} (O)` : `${g.toUpperCase()} IN DE OPSLAG, MAX ${max}. MEER = STAPEL VOOR ${g.toUpperCase()}`);
     });
 
-    // NOODSTOP
-    const nk = 41, nyc = 182, laden = e.nood > 0;
-    for (let y = -14; y <= 14; y++)
-      for (let x = -14; x <= 14; x++) {
-        const d2 = x * x + y * y;
-        if (d2 > 196) continue;
-        let k: string;
-        if (d2 > 156) k = '#0a0a0a';
-        else if (laden) k = d2 < 30 && x + y < 0 ? '#4a1010' : '#2c0808';
-        else k = d2 < 44 && x + y < -2 ? '#ff5a5a' : x + y < 0 ? '#c8141e' : '#7a0a10';
-        R(nk + x, nyc + y + (laden ? 1 : 0), 1, 1, k);
-      }
-    if (!laden) {
-      txt('STOP', nk - 7, nyc - 2, '#2a0204');
-      pg.fillStyle = '#ff2a3a55';
-      pg.fillRect(nk - 9, nyc - 9, 18, 18);
-    } else txt(String(Math.ceil(e.nood)), nk - 2, nyc - 1, KL.rood);
-    for (let i = 0; i < 66; i++)
-      for (let j = 0; j < 2; j++) R(8 + i, 204 + j, 1, 1, Math.floor((i + j) / 3) % 2 ? '#0a0a0a' : '#8a7016');
-    hit(nk - 14, nyc - 14, 29, 29, () => noodstop(s), laden ? `NOODSTOP LAADT OP (${Math.ceil(e.nood)} S)` : 'NOODSTOP (N): ALLES UIT, 40 HITTE ERAF');
+    // MUIZEN: wat ze uit zichzelf aan het doen zijn
+    const tel = werk(s).telling;
+    const rijen: [string, number, string, string][] = [
+      ['BOUWEN', tel.bouw, KL.geel, 'BOUWPLEKKEN AFMAKEN. GAAT VOOR ALLES'],
+      ['FABRICATOR', tel.fab, KL.cyaan, 'WERKEN IN DE FABRICATOR (ALS ER IETS IN DE RIJ STAAT)'],
+      ['SJOUWEN', tel.haal + tel.breng, KL.amber, 'BOREN ZONDER BAND LEEGHALEN'],
+      ['GRAVEN', tel.graaf, KL.groen, 'ZELF GRONDSTOF HALEN, WAAR NOG PLEK IS'],
+      ['VRIJ', tel.vrij, KL.label, 'NIETS TE DOEN: OPSLAG VOL OF NIETS TE BOUWEN'],
+    ];
+    const totaal = s.werkers.length || 1;
+    rijen.forEach(([naam, n, k, hulp], i) => {
+      const y = 166 + i * 8;
+      txt(naam, 8, y, KL.label);
+      txt(String(n).padStart(3, ' '), 54, y, n ? k : KL.dim, 1, n > 0);
+      verzonken(70, y, 104, 6, '#070707');
+      const bw = Math.round((102 * n) / totaal);
+      for (let x = 0; x < bw; x += 2) G(71 + x, y + 1, 1, 4, k);
+      hit(6, y - 1, 170, 8, null, `${naam}: ${hulp}`);
+    });
 
     // STROOMNET
     const nx = 190, ny = 73;
@@ -341,29 +342,22 @@ export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(
     txt('NETTO', nx + 68, ny + 56, KL.label);
     const nt = (netto > 0 ? '+' : '') + kw(netto);
     txt(nt, nx + 68, ny + 63, netto < 0 ? KL.rood : netto > 0 ? KL.geel : KL.groen, nt.length > 3 ? 1 : 2, true);
-    hit(nx, ny + 55, 98, 20, null, netto > 0 ? `${kw(netto)} KW OVER: DAT WORDT HITTE IN JE BRONNEN` : netto < 0 ? 'TEKORT: ALLES DRAAIT TRAAG, ZEKERING LIJDT' : 'PRECIES IN BALANS');
+    hit(nx, ny + 55, 98, 20, null, netto > 0 ? `${kw(netto)} KW OVER: ZET MEER AAN OF STOOK ZUINIGER` : netto < 0 ? 'TEKORT: WIE ONDERAAN STAAT KRIJGT NIETS' : 'PRECIES IN BALANS');
     verzonken(nx, ny + 77, 92, 8, '#070707');
     R(nx + 45, ny + 78, 1, 6, '#3a3d3b');
     G(nx + 45 + Math.round(Math.min(1, Math.max(-1, netto / 8)) * 42), ny + 78, 2, 6, netto < 0 ? KL.rood : netto > 2 ? KL.geel : KL.groen);
-    // zekering
+    // tekort: wie valt er uit
     const zx = nx + 100, zy = ny + 54;
     verzonken(zx, zy, 34, 32, '#0c0d0d');
-    txt('ZEKER', zx + 3, zy + 2, KL.label);
-    R(zx + 3, zy + 10, 3, 9, '#8e918c');
-    R(zx + 28, zy + 10, 3, 9, '#8e918c');
-    R(zx + 6, zy + 11, 22, 7, '#0c1a1e');
-    R(zx + 6, zy + 11, 22, 1, '#2a4a50');
-    if (e.zekering.heel) {
-      for (let x = 0; x < 22; x++) G(zx + 6 + x, zy + 14 + (x % 4 === 0 ? -1 : x % 4 === 2 ? 1 : 0), 1, 1, e.aanbod < e.vraag ? KL.amber : '#ffe08a');
-      txt('HEEL', zx + 9, zy + 21, KL.groen, 1, true);
+    const wie = e.verbruikers.find((c) => c.id === e.tekort);
+    if (!wie) {
+      txt('NET', zx + 11, zy + 6, KL.label);
+      txt('OK', zx + 13, zy + 17, KL.groen, 1, true);
     } else {
-      R(zx + 6, zy + 14, 8, 1, '#3a3a3a');
-      R(zx + 21, zy + 14, 7, 1, '#3a3a3a');
-      txt('RESET', zx + 7, zy + 21, knipper ? KL.rood : '#4a1010', 1, knipper);
+      txt('TEKORT', zx + 5, zy + 6, knipper ? KL.rood : '#701010', 1, knipper);
+      txt(wie.naam.slice(0, 7), zx + 17 - Math.min(7, wie.naam.length) * 2, zy + 17, KL.amber, 1, true);
     }
-    R(zx + 3, zy + 28, 28, 2, '#050505');
-    G(zx + 3, zy + 28, Math.round((28 * e.zekering.spanning) / MUIZEN_ENERGIE.zekeringSec), 2, KL.rood);
-    hit(zx, zy, 34, 32, () => resetZekering(s), e.zekering.heel ? `ZEKERING: SLAAT DOOR NA ${MUIZEN_ENERGIE.zekeringSec} S TEKORT` : 'ZEKERING DOOR! KLIK OF Z: NIEUWE ERIN');
+    hit(zx, zy, 34, 32, null, wie ? `${wie.naam} KRIJGT TE WEINIG. ZET IETS UIT OF ZET HEM HOGER (^)` : 'IEDEREEN KRIJGT GENOEG STROOM');
 
     // VERBRUIKERS
     const m = s.machine;
@@ -373,7 +367,7 @@ export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(
       R(x0 + 3, y0 + 3, 9, 16, '#050505');
       if (c.aan) {
         R(x0 + 4, y0 + 4, 7, 7, '#4c5051');
-        G(x0 + 5, y0 + 5, 5, 2, c.storing ? KL.rood : KL.groen);
+        G(x0 + 5, y0 + 5, 5, 2, KL.groen);
         R(x0 + 4, y0 + 11, 7, 7, '#1c1f21');
       } else {
         R(x0 + 4, y0 + 4, 7, 7, '#1c1f21');
@@ -383,36 +377,40 @@ export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(
       hit(x0 + 1, y0 + 1, 13, 20, () => zetVerbruiker(s, c), `${c.naam} AAN/UIT (TOETS ${c.toets}). VRAAGT ${kw(c.vraag)} KW`);
       const eind = txt(c.naam, x0 + 16, y0 + 3, KL.label);
       txt(`${kw(c.vraag)}KW`, eind + 3, y0 + 3, c.aan ? KL.amber : KL.dim);
-      const led = c.storing ? (knipper ? KL.rood : '#300') : c.krijgt >= 0.999 ? KL.groen : c.krijgt > 0 ? KL.amber : c.aan ? KL.rood : '#1d1f1e';
-      if (c.aan || c.storing) G(x0 + 130, y0 + 3, 5, 5, led);
+      const led = c.krijgt >= 0.999 ? KL.groen : c.krijgt > 0 ? KL.amber : c.aan ? KL.rood : '#1d1f1e';
+      if (c.aan) G(x0 + 130, y0 + 3, 5, 5, led);
       else R(x0 + 130, y0 + 3, 5, 5, led);
-      let f = 0, info = '', kleur = KL.cyaan, hulp = '';
+      // voorrang: ^ zet hem een plek hoger
+      if (i > 0) {
+        verzonken(x0 + 120, y0 + 1, 8, 8, '#070707');
+        txt('^', x0 + 122, y0 + 2, KL.cyaan);
+        hit(x0 + 120, y0 + 1, 8, 8, () => omhoog(s, c), `VOORRANG: ${c.naam} EEN PLEK HOGER. BOVENAAN KRIJGT EERST STROOM`);
+      }
+      let f = c.aan ? c.krijgt : 0, info = '', kleur = KL.cyaan, hulp = '';
       if (c.id === 'machine') {
         f = m.energie / m.maxEnergie;
         kleur = f >= 1 ? KL.groen : KL.rood;
-        info = f >= 1 ? `KLAAR VOOR SPRONG HITTE ${Math.round(c.hitte)}` : `STROOM ${Math.round(f * 100)}% HITTE ${Math.round(c.hitte)}`;
+        info = f >= 1 ? 'KLAAR VOOR DE SPRONG' : `STROOM ${Math.round(f * 100)}%`;
         hulp = 'MACHINE: MOET VOLLE STROOM HEBBEN ALS DE STREAM KOMT';
       } else if (c.id === 'koeling') {
-        f = c.krijgt;
-        info = c.krijgt > 0 ? `-${(MUIZEN_ENERGIE.koeling * c.krijgt).toFixed(1)} HITTE/S OP ALLES` : 'STIL';
-        hulp = 'KOELING: HAALT HITTE UIT ALLES';
+        info = c.aan ? (c.krijgt > 0 ? 'BRONNEN KOELEN SNELLER' : 'GEEN STROOM') : 'UIT';
+        hulp = 'KOELING: HETE BRONNEN WORDEN SNELLER WEER STERK';
       } else if (c.id === 'lampen') {
-        f = c.hitte / 100;
-        kleur = c.hitte > 85 ? KL.rood : KL.geel;
-        info = c.krijgt > 0 ? `GRAVEN +${Math.round(MUIZEN_ENERGIE.lampenSneller * c.krijgt * 100)}% HITTE ${Math.round(c.hitte)}` : `HITTE ${Math.round(c.hitte)}`;
-        hulp = 'WERKLAMPEN: MUIZEN GRAVEN SNELLER. WORDEN HEET';
+        kleur = KL.geel;
+        info = c.krijgt > 0 ? `GRAVEN +${Math.round(MUIZEN_ENERGIE.lampenSneller * c.krijgt * 100)}%` : c.aan ? 'GEEN STROOM' : 'UIT';
+        hulp = 'WERKLAMPEN: MUIZEN GRAVEN SNELLER';
       } else {
         const ind = industrie(s);
-        f = c.krijgt;
         kleur = KL.groen;
-        info = `${ind.boren.length} BOOR ${ind.banden.size} BAND${c.krijgt > 0 && c.krijgt < 0.999 ? ` ${Math.round(c.krijgt * 100)}%` : ''}`;
-        hulp = `INDUSTRIE: BOREN EN BANDEN (${kw(industrieVraag(s))} KW). ZET UIT VOOR DE STREAM ALS JE KRAP ZIT`;
+        const pct = c.aan && c.krijgt < 0.999 ? ` ${Math.round(c.krijgt * 100)}%` : '';
+        info = `${ind.boren.filter((b) => !b.af).length} BOOR ${[...ind.banden.values()].filter((b) => !b.af).length} BAND${ind.fabricator.rij.length ? ' FAB' : ''}${pct}`;
+        hulp = `INDUSTRIE: FABRICATOR, BOREN EN BANDEN (${kw(industrieVraag(s))} KW)`;
       }
       verzonken(x0 + 72, y0 + 10, 54, 5, '#050505');
       const vw = Math.round(52 * Math.min(1, Math.max(0, f)));
       for (let x = 0; x < vw; x += 2) G(x0 + 73 + x, y0 + 11, 1, 3, kleur);
       txt(info.slice(0, 30), x0 + 16, y0 + 16, c.aan ? KL.label : KL.dim);
-      hit(x0 + 15, y0 + 1, 124, 20, null, hulp);
+      hit(x0 + 15, y0 + 1, 104, 20, null, hulp);
     });
 
     // LOGBOEK
@@ -521,8 +519,6 @@ export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(
     if (b) return e.shiftKey ? draaiKnop(s, b) : zetBron(s, b);
     const c = en.verbruikers.find((x) => x.toets === t);
     if (c) return zetVerbruiker(s, c);
-    if (t === 'Z') resetZekering(s);
-    if (t === 'N') noodstop(s);
   });
 
   tekenPlaat();

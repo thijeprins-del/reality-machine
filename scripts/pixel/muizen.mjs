@@ -605,6 +605,45 @@ function tekenStapel() {
   bewaar('stapel', d, ax, ay, 2);
 }
 
+
+// HOUTBRANDER (2x2 tegels): de eerste stroombron. Lompe ijzeren oven met een vuurdeur, een schoorsteen, een stapel
+// stammen ernaast en een dynamo die door de stoom draait. Het vuur is het felste ding: oranje neon.
+function tekenHoutbrander() {
+  const d = new Doek(88, 130);
+  const r = ruis(141);
+  const ax = 44, ay = 90;
+  const g = isoPunt(ax, ay);
+  const B = (k, rr, z, u, v, h, ramp, o = {}) => d.blokS(...g(k, rr, z), u, v, h, ramp, { r, ...o });
+  const vloer = B(0, 0, 0, 16, 16, 4, T.beton);
+  gevaar(d, [vloer.P3[0], vloer.P3[1] - 2], 16, 2, 'kol');
+  const oven = B(2, 2, 4, 9, 10, 26, T.roest);
+  B(1.5, 1.5, 30, 10, 11, 3, T.staal); // rand bovenop
+  const sch = g(5, 5, 33);
+  d.cilinder(sch[0], sch[1], 4, 52, T.staal, { r });
+  d.cilinder(sch[0], sch[1] - 52, 5, 4, T.roest, { r });
+  // stoomketel met dynamo erachter
+  const ket = g(12.5, 5, 4);
+  d.cilinder(ket[0], ket[1], 6, 22, T.messing, { r });
+  B(11, 9, 4, 4, 5, 10, T.olijf);
+  // stammen
+  for (let i = 0; i < 5; i++) B(10 + (i % 2) * 0.5, 13 + (i % 3) * 0.2, 4 + Math.floor(i / 2) * 2, 5, 1, 2, T.bruin);
+  // vuurdeur aan de voorkant (rij-zijde)
+  const deur = g(5, 12, 10);
+  d.omlijn(K.lijn);
+  d.vuil(0.07, K.olie, 0.45, r);
+  for (let j = 0; j < 7; j++) for (let i = 0; i < 6; i++) d.licht(deur[0] - 2 * i + 2, deur[1] + i - j, j < 2 ? N.rood : N.natrium);
+  for (const [a, b, z, k, gl] of [
+    [g(11, 2, 30), g(12.5, 5, 26), 8, K.k0, K.k1],
+    [g(13, 9, 14), g(16, 12, 0), 10, K.kRood, K.kRoodL],
+    [g(2, 11, 28), g(-1, 16, 0), 14, K.kGeel, K.kGeelL],
+    [g(13, 13, 14), g(16, 16, 0), 6, K.k0, K.k1],
+  ]) d.kabel(a[0], a[1], b[0], b[1], z, k, gl);
+  d.neon(sch[0], sch[1] - 57, N.rood, 1);
+  d.neon(...g(12, 9, 14), N.gif, 1);
+  void oven;
+  bewaar('houtbrander', d, ax, ay, 2);
+}
+
 // ---------------------------------------------------------------------------
 // KABELMAST: houten paal met dwarsarm en isolatoren. Kabels tussen masten zijn een losse sprite.
 function tekenMast() {
@@ -742,6 +781,7 @@ for (const g of ['schroot', 'hout', 'kristal']) {
   tekenHoop(g);
 }
 tekenStapel();
+tekenHoutbrander();
 
 const regels = Object.entries(ankers).map(
   ([n, a]) =>

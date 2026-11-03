@@ -24,21 +24,21 @@ stream gemist.
 
 ## Stroom (muizen)
 Linksonder zit het controlepaneel van de muizen. Elke knop doet iets; wijs iets aan en het logboek legt het uit.
-- **Bronnen**: de dynamo stookt schroot, de ketel hout, de reactor kristal, allemaal uit je opslag. Hendel = aan/uit
-  (toetsen **1 2 3**), draaiknop = laag/midden/hoog (**shift** + 1 2 3): meer stroom, maar ook meer hitte en brandstof.
-- **Verbruikers** (toetsen **4 5 6**): de machine moet volle stroom krijgen als de stream komt, de koeling haalt hitte weg, de lampen laten muizen
-  sneller graven.
-- Te weinig stroom: alles draait trager en na 3 seconden slaat de **zekering** door (klik erop of **Z**).
-  Te veel stroom: wat over is wordt hitte. Op 100 hitte valt iets uit tot het is afgekoeld.
-- **Noodstop** (**N**): alles uit en flink wat hitte eraf. Daarna 10 seconden opladen.
+- **Bronnen**: je begint met een houtbrander. De dynamo (schroot) bouw je met **+**, de reactor (kristal) vind je alleen
+  als loot. Hendel = aan/uit (toetsen **1 2 3**), draaiknop = laag/normaal/overladen (**shift** + 1 2 3).
+- **Overladen** geeft veel extra stroom, maar de bron wordt heet en is daarna een tijdje zwakker. Dat mag gewoon.
+- **Verbruikers** (toetsen **4 5 6 7**) staan op voorrang: wat bovenaan staat krijgt eerst stroom. Met **^** zet je iets
+  hoger. De machine moet volle stroom krijgen als de stream komt.
 
 ## Bouwen (muizen)
-Rechtsboven zit de bouwbalk. Kies een knop of een toets; rechtsklik of **Esc** stopt met bouwen.
-- **B Boor**: klik naast een veld grondstoffen. De machine gooit de boor erheen. Hij graaft zelf, maar heeft stroom
-  nodig en een band om zijn brokken kwijt te kunnen.
-- **L Band**: sleep van de boor naar de opslag. Pijltjes laten zien welke kant hij op loopt; **R** draait een losse tegel.
-- **O Stapelplaats**: meer opslag, binnen de ring. Je ziet je voorraad als bergen op het erf en de stapelplaatsen.
-- **X Slopen**: klik of sleep. Je krijgt alles terug.
-- Op het paneel: **+** naast een bron = bouwen of upgraden naar een hogere MK. **INDUSTRIE** (toets **7**) zet boren
-  en banden aan of uit, handig als de machine bij de stream alle stroom nodig heeft.
+Rechtsboven zit de bouwbalk. Alles wat je neerzet moet eerst gemaakt worden in de **fabricator** naast de machine.
+- Klik op **+kosten** onder een knop (of **shift** + toets) om er een te laten maken. Rechtsklik op de regel eronder
+  schrapt de laatste. De fabricator heeft stroom en muizen nodig.
+- **B Boor**: klik naast een veld grondstoffen. De machine gooit de boor erheen. Hij heeft stroom nodig.
+- **L Band**: sleep van de boor naar de opslag of een stapel. **R** draait een losse tegel.
+- **P Paal**: brengt stroom verder. Kabels lopen van paal naar paal; een rode paal hangt nergens aan.
+- **O Stapel**: meer opslag voor één grondstof (**R** wisselt welke). Binnen de ring.
+- **X Slopen**: klik of sleep. Je krijgt het onderdeel terug.
+- **Muizen werken zelf**: eerst bouwen, dan de fabricator, dan boren leeghalen, en anders zelf graven.
+  Stuur je ze ergens heen, dan doen ze dat.
 - Bij de stream wordt alles buiten de ring ingepakt en krijg je de bouwkosten terug.
