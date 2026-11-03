@@ -3,7 +3,7 @@
 Nog een skelet. Werk dit bij bij elke grote regelwijziging.
 
 ## Kern
-- Een dimensie duurt **4 minuten** (`src/data/dimensies.ts`; nu even 1 minuut om mee te spelen), daarna komt de stream
+- Een dimensie duurt **5 minuten** (`src/data/dimensies.ts`, Thije 3 nov), daarna komt de stream
   (sprong naar de volgende dimensie).
 - **De transportring** (2 nov): een slecht geverfde, matte gele stippellijn om de machine (straal 14 tegels: binnen de
   ring bouw je). Je land is een grove schijf die iets buiten de ring steekt, lomp in elke wereld geplakt (rotswand,
@@ -69,6 +69,22 @@ Verbruikers: machine (6 kW; laadt niet op, moet bij de stream volle stroom krijg
 tot 60% sneller). Tekort: alles naar rato trager, zekering slaat door na 3 s. Overschot wordt hitte; op 100 storing
 tot onder 35. Bediening via een pixelart-paneel linksonder (`src/muizen/paneel.ts`), regels in `src/muizen/energie.ts`,
 getallen in `MUIZEN_ENERGIE` (`src/data/muizen.ts`).
+
+**Industrie (economische lus, 3 nov):** muizen sjouwen nog steeds met de hand, maar het echte werk doen machines.
+- **Boor** (2x2, 30 schroot, 2 kW): de machine gooit hem in een boog naar zijn plek, naast een veld (niet erop).
+  Hij graaft uit de tegels rond zijn voet, 1 brok per 1,5 s bij volle stroom, en houdt er hooguit 6 vast.
+- **Band** (1 schroot per tegel, 0,05 kW per tegel, 2 tegels/s): slepen legt een pad met één bocht. Een boor zet brokken
+  op een band die tegen zijn voet ligt; loopt de band de opslag of een stapelplaats in, dan komt het in de voorraad.
+  Een band die doodloopt naast een nieuw stuk draait er vanzelf naartoe. Lompe muizenband: één brok per tegel.
+- **Opslag**: hooguit 150 per grondstof; vol = de band staat stil en wat muizen meer brengen valt eraf.
+  **Stapelplaats** (2x2, binnen de ring, 25 schroot + 10 hout): +120 per grondstof. De voorraad is te zien als bergen
+  schroot, hout en kristal op het erf naast de opslag en op de stapelplaatsen (1 hoop = 15).
+- **Stroom**: boren en banden zijn samen de verbruiker INDUSTRIE (toets 7). Bronnen hebben een MK (1-3): de dynamo
+  begint op MK1, ketel en reactor moet je eerst bouwen. Per MK meer stroom (x1, 1,7, 2,5), maar ook meer brandstof en hitte.
+- **Stream**: alles buiten de ring blijft achter, dus het wordt ingepakt: je krijgt de bouwkosten terug en gooit het
+  in de nieuwe wereld opnieuw. Binnen de ring blijft alles staan.
+- Slopen geeft alles terug. Regels in `src/muizen/industrie.ts`, beeld en bouwbalk in `src/muizen/bouwen.ts`,
+  getallen in `MUIZEN_INDUSTRIE`. De band zit nu in de muizenmap; naar de kern (K5) zodra de otters ook banden willen.
 
 ### Otters (Lieuwe)
 Getallen in `src/data/otters.ts` (nog te maken).

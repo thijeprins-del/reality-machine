@@ -24,7 +24,8 @@ declare global {
 
 // Speelbare facties. De otters komen erbij zodra Lieuwe src/data/otters.ts en src/otters/ heeft.
 // `paneel`: eigen bediening van een factie over de wereld (muizen: het stroomnet). Elke factie mag iets anders hebben.
-type Paneel = (staat: () => SpelStaat) => { werk(sec: number): void };
+// Het paneel krijgt ook het wereldbeeld, zodat een factie eigen dingen in de wereld kan tekenen en neerzetten.
+type Paneel = (staat: () => SpelStaat, beeld: WereldBeeld) => { werk(sec: number): void };
 const FACTIES: Partial<Record<FactieId, { data: Factie; beeld: () => FactieBeeld; paneel?: () => Promise<Paneel> }>> = {
   muizen: { data: MUIZEN, beeld: muizenBeeld, paneel: async () => (await import('./muizen/paneel')).maakPaneel },
 };
@@ -72,7 +73,7 @@ async function start(): Promise<void> {
     stuur(staat, ids, kol, rij),
   );
   const balk = maakBalk();
-  const paneel = factie.paneel ? (await factie.paneel())(() => staat) : null;
+  const paneel = factie.paneel ? (await factie.paneel())(() => staat, beeld) : null;
 
   app.ticker.add((t) => {
     const sec = Math.min(0.1, t.deltaMS / 1000);

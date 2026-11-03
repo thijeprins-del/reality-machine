@@ -522,6 +522,89 @@ function tekenBand() {
   bewaar('band', d, ax, ay, 1);
 }
 
+
+// LEGE LOOPBAND (1 tegel, langs kol): lomp en gedeukt, zonder lading. Lading tekent het spel er los op.
+function tekenBandLeeg() {
+  const d = new Doek(40, 30);
+  const r = ruis(52);
+  const ax = 22, ay = 13;
+  const g = isoPunt(ax, ay);
+  const b = d.blokS(...g(0, 2, 0), 8, 4, 4, T.staal, { r });
+  for (let s = 0; s < 8; s++) streep(d, g(s, 2, 4), 4, 'rij', s % 2 ? T.rubber[1] : T.rubber[4]);
+  gevaar(d, [b.P3[0], b.P3[1] - 1], 8, 2, 'kol');
+  // scheve zijrail met een deuk
+  d.blokS(...g(0, 1.5, 4), 8, 0.5, 1, T.roest, { r });
+  d.blokS(...g(3, 1.5, 3), 2, 0.5, 1, T.roest, { r });
+  d.omlijn(K.lijn);
+  d.vuil(0.08, K.olie, 0.45, r);
+  d.kabel(b.P3[0] + 4, b.P3[1] - 1, b.P3[0] + 12, b.P3[1] + 4, 3, K.k0, K.k1);
+  d.neon(b.P1[0] - 2, b.P1[1] - 3, N.gif, 1);
+  bewaar('band-leeg', d, ax, ay, 1);
+}
+
+// LADING op de band: een brok schroot, een stuk hout of een kristal. Anker = midden onderaan.
+function tekenLading(goed) {
+  const d = new Doek(18, 16);
+  const r = ruis(90 + goed.length);
+  const g = isoPunt(9, 9);
+  if (goed === 'schroot') {
+    d.blokS(...g(-2, -1.5, 0), 4, 3, 3, T.staal, { r });
+    d.blokS(...g(-1, -0.5, 3), 2, 2, 2, T.roest, { r });
+  } else if (goed === 'hout') {
+    d.blokS(...g(-2.5, -1, 0), 5, 1, 2, T.bruin, { r });
+    d.blokS(...g(-2, 0.2, 0), 5, 1, 2, T.bruin, { r });
+    d.blokS(...g(-2.2, -0.4, 2), 5, 1, 2, T.bruin, { r });
+  } else {
+    d.blokS(...g(-1.5, -1.5, 0), 3, 3, 1, T.staal, { r });
+    d.blokS(...g(-0.5, -0.5, 1), 1.5, 1.5, 6, T.glas, { r });
+  }
+  d.omlijn(K.lijn);
+  if (goed === 'kristal') for (const [x, y] of [[9, 1], [9, 2], [9, 3], [8, 5]]) d.licht(x, y, N.cyaan);
+  bewaar(`last-${goed}`, d, 9, 13, 0);
+}
+
+// HOOP in de opslag: een bult schroot, een stapel planken of een kluit kristal. Het spel zet er veel naast elkaar.
+function tekenHoop(goed) {
+  const d = new Doek(28, 24);
+  const r = ruis(120 + goed.length);
+  const g = isoPunt(14, 14);
+  if (goed === 'schroot') {
+    for (let i = 0; i < 16; i++) {
+      const z = i < 7 ? 0 : i < 12 ? 2 : i < 15 ? 4 : 6;
+      const sp = 3.2 - z * 0.4;
+      d.blokS(...g(-sp + r() * sp * 2 - 0.5, -sp + r() * sp * 2 - 0.5, z), 1 + Math.floor(r() * 2), 1 + Math.floor(r() * 2), 2, r() < 0.45 ? T.roest : T.staal, { r });
+    }
+  } else if (goed === 'hout') {
+    for (let z = 0; z < 4; z++)
+      for (let j = 0; j < 4 - z; j++) d.blokS(...g(-3 + z * 0.4, -2 + j * 1.2 + z * 0.6, z * 1.6), 6 - z * 0.5, 1, 1.6, T.bruin, { r });
+  } else {
+    d.blokS(...g(-2.5, -2.5, 0), 5, 5, 1, T.staal, { r });
+    for (const [k, rr, h] of [[-1.5, -1.5, 7], [0.5, -1, 5], [-1, 0.5, 6], [0.8, 0.8, 4], [-2, 0.8, 3]]) d.blokS(...g(k, rr, 1), 1, 1, h, T.glas, { r });
+  }
+  d.omlijn(K.lijn);
+  d.vuil(0.05, K.olie, 0.4, r);
+  if (goed === 'kristal') for (const [x, y] of [[13, 3], [13, 4], [15, 7], [12, 7], [14, 9]]) d.licht(x, y, N.cyaan);
+  bewaar(`hoop-${goed}`, d, 14, 19, 0);
+}
+
+// STAPELPLAATS (2x2 tegels): betonvloer met hekpaaltjes en gevarenstrepen. De hopen tekent het spel erop.
+function tekenStapel() {
+  const d = new Doek(80, 60);
+  const r = ruis(93);
+  const ax = 40, ay = 28;
+  const g = schaal(isoPunt(ax, ay));
+  const B = (k, rr, z, u, v, h, ramp, o = {}) => d.blokS(...g(k, rr, z), u * F, v * F, h * F, ramp, { r, ...o });
+  const vloer = B(0, 0, 0, 8, 8, 1, T.beton);
+  gevaar(d, [vloer.P3[0], vloer.P3[1] - 1], 32, 2, 'kol');
+  gevaar(d, [vloer.P1[0] - 1, vloer.P1[1] - 1], 32, 2, 'rij');
+  for (const [k, rr] of [[0, 0], [7.5, 0], [0, 7.5], [7.5, 7.5], [3.75, 0], [0, 3.75]]) B(k, rr, 1, 0.5, 0.5, 5, T.staal);
+  d.omlijn(K.lijn);
+  d.vuil(0.07, K.olie, 0.45, r);
+  d.neon(...g(7.75, 7.75, 6.5), N.natrium, 1);
+  d.neon(...g(0.25, 0.25, 6.5), N.rood, 1);
+  bewaar('stapel', d, ax, ay, 2);
+}
+
 // ---------------------------------------------------------------------------
 // KABELMAST: houten paal met dwarsarm en isolatoren. Kabels tussen masten zijn een losse sprite.
 function tekenMast() {
@@ -653,6 +736,12 @@ tekenMast();
 tekenKabels();
 tekenMachine();
 tekenOpslag();
+tekenBandLeeg();
+for (const g of ['schroot', 'hout', 'kristal']) {
+  tekenLading(g);
+  tekenHoop(g);
+}
+tekenStapel();
 
 const regels = Object.entries(ankers).map(
   ([n, a]) =>

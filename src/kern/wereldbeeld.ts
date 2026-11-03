@@ -26,18 +26,20 @@ function wereldSprites(): Record<string, SpriteInfo> {
   return uit;
 }
 
-interface Stuk {
+export interface Stuk {
   delen: Sprite[]; // lijf plus gloedlagen
   naam: string;
 }
 
 export class WereldBeeld {
   readonly wereld = new Container();
-  private dingen = new Container();
+  // Lagen die een factie ook mag gebruiken (bv. muizen: boren, banden, hopen in de opslag).
+  readonly dingen = new Container(); // gesorteerd op diepte: zIndex = (kol + rij) * 10
+  readonly vloer = new Container(); // plat op de grond, onder alles (kabels, markeringen)
+  readonly scherp = new Container(); // gloedlagen
+  readonly waas = new Container();
+  readonly waas2 = new Container();
   private markering = new Graphics();
-  private scherp = new Container();
-  private waas = new Container();
-  private waas2 = new Container();
   private blur = new BlurFilter({ strength: 7, quality: 3 });
   private blur2 = new BlurFilter({ strength: 22, quality: 4 });
   private texturen = new Map<string, Texture>();
@@ -73,7 +75,7 @@ export class WereldBeeld {
       ]),
     );
     const k = this.staat.kaart;
-    this.wereld.addChild(this.ruimte, this.wereldGrond, this.schijf, this.markering, this.dingen);
+    this.wereld.addChild(this.ruimte, this.wereldGrond, this.schijf, this.vloer, this.markering, this.dingen);
     this.dingen.sortableChildren = true;
 
     const fel = (f: number) => {
@@ -331,8 +333,18 @@ export class WereldBeeld {
     this.texturen.set(naam, tex);
   }
 
+  // Even schudden (bv. als er iets zwaars neerploft).
+  schudden(n: number): void {
+    this.schud = Math.max(this.schud, n);
+  }
+
+  // Weg ermee (sprite plus gloed).
+  weg(st: Stuk): void {
+    for (const d of st.delen) d.destroy();
+  }
+
   // Eenheden krijgen alleen de scherpe gloed: honderden wazige brilletjes worden één groene mist.
-  private maak(naam: string, eenheid = false): Stuk {
+  maak(naam: string, eenheid = false): Stuk {
     const delen = [new Sprite(this.texturen.get(naam))];
     this.dingen.addChild(delen[0]);
     const gloed = this.texturen.get(`${naam}-gloed`);
@@ -346,7 +358,7 @@ export class WereldBeeld {
     return { delen, naam };
   }
 
-  private wissel(st: Stuk, naam: string): void {
+  wissel(st: Stuk, naam: string): void {
     st.naam = naam;
     st.delen[0].texture = this.texturen.get(naam)!;
     const gloed = this.texturen.get(`${naam}-gloed`);
@@ -357,7 +369,7 @@ export class WereldBeeld {
   }
 
   // Gebouw of grondstof: anker op de achterhoek van tegel (x, y). Tekenvolgorde op de voorste hoek.
-  private zetGebouw(st: Stuk, x: number, y: number, tegels: number, spiegel: 1 | -1): void {
+  zetGebouw(st: Stuk, x: number, y: number, tegels: number, spiegel: 1 | -1): void {
     const m = this.sprites[st.naam];
     const p = naarScherm(x, y);
     const px = p.x - m.ankerX * PIXEL * spiegel, py = p.y - TEGEL_H / 2 - m.ankerY * PIXEL;
@@ -369,7 +381,7 @@ export class WereldBeeld {
   }
 
   // Eenheid: voeten op (x, y). Kijkt naar links = gespiegeld.
-  private zetEenheid(st: Stuk, x: number, y: number, kijkt: 1 | -1, hup: number): void {
+  zetEenheid(st: Stuk, x: number, y: number, kijkt: 1 | -1, hup: number): void {
     const m = this.sprites[st.naam];
     const p = naarScherm(x, y);
     const px = Math.round(p.x - m.ankerX * PIXEL * kijkt), py = Math.round(p.y - m.ankerY * PIXEL - hup);

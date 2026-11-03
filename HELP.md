@@ -9,7 +9,7 @@ Je begint met je reality machine (de grote toren), een opslag ernaast en honderd
 niet, dus zuinig zijn. Rond de machine liggen velden met schroot, hout (dode bomen) en kristal.
 
 ## De gele ring en de stream
-Om je machine ligt een gele ring van geverfde streepjes. Elke minuut komt de stream: alles binnen de ring springt naar
+Om je machine ligt een gele ring van geverfde streepjes. Elke vijf minuten komt de stream: alles binnen de ring springt naar
 een nieuwe wereld, met andere kleuren en nieuwe grondstoffen. Wat buiten de ring ligt, blijft achter. Binnen de ring
 bouw je. De sprong lukt alleen als de machine op dat moment volle stroom krijgt: dan slaat de bliksem in de ring, wordt
 je land uit de wereld gerukt en landt het na een paar tellen in het niets in de volgende wereld. Geen volle stroom:
@@ -31,3 +31,14 @@ Linksonder zit het controlepaneel van de muizen. Elke knop doet iets; wijs iets 
 - Te weinig stroom: alles draait trager en na 3 seconden slaat de **zekering** door (klik erop of **Z**).
   Te veel stroom: wat over is wordt hitte. Op 100 hitte valt iets uit tot het is afgekoeld.
 - **Noodstop** (**N**): alles uit en flink wat hitte eraf. Daarna 10 seconden opladen.
+
+## Bouwen (muizen)
+Rechtsboven zit de bouwbalk. Kies een knop of een toets; rechtsklik of **Esc** stopt met bouwen.
+- **B Boor**: klik naast een veld grondstoffen. De machine gooit de boor erheen. Hij graaft zelf, maar heeft stroom
+  nodig en een band om zijn brokken kwijt te kunnen.
+- **L Band**: sleep van de boor naar de opslag. Pijltjes laten zien welke kant hij op loopt; **R** draait een losse tegel.
+- **O Stapelplaats**: meer opslag, binnen de ring. Je ziet je voorraad als bergen op het erf en de stapelplaatsen.
+- **X Slopen**: klik of sleep. Je krijgt alles terug.
+- Op het paneel: **+** naast een bron = bouwen of upgraden naar een hogere MK. **INDUSTRIE** (toets **7**) zet boren
+  en banden aan of uit, handig als de machine bij de stream alle stroom nodig heeft.
+- Bij de stream wordt alles buiten de ring ingepakt en krijg je de bouwkosten terug.

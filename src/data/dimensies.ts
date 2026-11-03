@@ -1,7 +1,7 @@
 // Getallen voor dimensies, de kaart en de stream. Zie DESIGN.md.
 import type { Grondstof } from '../kern/types';
 
-export const DIMENSIE_DUUR_SEC = 60; // even 1 minuut om mee te spelen (Thije, 2 nov); het plan was 4 minuten
+export const DIMENSIE_DUUR_SEC = 300; // 5 minuten per wereld (Thije, 3 nov)
 
 // De sprong: de schijf wordt uit de wereld gerukt, hangt even in het niets, en landt dan in de volgende.
 // Zo lang staat de tijd en het werk stil (het stroomnet loopt door).
