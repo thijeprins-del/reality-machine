@@ -23,6 +23,7 @@ export function maakBesturing(
   opZoom: (z: number) => void,
   opdracht: (ids: number[], kol: number, rij: number) => void,
 ): Besturing {
+  const ZOOMS = [0.25, 0.5, 1, 2, 3, 4];
   const selectie = new Set<number>();
   const kader = new Graphics();
   app.stage.addChild(kader);
@@ -62,7 +63,9 @@ export function maakBesturing(
 
   canvas.addEventListener('wheel', (e) => {
     e.preventDefault();
-    zoom = Math.min(4, Math.max(1, zoom + (e.deltaY < 0 ? 1 : -1)));
+    // onder 1 in halve stappen, zodat je de hele wereld kunt overzien
+    const i = ZOOMS.indexOf(zoom) + (e.deltaY < 0 ? 1 : -1);
+    zoom = ZOOMS[Math.max(0, Math.min(ZOOMS.length - 1, i))];
     zet();
   }, { passive: false });
   canvas.addEventListener('contextmenu', (e) => e.preventDefault());

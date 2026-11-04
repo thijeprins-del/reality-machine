@@ -90,7 +90,7 @@ export function energie(s: SpelStaat): EnergieStaat {
       trend: { schroot: 0, hout: 0, kristal: 0 },
       trendT: 0,
       vorige: { schroot: v.schroot ?? 0, hout: v.hout ?? 0, kristal: v.kristal ?? 0 },
-      log: [{ tekst: 'ZET DE HOUTBRANDER AAN (1)', kleur: 'groen' }],
+      log: [{ tekst: 'DE HOUTBRANDER DRAAIT. KIES WAT STROOM KRIJGT', kleur: 'groen' }],
       gemist: s.gemist,
     };
     STATEN.set(s, e);
