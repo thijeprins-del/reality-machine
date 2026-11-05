@@ -48,7 +48,7 @@ Nog een skelet. Werk dit bij bij elke grote regelwijziging.
 - Grondstoffen liggen alleen op land dat je kunt bereiken. Groot land achter een klip krijgt een oprit; eilanden blijven
   onbereikbaar. Begaanbaarheid hoort bij een manier van bewegen (`Doorgang`), zodat boten of veerponten later kunnen.
 - **Stap 3:** een tekenscript maakt per dimensie een tegelset uit een basistegel met ruis (ook het water: bruin op
-  Roestduin, gloeiend op Magmaveld, blauw op een nieuwe dimensie Aarde). Tot die tijd is de grond getekende vlakken.
+  Roestduin, gloeiend op Magmaveld, blauw op een nieuwe dimensie Aarde). Roestduin heeft zijn tegelset al; de andere werelden zijn nog getekende vlakken.
 
 ## Samenwerking facties
 Zelfde spelregels, ander gereedschap. De kern weet niets van muizen of otters; een factie is data plus één trucje.

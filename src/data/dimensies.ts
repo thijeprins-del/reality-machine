@@ -1,4 +1,5 @@
 // Getallen voor dimensies, de kaart en de stream. Zie DESIGN.md.
+import type { TegelSet } from '../kern/tegels';
 import type { Grondstof } from '../kern/types';
 
 export const DIMENSIE_DUUR_SEC = 60; // even 1 minuut om mee te spelen (Thije, 2 nov); het plan was 4 minuten
@@ -68,9 +69,10 @@ export interface DimensieWereld extends DimensieKleur {
   heuvels: Heuvels;
   water: number[];
   waterGloeit?: boolean; // ook in de gloedlaag
+  tegelset?: TegelSet; // de tegels uit scripts/pixel/terrein.mjs; zonder tegelset is de grond getekende vlakken
 }
 export const DIMENSIES: DimensieWereld[] = [
-  { naam: 'ROESTDUIN', grond: [0x5a2a12, 0x6b3316, 0x4f240f, 0x733a1a, 0x62301a], vlek: 0x2a1208, vlekKans: 0.15, rand: [0x3a1a0a, 0x2a1207], heuvels: { schaal: 16, hoog: 4.5, basis: 0.8, klipSchaal: 19, klipDrempel: 0.28 }, water: [0x4a3a1c, 0x54421f, 0x40331a] },
+  { naam: 'ROESTDUIN', grond: [0x5a2a12, 0x6b3316, 0x4f240f, 0x733a1a, 0x62301a], vlek: 0x2a1208, vlekKans: 0.15, rand: [0x3a1a0a, 0x2a1207], heuvels: { schaal: 16, hoog: 4.5, basis: 0.8, klipSchaal: 19, klipDrempel: 0.28 }, water: [0x4a3a1c, 0x54421f, 0x40331a], tegelset: 'roestduin' },
   { naam: 'KRISTALTOENDRA', grond: [0x8fa6c8, 0x9db3d3, 0x8299bd, 0xa8bddb, 0x7f95b8], vlek: 0x4ef2ff, vlekGloeit: true, vlekKans: 0.04, rand: [0x4c5c80, 0x3b4868], heuvels: { schaal: 9, hoog: 5, basis: 0.8, klipSchaal: 12, klipDrempel: 0.2 }, water: [0x3f8fb8, 0x4a9cc4, 0x3684ad], waterGloeit: true },
   { naam: 'GIFWOUD', grond: [0x1f3a14, 0x24431a, 0x1a3311, 0x2a4b1d, 0x203d16], vlek: 0x9dff2e, vlekGloeit: true, vlekKans: 0.06, rand: [0x142410, 0x0e1a0b], heuvels: { schaal: 12, hoog: 4, basis: 1, klipSchaal: 15, klipDrempel: 0.3 }, water: [0x3f7a12, 0x4a8a16, 0x366b10], waterGloeit: true },
   { naam: 'MAGMAVELD', grond: [0x1a1514, 0x201917, 0x161211, 0x241c19, 0x1c1614], vlek: 0xff6a1a, vlekGloeit: true, vlekKans: 0.12, rand: [0x2a0d06, 0x1e0904], heuvels: { schaal: 8, hoog: 7, basis: 1.2, klipSchaal: 10, klipDrempel: 0.12 }, water: [0xff5a12, 0xff7a1a, 0xe8480c], waterGloeit: true },

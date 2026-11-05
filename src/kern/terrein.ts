@@ -87,6 +87,18 @@ export function maakHoogtes(breed: number, diep: number, ring: { x: number; y: n
       verhoogd[j * s + i] = plateau;
       h[j * s + i] = Math.max(HOOGTE_MIN, Math.min(HOOGTE_MAX, Math.round(waarde) + plateau));
     }
+  // Eén losse hoek die boven of onder al zijn buren uitsteekt is geen heuvel maar een puistje: gelijk trekken.
+  for (let j = 1; j < diep; j++)
+    for (let i = 1; i < breed; i++) {
+      const o = j * s + i;
+      let hoog = -99, laag = 99;
+      for (const b of [-1, 1, -s, s, -s - 1, -s + 1, s - 1, s + 1]) {
+        hoog = Math.max(hoog, h[o + b]);
+        laag = Math.min(laag, h[o + b]);
+      }
+      if (h[o] > hoog) h[o] = hoog;
+      else if (h[o] < laag) h[o] = laag;
+    }
   // Buren schelen hooguit één niveau, behalve over de rand van een plateau: daar twee, en dat wordt een klip. Zo verschillen
   // de hoeken van een tegel nooit meer dan KLIP_HOOGTE, en is er een eindig aantal tegelvormen om te tekenen.
   // Dit verlaagt alleen, dus de vlakte rond de schijf blijft vlak.
