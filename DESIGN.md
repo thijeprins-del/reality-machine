@@ -67,8 +67,11 @@ Zelfde spelregels, ander gereedschap. De kern weet niets van muizen of otters; e
 ### Muizen (Thije)
 Cyberpunk/dieselpunk, tech-heavy. Getallen in `src/data/muizen.ts`.
 
-Honderden muizen (start: **300**), en je krijgt er **nooit** nieuwe bij. Ze minen zelf: elke muis draagt 2 per keer
+Een zwerm muizen (start: **60**), en je krijgt er **nooit** nieuwe bij. Ze minen zelf: elke muis draagt 2 per keer
 en graaft 2,5 s. Je selecteert ze in massa (slepen, dubbelklik).
+**Machines moeten beter zijn dan muizen** (Thije, 5 nov): muizen graven met de hand alleen de bovenste **15%** van
+elke tegel; de rest kan alleen een drill. Een drill doet 1 brok per 0,5 s (2 per s, zoveel als een band draagt), een
+muis haalt ongeveer 0,07 per s. Met de hand kom je op gang, daarna moet je boren en banden leggen.
 
 Beeld: een grauwe, duistere industriewereld, niets vrolijks. De muizen zelf klein en heel pluizig (en vuil); hun
 robots, wapens en fabrieken gigantisch, hoekig en semi-3D (overcompensatie). Staal, legergroen en bruin, roest, olie

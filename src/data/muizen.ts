@@ -5,10 +5,11 @@ import { industrieTrucje, type IndustrieGetallen } from '../muizen/industrie';
 import { werkTrucje } from '../muizen/werk';
 
 // --- Balansknoppen ---
-const AANTAL_MUIZEN = 300; // je krijgt er nooit meer bij
+const AANTAL_MUIZEN = 60; // je krijgt er nooit meer bij
 const DRAAGT = 2; // grondstof per keer sjouwen
 const GRAAF_SEC = 2.5; // zo lang graaft een muis voor één lading
-const BOOR_SEC = 1.5; // zo lang doet een boor over één brok bij volle stroom (een muis: 2,5 s per 2, plus lopen)
+const BOOR_SEC = 0.5; // zo lang doet een boor over één brok bij volle stroom (een muis haalt ~0,07 per s, een boor 2 per s)
+const HAND_DEEL = 0.15; // muizen graven met de hand alleen de bovenste 15% van elke tegel; de rest kan alleen een drill
 
 // Stroomnet van de muizen (src/muizen/energie.ts). Bronnen verbranden grondstof uit de opslag.
 // Draait om keuzes: wat zet je aan, en overlaad je nu (meer stroom) ten koste van straks (een tijd zwakker)?
@@ -90,7 +91,7 @@ export const MUIZEN: Factie = {
 };
 const stroomnet = energieTrucje(MUIZEN_ENERGIE, MUIZEN.eenheden);
 const industrie = industrieTrucje(MUIZEN_INDUSTRIE);
-const werk = werkTrucje(MUIZEN.eenheden);
+const werk = werkTrucje(MUIZEN.eenheden, HAND_DEEL);
 MUIZEN.trucje = {
   naam: 'Stroomnet',
   opTik: (s, sec) => {
