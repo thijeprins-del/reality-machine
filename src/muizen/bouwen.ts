@@ -4,6 +4,7 @@
 // Regels staan in industrie.ts en werk.ts; dit bestand tekent alleen en vertaalt klikken. Tekst in beeld is Engels.
 import { Graphics } from 'pixi.js';
 import { naarScherm } from '../kern/iso';
+import { klein } from '../kern/scherm';
 import type { Blok } from '../kern/kaart';
 import type { SpelStaat } from '../kern/spel';
 import { hoogteOp, tegelOnder } from '../kern/terrein';
@@ -48,7 +49,7 @@ const KNOPPEN: { id: Exclude<Modus, null>; naam: string; toets: string; uitleg: 
 const SW = 136, SH = 364; // bouwmenu in menu-eenheden
 const RIJ = 24; // hoogte van een knop
 
-export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(sec: number): void } {
+export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(sec: number): void; zicht(aan: boolean): void } {
   const canvas = document.body.querySelector('canvas') as HTMLCanvasElement; // het spel zelf (eerste canvas)
   let modus: Modus = null;
   let draai: Richting = 'O'; // richting van een losse bandtegel (R draait)
@@ -99,8 +100,13 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
   const laag = Object.assign(document.createElement('canvas'), { width: SW, height: SH });
   const bc = laag.getContext('2d')!;
   let bs = 2;
+  let open = !klein(); // op een telefoon dicht tot je op BUILD tikt
   const maat = () => {
-    bs = Math.max(1, Math.min(3, Math.floor(Math.min((innerHeight * 0.92) / SH, (innerWidth * 0.24) / SW) * 2) / 2));
+    bv.style.display = open ? 'block' : 'none';
+    // klein scherm: zo groot als past boven de knoppenbalk, ook kleiner dan 1
+    bs = klein()
+      ? Math.min(2, (innerHeight - 56) / SH, (innerWidth * 0.5) / SW)
+      : Math.max(1, Math.min(3, Math.floor(Math.min((innerHeight * 0.92) / SH, (innerWidth * 0.24) / SW) * 2) / 2));
     const dpr = Math.min(2, devicePixelRatio || 1);
     bv.style.width = `${SW * bs}px`;
     bv.style.height = `${SH * bs}px`;
@@ -242,7 +248,7 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
       }
     }
     // uitleg en meldingen onderaan
-    const regel = melding ? melding.reden : wijst >= 0 && vakken[wijst] ? vakken[wijst].hulp : modus ? KNOPPEN.find((k) => k.id === modus)!.uitleg : 'PICK SOMETHING TO BUILD. RIGHT CLICK OR ESC STOPS';
+    const regel = melding ? melding.reden : wijst >= 0 && vakken[wijst] ? vakken[wijst].hulp : modus ? KNOPPEN.find((k) => k.id === modus)!.uitleg : matchMedia('(pointer: coarse)').matches ? 'PICK SOMETHING, THEN TAP THE GROUND. CLEAR STOPS' : 'PICK SOMETHING TO BUILD. RIGHT CLICK OR ESC STOPS';
     R(6, SH - 42, SW - 10, 1, '#353837');
     zinnen(regel, 31, 4).forEach((z, n) => txt(z, 8, SH - 37 + n * 8, melding ? (melding.ok ? KL.groen : KL.rood) : KL.cyaan));
     // naar het scherm: pixels opschalen, tekst scherp erover
@@ -269,6 +275,7 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
     e.stopPropagation();
     e.preventDefault();
     const n = opMenu(e);
+    wijst = n; // ook bij tikken de uitleg onderaan laten zien
     if (n >= 0 && e.button === 0) vakken[n].doe?.();
   });
   bv.addEventListener('pointermove', (e) => (wijst = opMenu(e)));
@@ -322,6 +329,12 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
       return;
     }
     if (e.button === 1) return; // middelste knop: gewoon kijken
+    if (!e.isPrimary) return; // tweede vinger: knijpen om te zoomen
+    if (e.pointerType === 'touch' && modus !== 'band' && modus !== 'sloop') {
+      // aanraken: neerzetten bij loslaten, zodat slepen nog kijken is
+      tikBouw = { x: e.clientX, y: e.clientY, id: e.pointerId };
+      return;
+    }
     e.stopPropagation();
     e.preventDefault();
     if (e.button === 2) return kies(null);
@@ -336,6 +349,16 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
     }
     muis = opTegel(e);
   });
+  let tikBouw: { x: number; y: number; id: number } | null = null;
+  window.addEventListener('pointerup', (e) => {
+    if (!tikBouw || tikBouw.id !== e.pointerId) return;
+    const t0 = tikBouw;
+    tikBouw = null;
+    if (!modus || Math.hypot(e.clientX - t0.x, e.clientY - t0.y) > 10) return;
+    e.stopPropagation(); // geen tik voor de muizen
+    const tg = opTegel(e);
+    doe(staat(), tg.kol, tg.rij);
+  }, { capture: true });
   window.addEventListener('pointerup', (e) => {
     if (!sleep || e.button !== 0) return;
     const a = sleep;
@@ -739,6 +762,10 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
   }
 
   return {
+    zicht(aan) {
+      open = aan;
+      maat();
+    },
     werk(sec) {
       t += sec;
       const s = staat();
