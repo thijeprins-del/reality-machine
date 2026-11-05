@@ -2,10 +2,10 @@
 // De factie levert de plaatjes (FactieBeeld); de kern weet niet welke factie het is.
 import { Assets, BlurFilter, ColorMatrixFilter, Container, Graphics, Sprite, type Texture } from 'pixi.js';
 import { naarScherm, TEGEL_B, TEGEL_H } from './iso';
-import { dimensieKleur, DIMENSIE_DUUR_SEC, HOOGTE_PX, SPRONG_SEC, THUIS, type DimensieKleur } from '../data/dimensies';
+import { dimensieKleur, DIMENSIE_DUUR_SEC, HOOGTE_MIN, HOOGTE_PX, SPRONG_SEC, THUIS, type DimensieWereld } from '../data/dimensies';
 import { schijfStraal, type Blok, type Kaart } from './kaart';
 import type { SpelStaat } from './spel';
-import { hoeken, hoogteOp, knikLinksRechts } from './terrein';
+import { hoeken, hoogteOp, knikLinksRechts, TEGEL_KLIP, TEGEL_WATER } from './terrein';
 import { hash01 } from './toeval';
 import type { FactieBeeld, SpriteInfo } from './types';
 import { WERELD_SPRITES } from './wereld-sprites';
@@ -401,7 +401,7 @@ const ruit = (x: number, y: number) => [x, y - TEGEL_H / 2, x + TEGEL_B / 2, y, 
 // De wereld eromheen in de kleuren van de dimensie, met heuvels. Vlekken die gloeien (lava, gif, kristal) gaan ook in de
 // gloedlaag. Aan de voorkant een rand aarde en rots. Onder de schijf hoeft niets.
 // Van achter naar voor getekend, dus een heuvel valt vanzelf over de grond erachter.
-function tekenGrond(k: Kaart, wereld: DimensieKleur): [Graphics, Graphics] {
+function tekenGrond(k: Kaart, wereld: DimensieWereld): [Graphics, Graphics] {
   const g = new Graphics();
   const gl = new Graphics();
   const { breed, diep } = k;
@@ -410,7 +410,17 @@ function tekenGrond(k: Kaart, wereld: DimensieKleur): [Graphics, Graphics] {
       if (opSchijf(k, kol, rij)) continue;
       const { x, y } = naarScherm(kol, rij);
       const h = hash01(rij * 1000 + kol + k.afzettingen.length * 7919);
-      const kleur = wereld.grond[Math.floor(h * wereld.grond.length)];
+      const soort = k.soort[rij * breed + kol];
+      if (soort === TEGEL_WATER) {
+        const py = y - HOOGTE_MIN * HOOGTE_PX;
+        const kleurW = wereld.water[Math.floor(h * wereld.water.length)];
+        g.poly(ruit(x, py)).fill(kleurW);
+        if (wereld.waterGloeit) gl.poly(ruit(x, py)).fill({ color: kleurW, alpha: 0.3 });
+        continue;
+      }
+      // klippen in de kleur van de rotsrand, met een donkere lijn langs de bovenkant: een klip die van je af kijkt zie je
+      // verder bijna niet, en je moet wel kunnen zien dat je daar niet langs kunt
+      const kleur = soort === TEGEL_KLIP ? wereld.rand[0] : wereld.grond[Math.floor(h * wereld.grond.length)];
       const c = hoeken(k, kol, rij);
       const A = [x, y - TEGEL_H / 2 - c.a * HOOGTE_PX], R = [x + TEGEL_B / 2, y - c.r * HOOGTE_PX];
       const V = [x, y + TEGEL_H / 2 - c.v * HOOGTE_PX], L = [x - TEGEL_B / 2, y - c.l * HOOGTE_PX];
@@ -421,6 +431,12 @@ function tekenGrond(k: Kaart, wereld: DimensieKleur): [Graphics, Graphics] {
       } else {
         g.poly([...A, ...R, ...V]).fill(belicht(kleur, c.r - c.a, c.v - c.r));
         g.poly([...A, ...V, ...L]).fill(belicht(kleur, c.v - c.l, c.l - c.a));
+      }
+      if (soort === TEGEL_KLIP) {
+        const laag = Math.min(c.a, c.r, c.v, c.l);
+        for (const [p, q, hp, hq] of [[A, R, c.a, c.r], [R, V, c.r, c.v], [V, L, c.v, c.l], [L, A, c.l, c.a]] as [number[], number[], number, number][])
+          if (hp > laag && hq > laag) g.moveTo(p[0], p[1]).lineTo(q[0], q[1]).stroke({ width: PIXEL, color: 0x060505, alpha: 0.85 });
+        continue;
       }
       const v = hash01(h * 1e6);
       if (v < wereld.vlekKans) {

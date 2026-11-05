@@ -1,9 +1,11 @@
 // Terrein: de hoogtekaart van een dimensie. Hoogtes staan op de HOEKEN van tegels, in hele niveaus, dus er zijn
 // (breed + 1) x (diep + 1) getallen. Tegel (x, y) loopt van x - 0,5 tot x + 0,5, dus hoek (i, j) ligt op (i - 0,5, j - 0,5).
 // Een schuine tegel is twee platte driehoeken; hoogteOp en het tekenen knikken langs dezelfde lijn.
-import { HOOGTE_DROOG, HOOGTE_MAX, HOOGTE_MIN, HOOGTE_PX, TERREIN_VLAK, TERREIN_VOL, type Heuvels } from '../data/dimensies';
+import { HOOGTE_MAX, HOOGTE_MIN, HOOGTE_PX, KLIP_HOOGTE, MAX_OPRITTEN, MIN_STUK, TERREIN_VLAK, TERREIN_VOL, type Heuvels } from '../data/dimensies';
 import { TEGEL_B, TEGEL_H } from './iso';
 import { volgende } from './toeval';
+
+export const TEGEL_LAND = 0, TEGEL_WATER = 1, TEGEL_KLIP = 2;
 
 export interface Terrein {
   breed: number;
@@ -68,33 +70,137 @@ function maakRuis(stroom: { toeval: number }): (x: number, y: number) => number 
 }
 
 // De hoogtekaart van één wereld. Rond de schijf blijft het vlak: daar ligt je eigen land, en muizen moeten er af kunnen.
-// Pas verderop mogen de heuvels omhoog komen.
+// Pas verderop komen heuvels, meren (wat onder de grond zakt) en plateaus met klippen eromheen.
 export function maakHoogtes(breed: number, diep: number, ring: { x: number; y: number; r: number }, heuvels: Heuvels, stroom: { toeval: number }): Int8Array {
   const s = breed + 1, n = s * (diep + 1);
   const h = new Int8Array(n);
-  const ruis = maakRuis(stroom);
+  const verhoogd = new Int8Array(n);
+  const ruis = maakRuis(stroom), klipRuis = maakRuis(stroom);
   const v0 = ring.r + TERREIN_VLAK, v1 = ring.r + TERREIN_VOL;
   for (let j = 0; j <= diep; j++)
     for (let i = 0; i <= breed; i++) {
       const d = Math.hypot(i - 0.5 - ring.x, j - 0.5 - ring.y);
       const m = Math.max(0, Math.min(1, (d - v0) / (v1 - v0)));
-      const waarde = heuvels.basis + ruis(i / heuvels.schaal, j / heuvels.schaal) * heuvels.hoog;
-      h[j * s + i] = Math.max(HOOGTE_DROOG, Math.min(HOOGTE_MAX, Math.round(waarde * m * m * (3 - 2 * m))));
+      const waarde = (heuvels.basis + ruis(i / heuvels.schaal, j / heuvels.schaal) * heuvels.hoog) * m * m * (3 - 2 * m);
+      // Een plateau gaat aan de rand van zijn gebied in één keer KLIP_HOOGTE omhoog; dicht bij de schijf loopt het uit in een helling.
+      const plateau = klipRuis(i / heuvels.klipSchaal, j / heuvels.klipSchaal) > heuvels.klipDrempel ? Math.round(KLIP_HOOGTE * m) : 0;
+      verhoogd[j * s + i] = plateau;
+      h[j * s + i] = Math.max(HOOGTE_MIN, Math.min(HOOGTE_MAX, Math.round(waarde) + plateau));
     }
-  // Nu nog alleen hellingen: buren schelen hooguit één niveau, ook schuin. Heen en terug is genoeg, en omdat dit alleen
-  // verlaagt, blijft de vlakte rond de schijf vlak. Klippen komen in stap 2.
-  const beperk = (o: number, b: number) => {
-    if (b >= 0 && b < n && h[o] > h[b] + 1) h[o] = h[b] + 1;
+  // Buren schelen hooguit één niveau, behalve over de rand van een plateau: daar twee, en dat wordt een klip. Zo verschillen
+  // de hoeken van een tegel nooit meer dan KLIP_HOOGTE, en is er een eindig aantal tegelvormen om te tekenen.
+  // Dit verlaagt alleen, dus de vlakte rond de schijf blijft vlak.
+  const buren = [-1, 1, -s, s, -s - 1, -s + 1, s - 1, s + 1];
+  const beperk = (o: number): boolean => {
+    let anders = false;
+    for (const b of buren) {
+      const a = o + b;
+      if (a < 0 || a >= n || Math.abs((a % s) - (o % s)) > 1) continue;
+      const mag = Math.abs(verhoogd[o] - verhoogd[a]) >= KLIP_HOOGTE ? KLIP_HOOGTE : 1;
+      if (h[o] > h[a] + mag) {
+        h[o] = h[a] + mag;
+        anders = true;
+      }
+    }
+    return anders;
   };
-  for (let o = 0; o < n; o++) {
-    if (o % s > 0) { beperk(o, o - 1); beperk(o, o - s - 1); }
-    beperk(o, o - s);
-    if (o % s < s - 1) beperk(o, o - s + 1);
-  }
-  for (let o = n - 1; o >= 0; o--) {
-    if (o % s < s - 1) { beperk(o, o + 1); beperk(o, o + s + 1); }
-    beperk(o, o + s);
-    if (o % s > 0) beperk(o, o + s - 1);
+  for (let anders = true; anders; ) {
+    anders = false;
+    for (let o = 0; o < n; o++) if (beperk(o)) anders = true;
+    for (let o = n - 1; o >= 0; o--) if (beperk(o)) anders = true;
   }
   return h;
+}
+
+// Wat voor tegel is dit? Hoeken die 2 of meer verschillen: klip. Alle hoeken op -1: water.
+export function tegelSoorten(t: Terrein): Uint8Array {
+  const soort = new Uint8Array(t.breed * t.diep);
+  for (let y = 0; y < t.diep; y++)
+    for (let x = 0; x < t.breed; x++) {
+      const { a, r, v, l } = hoeken(t, x, y);
+      const hoog = Math.max(a, r, v, l), laag = Math.min(a, r, v, l);
+      soort[y * t.breed + x] = hoog - laag >= KLIP_HOOGTE ? TEGEL_KLIP : hoog === HOOGTE_MIN ? TEGEL_WATER : TEGEL_LAND;
+    }
+  return soort;
+}
+
+// Alle land dat je kunt bereiken vanaf (x, y), lopend zonder over klippen of water te gaan.
+function bereik(t: Terrein, soort: Uint8Array, x: number, y: number, uit: Int32Array, merk: number): number {
+  const stapel = [y * t.breed + x];
+  uit[stapel[0]] = merk;
+  let aantal = 0;
+  while (stapel.length) {
+    const o = stapel.pop() as number;
+    aantal++;
+    const i = o % t.breed;
+    for (const b of [i > 0 ? o - 1 : -1, i < t.breed - 1 ? o + 1 : -1, o - t.breed, o + t.breed]) {
+      if (b < 0 || b >= soort.length || uit[b] || soort[b] !== TEGEL_LAND) continue;
+      uit[b] = merk;
+      stapel.push(b);
+    }
+  }
+  return aantal;
+}
+
+// Maak een klip begaanbaar: de hoge hoeken één niveau omlaag, dan is het een helling.
+function maakOprit(t: Terrein, x: number, y: number): void {
+  const s = t.breed + 1, { a, r, v, l } = hoeken(t, x, y), hoog = Math.max(a, r, v, l);
+  for (const [i, j, w] of [[x, y, a], [x + 1, y, r], [x + 1, y + 1, v], [x, y + 1, l]])
+    if (w === hoog) t.hoogte[j * s + i] -= 1;
+}
+
+// Een oprit kan een hoek naast hem te ver laten uitsteken. Trek die mee omlaag, zodat een tegel nooit meer dan KLIP_HOOGTE
+// verschilt. Dit verlaagt alleen wat te hoog staat, dus de oprit blijft open.
+function houdKlippenBinnenPerk(t: Terrein): void {
+  const s = t.breed + 1, h = t.hoogte, n = h.length;
+  const buren = [-1, 1, -s, s, -s - 1, -s + 1, s - 1, s + 1];
+  for (let anders = true; anders; ) {
+    anders = false;
+    for (let o = 0; o < n; o++)
+      for (const b of buren) {
+        const a = o + b;
+        if (a < 0 || a >= n || Math.abs((a % s) - (o % s)) > 1 || h[o] <= h[a] + KLIP_HOOGTE) continue;
+        h[o] = h[a] + KLIP_HOOGTE;
+        anders = true;
+      }
+  }
+}
+
+// Grote stukken land achter een klip krijgen een oprit, zodat de wereld niet in stukjes valt. Eilanden in het water
+// laten we met rust (daar komen ooit boten), en kleine stukjes ook: daar komen ook geen grondstoffen op.
+export function verbindLand(t: Terrein, start: { x: number; y: number }, stroom: { toeval: number }): void {
+  const { breed, diep } = t;
+  for (let ronde = 0; ronde < MAX_OPRITTEN; ronde++) {
+    const soort = tegelSoorten(t);
+    const gebied = new Int32Array(breed * diep);
+    bereik(t, soort, start.x, start.y, gebied, 1);
+    const grootte = [0, 0];
+    for (let o = 0; o < gebied.length; o++)
+      if (soort[o] === TEGEL_LAND && !gebied[o]) grootte[grootte.length] = bereik(t, soort, o % breed, Math.floor(o / breed), gebied, grootte.length);
+    // klippen met aan de ene kant ons land en recht tegenover een groot stuk land waar we nog niet komen
+    const kansen: { x: number; y: number; dx: number; dy: number; stuk: number }[] = [];
+    for (let y = 1; y < diep - 1; y++)
+      for (let x = 1; x < breed - 1; x++) {
+        if (soort[y * breed + x] !== TEGEL_KLIP) continue;
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const hier = gebied[(y - dy) * breed + x - dx], daar = gebied[(y + dy) * breed + x + dx];
+          if (hier === 1 && daar > 1 && grootte[daar] >= MIN_STUK) kansen.push({ x, y, dx, dy, stuk: daar });
+        }
+      }
+    if (!kansen.length) return;
+    // per stuk land één oprit, twee tegels breed als de klip ernaast doorloopt
+    const gedaan = new Set<number>();
+    for (let k = kansen.length - 1; k > 0; k--) {
+      const j = Math.floor(volgende(stroom) * (k + 1));
+      [kansen[k], kansen[j]] = [kansen[j], kansen[k]];
+    }
+    for (const k of kansen) {
+      if (gedaan.has(k.stuk)) continue;
+      gedaan.add(k.stuk);
+      maakOprit(t, k.x, k.y);
+      const zx = k.x + k.dy, zy = k.y + k.dx;
+      if (soort[zy * breed + zx] === TEGEL_KLIP) maakOprit(t, zx, zy);
+    }
+    houdKlippenBinnenPerk(t);
+  }
 }

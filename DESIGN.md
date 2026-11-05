@@ -38,13 +38,15 @@ Nog een skelet. Werk dit bij bij elke grote regelwijziging.
 - Elke wereld krijgt heuvels uit Perlin-ruis (`src/kern/terrein.ts`), met per dimensie eigen getallen (`heuvels` in
   `src/data/dimensies.ts`). Een wereld hangt alleen af van de seed en het dimensienummer, niet van wat je speelde.
 - Hoogtes staan op de **hoeken** van tegels, in hele niveaus van -1 tot +5. Eén niveau is 16 schermpixels.
-  Verschillen de hoeken van een tegel 1 niveau: helling. Verschillen ze 2: klip (komt in stap 2).
+  Verschillen de hoeken van een tegel 1 niveau: helling. Verschillen ze 2: klip. Meer dan 2 komt niet voor; een hogere
+  wand beslaat meerdere tegels. Alle hoeken op -1: water.
 - De schijf ligt op hoogte 0. Tot 3,5 tegels buiten de ring blijft de wereld vlak, want muizen moeten eraf kunnen.
 - Eenheden en grondstoffen staan op de grond; **eenheden worden altijd boven het terrein getekend**, zodat een muis
   achter een heuvel zichtbaar blijft. Klikken raakt de voorste grond op die plek.
-- **Stap 2:** hoogte -1 wordt water. Klippen en water zijn voor lopende eenheden onbegaanbaar, in beide richtingen.
-  Routes via een richtingenkaart per doel, en de generator garandeert dat de grondstoffen bereikbaar zijn.
-  Begaanbaarheid per manier van bewegen, zodat boten of veerponten later kunnen.
+- Klippen en water zijn voor lopende eenheden onbegaanbaar, in beide richtingen. Routes via een richtingenkaart per doel
+  (`src/kern/routes.ts`), gedeeld door de hele zwerm. Een klik op water of een klip: zo dichtbij als het kan.
+- Grondstoffen liggen alleen op land dat je kunt bereiken. Groot land achter een klip krijgt een oprit; eilanden blijven
+  onbereikbaar. Begaanbaarheid hoort bij een manier van bewegen (`Doorgang`), zodat boten of veerponten later kunnen.
 - **Stap 3:** een tekenscript maakt per dimensie een tegelset uit een basistegel met ruis (ook het water: bruin op
   Roestduin, gloeiend op Magmaveld, blauw op een nieuwe dimensie Aarde). Tot die tijd is de grond getekende vlakken.
 

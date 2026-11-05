@@ -1,6 +1,7 @@
 // De kaart van een dimensie: de machine en de opslag in het midden, velden met grondstoffen eromheen.
 import { dimensieHeuvels, KAART_BREED, KAART_DIEP, RING_STRAAL, VELDEN } from '../data/dimensies';
-import { maakHoogtes, type Terrein } from './terrein';
+import type { Doorgang } from './routes';
+import { maakHoogtes, TEGEL_LAND, tegelSoorten, verbindLand, type Terrein } from './terrein';
 import { hash01, volgende } from './toeval';
 import type { Grondstof } from './types';
 
@@ -21,6 +22,8 @@ export interface Blok {
 }
 
 export interface Kaart extends Terrein {
+  soort: Uint8Array; // per tegel: TEGEL_LAND, TEGEL_WATER of TEGEL_KLIP
+  lopen: Doorgang; // waar lopende eenheden kunnen komen
   afzettingen: Afzetting[];
   machine: Blok;
   opslag: Blok;
@@ -56,11 +59,15 @@ export function maakKaart(seed: number, dimensie: number): Kaart {
   const opslag: Blok = { x: mx + 5, y: my + 1, breed: 2, diep: 2 };
   const midden = { x: mx + 2, y: my + 2 };
   const ring = { x: mx + 1.5, y: my + 1.5, r: RING_STRAAL };
-  const hoogte = maakHoogtes(breed, diep, ring, dimensieHeuvels(dimensie), stroomVoor(seed, dimensie, 1));
+  const stroom = stroomVoor(seed, dimensie, 1);
+  const terrein: Terrein = { breed, diep, hoogte: maakHoogtes(breed, diep, ring, dimensieHeuvels(dimensie), stroom) };
+  verbindLand(terrein, { x: midden.x, y: midden.y }, stroom);
+  const soort = tegelSoorten(terrein);
+  const lopen = maakLopen(terrein, soort, midden, machine);
 
   const bezet = new Uint8Array(breed * diep);
   const vrij = (x: number, y: number) =>
-    x >= 1 && y >= 1 && x < breed - 1 && y < diep - 1 && !bezet[y * breed + x] &&
+    x >= 1 && y >= 1 && x < breed - 1 && y < diep - 1 && !bezet[y * breed + x] && lopen.vrij[y * breed + x] === 1 &&
     Math.hypot(x - ring.x, y - ring.y) > ring.r + 3.5; // grondstoffen alleen buiten de ring en de schijf
 
   const afzettingen: Afzetting[] = [];
@@ -71,9 +78,10 @@ export function maakKaart(seed: number, dimensie: number): Kaart {
     for (let n = 0; n < v.aantal; n++) {
       // zoek een vrije plek voor het hart van het veld, op de goede afstand
       let hart: { x: number; y: number } | null = null;
-      for (let poging = 0; poging < 60 && !hart; poging++) {
+      // (lukt dat niet, omdat er bijvoorbeeld een meer ligt, dan langzaam verder weg: elk veld moet er komen)
+      for (let poging = 0; poging < 400 && !hart; poging++) {
         const hoek = r() * Math.PI * 2;
-        const af = v.afstand[0] + r() * (v.afstand[1] - v.afstand[0]);
+        const af = v.afstand[0] + r() * (v.afstand[1] - v.afstand[0]) + Math.max(0, poging - 60) * 0.05;
         const x = Math.round(midden.x + Math.cos(hoek) * af);
         const y = Math.round(midden.y + Math.sin(hoek) * af);
         if (vrij(x, y)) hart = { x, y };
@@ -95,7 +103,26 @@ export function maakKaart(seed: number, dimensie: number): Kaart {
         afzettingen.push({ id: afzettingen.length, goed, x: t.x, y: t.y, rest: v.perTegel, variant: Math.floor(r() * 2) });
     }
   }
-  return { breed, diep, hoogte, afzettingen, machine, opslag, ring };
+  return { ...terrein, soort, lopen, afzettingen, machine, opslag, ring };
+}
+
+// Waar lopende eenheden kunnen staan: land dat je vanaf de machine kunt bereiken, niet op of vlak tegen de machine.
+function maakLopen(t: Terrein, soort: Uint8Array, start: { x: number; y: number }, machine: Blok): Doorgang {
+  const { breed, diep } = t;
+  const vrij = new Uint8Array(breed * diep);
+  const stapel = [start.y * breed + start.x];
+  vrij[stapel[0]] = 1;
+  while (stapel.length) {
+    const o = stapel.pop() as number, x = o % breed;
+    for (const b of [x > 0 ? o - 1 : -1, x < breed - 1 ? o + 1 : -1, o - breed, o + breed]) {
+      if (b < 0 || b >= vrij.length || vrij[b] || soort[b] !== TEGEL_LAND) continue;
+      vrij[b] = 1;
+      stapel.push(b);
+    }
+  }
+  for (let y = machine.y - 1; y <= machine.y + machine.diep; y++)
+    for (let x = machine.x - 1; x <= machine.x + machine.breed; x++) vrij[y * breed + x] = 0;
+  return { breed, diep, vrij, velden: new Map() };
 }
 
 export function afzettingOp(k: Kaart, x: number, y: number): Afzetting | undefined {
