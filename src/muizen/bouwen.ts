@@ -355,7 +355,7 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
     const t0 = tikBouw;
     tikBouw = null;
     if (!modus || Math.hypot(e.clientX - t0.x, e.clientY - t0.y) > 10) return;
-    e.stopPropagation(); // geen tik voor de muizen
+    e.preventDefault(); // gebruikt: geen tik voor de muizen (de kern ziet het loslaten nog wel, anders blijft de vinger 'hangen')
     const tg = opTegel(e);
     doe(staat(), tg.kol, tg.rij);
   }, { capture: true });

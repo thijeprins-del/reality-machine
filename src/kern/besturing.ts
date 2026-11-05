@@ -103,7 +103,9 @@ export function maakBesturing(
     zoom = ZOOMS[Math.max(0, Math.min(ZOOMS.length - 1, ZOOMS.indexOf(zoom) + stap))];
     zet();
   };
-  const raakNeer = (x: number, y: number, id: number) => {
+  const raakNeer = (x: number, y: number, id: number, eerste: boolean) => {
+    // eerste vinger: wat er nog in de lijst stond is blijven hangen (gemist loslaten), dus weg ermee
+    if (eerste) vingers.clear();
     vingers.set(id, { x, y });
     if (vingers.size === 1) {
       const t0 = { x0: x, y0: y, verplaatst: false, kader: false, klok: 0 };
@@ -140,7 +142,7 @@ export function maakBesturing(
       kijk = { x: tik.x0, y: tik.y0 }; // de pointermove hieronder schuift de camera
     }
   };
-  const raakOp = (x: number, y: number, id: number) => {
+  const raakOp = (x: number, y: number, id: number, gebruikt = false) => {
     vingers.delete(id);
     if (knijp) {
       if (vingers.size < 2) knijp = null;
@@ -151,7 +153,7 @@ export function maakBesturing(
     kijk = null;
     if (!t0) return;
     clearTimeout(t0.klok);
-    if (t0.kader || t0.verplaatst) return; // het kader rondt pointerup hieronder af
+    if (t0.kader || t0.verplaatst || gebruikt) return; // het kader rondt pointerup hieronder af; gebruikt = er is iets gebouwd
     const werkers = staat().werkers;
     const nu = performance.now();
     if (nu - laatsteKlik < 350) {
@@ -194,7 +196,7 @@ export function maakBesturing(
   }
 
   canvas.addEventListener('pointerdown', (e) => {
-    if (e.pointerType === 'touch') return raakNeer(e.offsetX, e.offsetY, e.pointerId);
+    if (e.pointerType === 'touch') return raakNeer(e.offsetX, e.offsetY, e.pointerId, e.isPrimary);
     if (e.button === 0 && !e.shiftKey && bewerker?.actief) {
       const t = tegelOnderMuis(e.offsetX, e.offsetY);
       bewerker.neer(t.kol, t.rij);
@@ -242,7 +244,7 @@ export function maakBesturing(
   const raakWeg = (e: PointerEvent) => {
     if (e.pointerType !== 'touch' || !vingers.has(e.pointerId)) return false;
     const r = canvas.getBoundingClientRect();
-    raakOp(e.clientX - r.left, e.clientY - r.top, e.pointerId);
+    raakOp(e.clientX - r.left, e.clientY - r.top, e.pointerId, e.defaultPrevented);
     return !sleep; // een kader rondt hieronder af zoals met de muis
   };
   window.addEventListener('pointercancel', (e) => {
