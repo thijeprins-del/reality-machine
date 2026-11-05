@@ -3,6 +3,7 @@
 import type { SpelStaat } from '../kern/spel';
 import type { WereldBeeld } from '../kern/wereldbeeld';
 import { maakBouwen } from './bouwen';
+import { klein, knop as balkKnop } from '../kern/scherm';
 import type { Grondstof } from '../kern/types';
 import { MUIZEN_ENERGIE } from '../data/muizen';
 import { draaiKnop, energie, MAX_MK, omhoog, STANDEN, stroomVan, upgradeBron, upgradeKosten, verbruikVan, zetBron, zetVerbruiker, zwakte, type Bron, type EnergieStaat } from './energie';
@@ -69,8 +70,11 @@ export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(
   const plaat = doek(PW, PH);
   let ps = 2, tijd = 0, scoop = 0, logScroll = 0, hover = -1, hits: Hit[] = [];
 
+  let open = !klein(); // op een telefoon dicht tot je op PANEL tikt
   function maat(): void {
-    const ps0 = Math.min((innerWidth * 0.78) / PW, (innerHeight * 0.5) / PH);
+    pv.style.display = open ? 'block' : 'none';
+    pv.style.bottom = klein() ? '52px' : '0'; // de knoppenbalk blijft vrij
+    const ps0 = klein() ? Math.min((innerWidth - 8) / PW, (innerHeight - 60) / PH) : Math.min((innerWidth * 0.78) / PW, (innerHeight * 0.5) / PH);
     ps = ps0 >= 1 ? Math.floor(ps0 * 2) / 2 : ps0; // halve stappen: groot genoeg, nog scherp genoeg
     const dpr = Math.min(2, devicePixelRatio || 1);
     pv.style.width = `${Math.floor(PW * ps)}px`;
@@ -511,6 +515,7 @@ export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(
       e.preventDefault();
       if (e.button !== 0) return;
       const i = zoek(p);
+      hover = i; // ook bij tikken de uitleg laten zien
       hits[i]?.doe?.();
     },
     { capture: true },
@@ -539,6 +544,19 @@ export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(
   maat();
   window.addEventListener('resize', maat);
   const bouwen = beeld ? maakBouwen(staat, beeld) : null;
+  // telefoon: het paneel en het bouwmenu om de beurt open, met knoppen
+  if (klein()) {
+    let kPaneel: HTMLButtonElement, kBouw: HTMLButtonElement | null = null;
+    const zet = (paneel: boolean, bouw: boolean) => {
+      open = paneel;
+      maat();
+      bouwen?.zicht(bouw);
+      kPaneel.classList.toggle('aan', paneel);
+      kBouw?.classList.toggle('aan', bouw);
+    };
+    kPaneel = balkKnop('PANEL', 'power, stock and mice', () => zet(!open, false));
+    if (bouwen) kBouw = balkKnop('BUILD', 'build menu', () => zet(false, !kBouw!.classList.contains('aan')));
+  }
   return {
     werk(sec) {
       tijd += sec;

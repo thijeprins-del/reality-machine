@@ -1,10 +1,13 @@
 // Camera en besturing. Muis: slepen = selecteren (shift = erbij), dubbelklik = alle eenheden in beeld,
 // rechtsklik = opdracht, middelste knop slepen = kijken, scrollen = zoomen.
 // Toetsen: WASD of pijlen = kijken, Esc = niets geselecteerd, spatie = terug naar de machine.
+// Aanraken: tik op een muis = selecteren, dubbeltik = alles in beeld, tik op de grond = opdracht, slepen = kijken,
+// knijpen = zoomen, vasthouden en slepen = kader. Knoppen HOME en CLEAR (scherm.ts) doen spatie en Esc.
 import { Graphics, type Application, type Container } from 'pixi.js';
 import { naarScherm, TEGEL_B, TEGEL_H } from './iso';
 import type { SpelStaat } from './spel';
 import type { TerreinBewerker } from './terreinbewerker';
+import { knop } from './scherm';
 import { hoogteOp, tegelOnder } from './terrein';
 
 export interface Besturing {
@@ -32,7 +35,7 @@ export function maakBesturing(
   app.stage.addChild(kader);
   const canvas = app.canvas;
 
-  let zoom = app.screen.width > 2400 ? 2 : 1;
+  let zoom = app.screen.width > 2400 ? 2 : app.screen.width < 1000 || app.screen.height < 640 ? 0.5 : 1; // telefoon: verder uit
   // camera = het wereldpunt in het midden van het scherm
   let m = staat().kaart.machine;
   const startPunt = () => naarScherm(m.x + m.breed / 2, m.y + m.diep / 2);
@@ -87,7 +90,111 @@ export function maakBesturing(
     return tegelOnder(staat().kaart, p.x, p.y);
   };
 
+  // ---- aanraken (telefoon, tablet) ----
+  canvas.style.touchAction = 'none';
+  const vingers = new Map<number, { x: number; y: number }>();
+  let tik: { x0: number; y0: number; verplaatst: boolean; kader: boolean; klok: number } | null = null;
+  let knijp: { d: number } | null = null;
+  const afstand = () => {
+    const [a, b] = [...vingers.values()];
+    return Math.hypot(a.x - b.x, a.y - b.y);
+  };
+  const zoomStap = (stap: number) => {
+    zoom = ZOOMS[Math.max(0, Math.min(ZOOMS.length - 1, ZOOMS.indexOf(zoom) + stap))];
+    zet();
+  };
+  const raakNeer = (x: number, y: number, id: number) => {
+    vingers.set(id, { x, y });
+    if (vingers.size === 1) {
+      const t0 = { x0: x, y0: y, verplaatst: false, kader: false, klok: 0 };
+      // even vasthouden zonder te bewegen: dan sleep je een kader
+      t0.klok = window.setTimeout(() => {
+        if (tik !== t0 || t0.verplaatst) return;
+        t0.kader = true;
+        sleep = { x0: x, y0: y, x1: x, y1: y, extra: false };
+      }, 380);
+      tik = t0;
+      return;
+    }
+    // twee vingers: knijpen, geen tik of kader meer
+    if (tik) clearTimeout(tik.klok);
+    tik = null;
+    sleep = null;
+    kijk = null;
+    knijp = { d: afstand() };
+  };
+  const raakBeweeg = (x: number, y: number, id: number) => {
+    if (!vingers.has(id)) return;
+    vingers.set(id, { x, y });
+    if (knijp && vingers.size >= 2) {
+      const r = afstand() / Math.max(1, knijp.d);
+      if (r > 1.35 || r < 0.74) {
+        zoomStap(r > 1 ? 1 : -1);
+        knijp.d = afstand();
+      }
+      return;
+    }
+    if (!tik || tik.kader) return;
+    if (!tik.verplaatst && Math.hypot(x - tik.x0, y - tik.y0) > 10) {
+      tik.verplaatst = true;
+      kijk = { x: tik.x0, y: tik.y0 }; // de pointermove hieronder schuift de camera
+    }
+  };
+  const raakOp = (x: number, y: number, id: number) => {
+    vingers.delete(id);
+    if (knijp) {
+      if (vingers.size < 2) knijp = null;
+      return;
+    }
+    const t0 = tik;
+    tik = null;
+    kijk = null;
+    if (!t0) return;
+    clearTimeout(t0.klok);
+    if (t0.kader || t0.verplaatst) return; // het kader rondt pointerup hieronder af
+    const werkers = staat().werkers;
+    const nu = performance.now();
+    if (nu - laatsteKlik < 350) {
+      for (const w of werkers) {
+        const p = opScherm(w.x, w.y);
+        if (p.x >= 0 && p.y >= 0 && p.x <= app.screen.width && p.y <= app.screen.height) selectie.add(w.id);
+      }
+      laatsteKlik = 0;
+      return;
+    }
+    laatsteKlik = nu;
+    let beste = -1, afst = Math.max(22, 14 * zoom);
+    for (const w of werkers) {
+      const p = opScherm(w.x, w.y);
+      const d = Math.hypot(p.x - x, p.y - y);
+      if (d < afst) [beste, afst] = [w.id, d];
+    }
+    if (beste >= 0 && !selectie.has(beste)) {
+      selectie.clear();
+      selectie.add(beste);
+    } else if (selectie.size) {
+      const t = tegelOnderMuis(x, y);
+      opdracht([...selectie], t.kol, t.rij);
+    }
+  };
+  if (matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window) {
+    knop('HOME', 'back to the machine', () => {
+      const start = startPunt();
+      cam.x = start.x;
+      cam.y = start.y;
+      zet();
+    });
+    knop('CLEAR', 'nothing selected, stop building', () => {
+      selectie.clear();
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+      window.dispatchEvent(new KeyboardEvent('keyup', { key: 'Escape' }));
+    });
+    knop('+', 'zoom in', () => zoomStap(1));
+    knop('-', 'zoom out', () => zoomStap(-1));
+  }
+
   canvas.addEventListener('pointerdown', (e) => {
+    if (e.pointerType === 'touch') return raakNeer(e.offsetX, e.offsetY, e.pointerId);
     if (e.button === 0 && !e.shiftKey && bewerker?.actief) {
       const t = tegelOnderMuis(e.offsetX, e.offsetY);
       bewerker.neer(t.kol, t.rij);
@@ -109,6 +216,7 @@ export function maakBesturing(
   window.addEventListener('pointermove', (e) => {
     const r = canvas.getBoundingClientRect();
     const x = e.clientX - r.left, y = e.clientY - r.top;
+    if (e.pointerType === 'touch') raakBeweeg(x, y, e.pointerId);
     if (bewerker?.actief) {
       if (e.target !== canvas && !verven) bewerker.zweef(null, null);
       else {
@@ -131,7 +239,21 @@ export function maakBesturing(
       zet();
     }
   });
+  const raakWeg = (e: PointerEvent) => {
+    if (e.pointerType !== 'touch' || !vingers.has(e.pointerId)) return false;
+    const r = canvas.getBoundingClientRect();
+    raakOp(e.clientX - r.left, e.clientY - r.top, e.pointerId);
+    return !sleep; // een kader rondt hieronder af zoals met de muis
+  };
+  window.addEventListener('pointercancel', (e) => {
+    vingers.delete(e.pointerId);
+    tik = null;
+    knijp = null;
+    kijk = null;
+    sleep = null;
+  });
   window.addEventListener('pointerup', (e) => {
+    if (raakWeg(e)) return;
     if (e.button === 0) verven = false;
     if (e.button === 1) kijk = null;
     if (e.button !== 0 || !sleep) return;
