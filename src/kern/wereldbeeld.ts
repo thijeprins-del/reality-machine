@@ -2,9 +2,10 @@
 // De factie levert de plaatjes (FactieBeeld); de kern weet niet welke factie het is.
 import { Assets, BlurFilter, ColorMatrixFilter, Container, Graphics, Sprite, type Texture } from 'pixi.js';
 import { naarScherm, TEGEL_B, TEGEL_H } from './iso';
-import { dimensieKleur, DIMENSIE_DUUR_SEC, SPRONG_SEC, THUIS, type DimensieKleur } from '../data/dimensies';
+import { dimensieKleur, DIMENSIE_DUUR_SEC, HOOGTE_PX, SPRONG_SEC, THUIS, type DimensieKleur } from '../data/dimensies';
 import { schijfStraal, type Blok, type Kaart } from './kaart';
 import type { SpelStaat } from './spel';
+import { hoeken, hoogteOp, knikLinksRechts } from './terrein';
 import { hash01 } from './toeval';
 import type { FactieBeeld, SpriteInfo } from './types';
 import { WERELD_SPRITES } from './wereld-sprites';
@@ -301,7 +302,7 @@ export class WereldBeeld {
         : w.taak === 'graven' && Math.sin(this.t * 22 + fase) > 0 ? PIXEL : 0;
       this.zetEenheid(st, w.x, w.y, w.kijkt, hup);
       if (selectie.has(w.id)) {
-        const p = naarScherm(w.x, w.y);
+        const p = naarScherm(w.x, w.y, hoogteOp(k, w.x, w.y));
         this.markering.ellipse(p.x, p.y, 7, 3.5);
       }
     });
@@ -371,7 +372,7 @@ export class WereldBeeld {
   // Gebouw of grondstof: anker op de achterhoek van tegel (x, y). Tekenvolgorde op de voorste hoek.
   zetGebouw(st: Stuk, x: number, y: number, tegels: number, spiegel: 1 | -1): void {
     const m = this.sprites[st.naam];
-    const p = naarScherm(x, y);
+    const p = naarScherm(x, y, hoogteOp(this.staat.kaart, x + (tegels - 1) / 2, y + (tegels - 1) / 2)); // op de hoogte van zijn midden
     const px = p.x - m.ankerX * PIXEL * spiegel, py = p.y - TEGEL_H / 2 - m.ankerY * PIXEL;
     for (const d of st.delen) {
       d.scale.set(PIXEL * spiegel, PIXEL);
@@ -383,7 +384,7 @@ export class WereldBeeld {
   // Eenheid: voeten op (x, y). Kijkt naar links = gespiegeld.
   zetEenheid(st: Stuk, x: number, y: number, kijkt: 1 | -1, hup: number): void {
     const m = this.sprites[st.naam];
-    const p = naarScherm(x, y);
+    const p = naarScherm(x, y, hoogteOp(this.staat.kaart, x, y));
     const px = Math.round(p.x - m.ankerX * PIXEL * kijkt), py = Math.round(p.y - m.ankerY * PIXEL - hup);
     for (const d of st.delen) {
       d.scale.set(PIXEL * kijkt, PIXEL);
@@ -399,10 +400,19 @@ function opSchijf(k: Kaart, kol: number, rij: number): boolean {
   return Math.hypot(dx, dy) <= schijfStraal(k, Math.atan2(dy, dx));
 }
 
+// Een stuk schuine grond iets lichter of donkerder: het licht komt van linksboven. gk en gr = hoeveel niveaus de grond
+// stijgt per tegel in kolom- en rijrichting. De getallen zijn voorlopig; straks zit dit in de tegelset.
+function belicht(kleur: number, gk: number, gr: number): number {
+  const f = 1 + (gk - gr) * 0.3 - (gk + gr) * 0.1;
+  const kanaal = (schuif: number) => Math.max(0, Math.min(255, Math.round(((kleur >> schuif) & 255) * f)));
+  return (kanaal(16) << 16) | (kanaal(8) << 8) | kanaal(0);
+}
+
 const ruit = (x: number, y: number) => [x, y - TEGEL_H / 2, x + TEGEL_B / 2, y, x, y + TEGEL_H / 2, x - TEGEL_B / 2, y];
 
-// De wereld eromheen in de kleuren van de dimensie. Vlekken die gloeien (lava, gif, kristal) gaan ook in de gloedlaag.
-// Aan de voorkant een rand aarde en rots. Onder de schijf hoeft niets.
+// De wereld eromheen in de kleuren van de dimensie, met heuvels. Vlekken die gloeien (lava, gif, kristal) gaan ook in de
+// gloedlaag. Aan de voorkant een rand aarde en rots. Onder de schijf hoeft niets.
+// Van achter naar voor getekend, dus een heuvel valt vanzelf over de grond erachter.
 function tekenGrond(k: Kaart, wereld: DimensieKleur): [Graphics, Graphics] {
   const g = new Graphics();
   const gl = new Graphics();
@@ -412,10 +422,21 @@ function tekenGrond(k: Kaart, wereld: DimensieKleur): [Graphics, Graphics] {
       if (opSchijf(k, kol, rij)) continue;
       const { x, y } = naarScherm(kol, rij);
       const h = hash01(rij * 1000 + kol + k.afzettingen.length * 7919);
-      g.poly(ruit(x, y)).fill(wereld.grond[Math.floor(h * wereld.grond.length)]);
+      const kleur = wereld.grond[Math.floor(h * wereld.grond.length)];
+      const c = hoeken(k, kol, rij);
+      const A = [x, y - TEGEL_H / 2 - c.a * HOOGTE_PX], R = [x + TEGEL_B / 2, y - c.r * HOOGTE_PX];
+      const V = [x, y + TEGEL_H / 2 - c.v * HOOGTE_PX], L = [x - TEGEL_B / 2, y - c.l * HOOGTE_PX];
+      if (c.a + c.v === c.r + c.l) g.poly([...A, ...R, ...V, ...L]).fill(belicht(kleur, c.r - c.a, c.l - c.a));
+      else if (knikLinksRechts(c.a, c.r, c.v, c.l)) {
+        g.poly([...A, ...R, ...L]).fill(belicht(kleur, c.r - c.a, c.l - c.a));
+        g.poly([...V, ...L, ...R]).fill(belicht(kleur, c.v - c.l, c.v - c.r));
+      } else {
+        g.poly([...A, ...R, ...V]).fill(belicht(kleur, c.r - c.a, c.v - c.r));
+        g.poly([...A, ...V, ...L]).fill(belicht(kleur, c.v - c.l, c.l - c.a));
+      }
       const v = hash01(h * 1e6);
       if (v < wereld.vlekKans) {
-        const vx = x - 8 + Math.round(v * 400) % 14, vy = y - 2 + Math.round(v * 900) % 4;
+        const vx = x - 8 + Math.round(v * 400) % 14, vy = y - 2 + Math.round(v * 900) % 4 - Math.round(hoogteOp(k, kol, rij) * HOOGTE_PX / PIXEL) * PIXEL;
         g.rect(vx, vy, 4 + Math.round(v * 77) % 6, 2).fill(wereld.vlek);
         if (wereld.vlekGloeit) gl.rect(vx, vy, 4 + Math.round(v * 77) % 6, 2).fill(wereld.vlek);
       }
@@ -423,11 +444,13 @@ function tekenGrond(k: Kaart, wereld: DimensieKleur): [Graphics, Graphics] {
   const dikte = 40;
   for (let i = 0; i < breed; i++) {
     const { x, y } = naarScherm(i, diep - 1);
-    g.poly([x - TEGEL_B / 2, y, x, y + TEGEL_H / 2, x, y + TEGEL_H / 2 + dikte, x - TEGEL_B / 2, y + dikte]).fill(wereld.rand[0]);
+    const c = hoeken(k, i, diep - 1);
+    g.poly([x - TEGEL_B / 2, y - c.l * HOOGTE_PX, x, y + TEGEL_H / 2 - c.v * HOOGTE_PX, x, y + TEGEL_H / 2 + dikte, x - TEGEL_B / 2, y + dikte]).fill(wereld.rand[0]);
   }
   for (let i = 0; i < diep; i++) {
     const { x, y } = naarScherm(breed - 1, i);
-    g.poly([x, y + TEGEL_H / 2, x + TEGEL_B / 2, y, x + TEGEL_B / 2, y + dikte, x, y + TEGEL_H / 2 + dikte]).fill(wereld.rand[1]);
+    const c = hoeken(k, breed - 1, i);
+    g.poly([x, y + TEGEL_H / 2 - c.v * HOOGTE_PX, x + TEGEL_B / 2, y - c.r * HOOGTE_PX, x + TEGEL_B / 2, y + dikte, x, y + TEGEL_H / 2 + dikte]).fill(wereld.rand[1]);
   }
   return [g, gl];
 }

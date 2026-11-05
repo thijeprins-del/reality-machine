@@ -21,7 +21,7 @@ export interface SpelStaat {
 
 export function nieuwSpel(seed: number, f: Factie): SpelStaat {
   const s = { toeval: seed >>> 0 };
-  const kaart = maakKaart(s);
+  const kaart = maakKaart(seed, 1);
   const werkers: Werker[] = [];
   for (const [soort, aantal] of Object.entries(f.startEenheden)) {
     const nieuw = maakWerkers(soort, aantal ?? 0, kaart, s);
@@ -72,7 +72,7 @@ export function stream(s: SpelStaat, f?: Factie): void {
 }
 
 function verhuis(s: SpelStaat): void {
-  s.kaart = maakKaart(s); // zelfde machine en opslag, nieuwe velden
+  s.kaart = maakKaart(s.seed, s.dimensie); // zelfde machine en opslag, nieuw terrein en nieuwe velden
   const r = s.kaart.ring;
   for (const w of s.werkers) {
     // wat ze droegen gaat mee de opslag in; opdrachten in de oude wereld vervallen
