@@ -44,6 +44,7 @@ Bouwen kost onderdelen: **platen** (PLATE) en **balken** (BEAM). Die maak je in 
 - **X Slopen** (DEMOLISH): klik of sleep. Je krijgt de kosten terug.
 - Je kunt alles neerzetten, ook als het er nog niet is: muizen brengen de spullen uit de opslag zodra ze er liggen.
   Het balkje boven een bouwplek is eerst cyaan (spullen gebracht), dan geel (gebouwd).
+  Muizen pakken het waar het het dichtst bij ligt: uit de opslag of een stockpile, bij een drill of fabricator op de grond, of van een belt.
 - **Muizen werken zelf**: eerst bouwen, dan de fabricators, dan boren en fabricators leeghalen, en anders zelf graven.
   Stuur je ze ergens heen, dan doen ze dat.
 - Bij de stream wordt alles buiten de ring ingepakt en krijg je de bouwkosten terug. Alle tekst in het spel is Engels.

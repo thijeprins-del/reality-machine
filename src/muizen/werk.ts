@@ -29,6 +29,7 @@ interface Taak {
   goed?: Goed;
   n?: number;
   fase?: 'pak' | 'breng';
+  van?: string; // lever: waar hij het pakt: '' = opslag/stapel, `m`+id = bij een drill of fabricator op de grond, `b`+tegel = van een belt
 }
 interface WerkStaat {
   taken: Map<number, Taak>;
@@ -104,6 +105,7 @@ function stapWerk(s: SpelStaat, sec: number): void {
   let rennen = 0;
   const onderweg = new Map<string, number>(); // "doel:goed" -> hoeveel er al gehaald of gebracht wordt
   const gepland = new Map<Goed, number>(); // nog op te halen uit de opslag
+  const geplandBij = new Map<string, number>(); // "van:goed" -> nog op te halen van de grond of een belt
   // Waar muizen spullen naartoe brengen: bouwplekken (wat nog nodig is) en fabricators (hun invoer).
   const dingen = [...i.boren, ...i.palen, ...i.stapels, ...i.fabrieken];
   const leverDoel = (doel: number | string) => {
@@ -144,6 +146,29 @@ function stapWerk(s: SpelStaat, sec: number): void {
   };
   const ploeg = new Map<number, number>();
   const makers: Maker[] = [...i.boren, ...i.fabrieken];
+  // Iets oppakken waar het ligt: uit de opslag, bij een drill of fabricator op de grond, of van een belt. Geeft hoeveel.
+  const pak = (van: string, g: Goed, n: number): number => {
+    if (van.startsWith('m')) {
+      const b = makers.find((x) => x.id === +van.slice(1));
+      if (!b) return 0;
+      let k = 0;
+      for (let j = b.buffer.length - 1; j >= 0 && k < n; j--) if (b.buffer[j] === g) {
+        b.buffer.splice(j, 1);
+        k++;
+      }
+      return k;
+    }
+    if (van.startsWith('b')) {
+      const bt = i.banden.get(+van.slice(1));
+      if (!bt || bt.goed !== g) return 0;
+      bt.goed = undefined;
+      bt.voortgang = 0;
+      return 1;
+    }
+    const k = Math.min(n, Math.floor(v[g] ?? 0));
+    v[g] = (v[g] ?? 0) - k;
+    return k;
+  };
   for (const w of s.werkers) {
     const t = W.taken.get(w.id);
     if (!t) continue;
@@ -186,20 +211,20 @@ function stapWerk(s: SpelStaat, sec: number): void {
       onderweg.set(sleutel, (onderweg.get(sleutel) ?? 0) + (t.n ?? 0));
       aantal.set(`l${t.doel}`, (aantal.get(`l${t.doel}`) ?? 0) + 1);
       if (t.fase === 'pak') {
-        gepland.set(t.goed!, (gepland.get(t.goed!) ?? 0) + (t.n ?? 0));
+        if (t.van) geplandBij.set(`${t.van}:${t.goed}`, (geplandBij.get(`${t.van}:${t.goed}`) ?? 0) + (t.n ?? 0));
+        else gepland.set(t.goed!, (gepland.get(t.goed!) ?? 0) + (t.n ?? 0));
         // bij de opslag zet de kern een muis soms net ergens anders neer: dichtbij is goed genoeg
         if (w.taak !== 'rust') continue;
-        if (Math.hypot(w.x - t.x, w.y - t.y) > 2.5) {
+        if (Math.hypot(w.x - t.x, w.y - t.y) > (t.van?.startsWith('b') ? 1.5 : 2.5)) {
           stuur(s, [w.id], t.x, t.y);
           continue;
         }
-        const neem = Math.min(t.n ?? 0, Math.floor(v[t.goed!] ?? 0));
         const d = leverDoel(t.doel);
+        const neem = d ? pak(t.van ?? '', t.goed!, t.n ?? 0) : 0;
         if (neem <= 0 || !d) {
           W.taken.delete(w.id);
           continue;
         }
-        v[t.goed!] = (v[t.goed!] ?? 0) - neem;
         w.lading = { goed: t.goed as Grondstof, n: neem }; // de kern noemt het Grondstof, maar het mag elk goed zijn
         const p = randPlek(d.blok, w.id);
         Object.assign(t, { fase: 'breng', n: neem, x: p.x, y: p.y });
@@ -300,7 +325,26 @@ function stapWerk(s: SpelStaat, sec: number): void {
     }
   };
 
-  // Spullen brengen: haal uit de opslag wat het doel nog wil hebben (wat er ligt, min wat al gepland is).
+  // Waar ligt goed g het dichtst bij c, en hoeveel kan je daar nog pakken (min wat al gepland is)?
+  const bron = (g: Goed, c: { x: number; y: number }) => {
+    let beste = null as null | { van: string; n: number; x: number; y: number }, bd = Infinity;
+    const kijk = (van: string, n: number, x: number, y: number) => {
+      if (n <= 0) return;
+      const d = Math.hypot(x - c.x, y - c.y);
+      if (d < bd) [beste, bd] = [{ van, n, x, y }, d];
+    };
+    const o = midden(s.kaart.opslag);
+    kijk('', Math.floor(v[g] ?? 0) - (gepland.get(g) ?? 0), o.x, o.y);
+    for (const m of makers) {
+      if ((m as { vlieg?: number }).vlieg || m.af) continue;
+      const n = m.buffer.filter((x) => x === g).length - (geplandBij.get(`m${m.id}:${g}`) ?? 0);
+      const p = randPlek(blok2(m), m.id);
+      kijk(`m${m.id}`, n, p.x, p.y);
+    }
+    for (const [k, bt] of i.banden) if (!bt.af && bt.goed === g) kijk(`b${k}`, 1 - (geplandBij.get(`b${k}:${g}`) ?? 0), bt.x + 0.5, bt.y + 0.5);
+    return beste as null | { van: string; n: number; x: number; y: number };
+  };
+  // Spullen brengen: haal wat het doel nog wil hebben uit de opslag, van de grond of van een belt.
   const lever = (doel: number | string, maxMuizen: number) => {
     const d = leverDoel(doel);
     if (!d) return;
@@ -308,12 +352,15 @@ function stapWerk(s: SpelStaat, sec: number): void {
     for (const g of d.soorten) {
       let wil = d.wil(g) - (onderweg.get(`${doel}:${g}`) ?? 0);
       while (wil > 0 && muizen > 0) {
-        const n = Math.min(DRAAGT, wil, Math.floor(v[g] ?? 0) - (gepland.get(g) ?? 0));
-        if (n <= 0) break;
         if (!beschikbaar.length && !gravers.length) return; // geen muizen meer vrij
         const c = midden(d.blok);
-        geef(1, c.x, c.y, (w) => ({ klus: 'lever', doel, goed: g, n, fase: 'pak', ...pakPlek(s, g, w) }));
-        gepland.set(g, (gepland.get(g) ?? 0) + n);
+        // dichtstbij het doel: de opslag, iets op de grond bij een drill of fabricator, of op een belt
+        const b = bron(g, c);
+        const n = Math.min(DRAAGT, wil, b?.n ?? 0);
+        if (!b || n <= 0) break;
+        geef(1, c.x, c.y, (w) => ({ klus: 'lever', doel, goed: g, n, fase: 'pak', van: b.van, ...(b.van ? { x: b.x, y: b.y } : pakPlek(s, g, w)) }));
+        if (b.van) geplandBij.set(`${b.van}:${g}`, (geplandBij.get(`${b.van}:${g}`) ?? 0) + n);
+        else gepland.set(g, (gepland.get(g) ?? 0) + n);
         onderweg.set(`${doel}:${g}`, (onderweg.get(`${doel}:${g}`) ?? 0) + n);
         wil -= n;
         muizen--;

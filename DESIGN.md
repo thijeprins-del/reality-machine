@@ -109,6 +109,8 @@ Energie gaat om keuzes, niet om alles overeind houden. Er is geen zekering en ge
   brengen ze naar de bouwplek, pas dan bouwen ze (balkje: cyaan = gebracht, geel = gebouwd). Een fabricator krijgt zijn
   grondstof ook gebracht, door muizen of een band die erin loopt (tot 3 keer het recept). Wat hij maakt gaat via band of
   muizen naar de opslag. Brengen en bouwen gaat voor zelf graven: ook gravende muizen worden ervoor weggehaald.
+  Wat nodig is pakken ze waar het het dichtst bij het doel ligt: opslag/stapel, op de grond bij een drill of
+  fabricator (zijn buffer), of van een belt (Thije, 5 nov).
 - **Stockpiles instellen (5 nov):** klik op een stockpile en kies rechts welk goed erin komt (ook platen en balken) en
   de prio (LOW, NORMAL, HIGH). Muizen brengen naar de hoogste prio; die vult zich ook eerst (dan het erf, dan de rest).
   Twee maten: STOCKPILE (2x2, 4 balken, +150) en SMALL PILE (1 tegel, 1 balk, +40). Eén goed per stockpile.
