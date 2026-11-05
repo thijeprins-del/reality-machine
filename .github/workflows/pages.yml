@@ -1,7 +1,7 @@
 # Uitrol naar GitHub Pages, twee versies (versimpeld van Casus Romae):
 #   main → RELEASE  https://thijeprins.nl/reality-machine/
 #   dev  → DEV      https://thijeprins.nl/reality-machine/dev/
-# - Elke PR naar dev of main: job `controle` (npm run snel). Rood = niet mergen.
+# - Elke PR naar dev of main: job `controle` (npm run snel; naar dev ook: VERSIE opgehoogd). Rood = niet mergen.
 # - Push op dev: de workflow start zichzelf op main, want uitrollen mag alleen vanaf main.
 # - Uitrollen bouwt main en dev en zet ze samen neer (Pages bewaart één site per repo).
 # - Wijzigingen die alleen docs raken (behalve HELP.md) rollen niet uit.
@@ -24,6 +24,19 @@ jobs:
       cancel-in-progress: true
     steps:
       - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      # Elke PR naar dev hoogt VERSIE op (bv. v100t -> v101l), zie CLAUDE.md "Versie".
+      - name: Versie opgehoogd
+        if: github.base_ref == 'dev'
+        run: |
+          nieuw=$(tr -d '[:space:]' < VERSIE)
+          oud=$(git show "origin/dev:VERSIE" 2>/dev/null | tr -d '[:space:]' || true)
+          echo "dev: ${oud:-geen}  PR: $nieuw"
+          [[ "$nieuw" =~ ^v([0-9]+)[tl]$ ]] || { echo "::error::VERSIE moet vNNNt of vNNNl zijn, is '$nieuw'"; exit 1; }
+          n=${BASH_REMATCH[1]}
+          if [[ "$oud" =~ ^v([0-9]+)[tl]$ ]] && (( n != BASH_REMATCH[1] + 1 )); then
+            echo "::error::VERSIE moet v$((BASH_REMATCH[1] + 1))t of v$((BASH_REMATCH[1] + 1))l zijn (dev staat op $oud)"; exit 1
+          fi
       # main heeft vóór de eerste release nog geen spel (geen package.json): dan valt er niets te controleren.
       - uses: actions/setup-node@v4
         if: hashFiles('package-lock.json') != ''
@@ -101,7 +114,7 @@ jobs:
               printf '<!doctype html><meta charset="utf-8"><title>Reality Machine</title><p>Reality Machine: binnenkort. <a href="./dev/">Naar DEV</a></p>\n' > "bouw/$env/index.html"
               touch "bouw/$env/.binnenkort"
             fi
-            echo "$env: build $BUILD_NUMBER (${sha:0:7})" > "bouw/$env/versie.txt"
+            echo "$env: $(cat "src-$env/VERSIE" 2>/dev/null || echo '?') build $BUILD_NUMBER (${sha:0:7})" > "bouw/$env/versie.txt"
           done
       - name: Zet de site samen
         run: |
