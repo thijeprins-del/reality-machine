@@ -1,6 +1,7 @@
 // Werkers: eenheden die grondstoffen halen. Lopen naar een afzetting, graven, sjouwen naar de opslag, en weer terug.
 // Posities in tegels (kommagetallen); het midden van tegel (x, y) ligt op (x, y).
-import { afzettingOp, type Afzetting, type Blok, type Kaart } from './kaart';
+import { afzettingOp, type Afzetting, type Kaart } from './kaart';
+import { dichtstbijVrij, routePunt, vrijOp } from './routes';
 import { hash01, volgende } from './toeval';
 import type { EenheidSoort, Grondstof, Voorraad } from './types';
 
@@ -13,7 +14,7 @@ export interface Werker {
   y: number;
   doelX: number;
   doelY: number;
-  via: { x: number; y: number } | null; // omweg om de machine heen
+  via: { x: number; y: number } | null; // het volgende punt op de route; null = rechtdoor naar het doel
   taak: Taak;
   bron: number; // id van de afzetting, -1 = geen
   lading: { goed: Grondstof; n: number } | null;
@@ -36,7 +37,7 @@ export function maakWerkers(soort: string, aantal: number, k: Kaart, s: { toeval
   const rond = k.machine;
   const mx = rond.x + rond.breed / 2 - 0.5, my = rond.y + rond.diep / 2 - 0.5;
   const vrij = (x: number, y: number) =>
-    [k.machine, k.opslag].every((b) => x < b.x - 0.8 || y < b.y - 0.8 || x > b.x + b.breed - 0.2 || y > b.y + b.diep - 0.2);
+    vrijOp(k.lopen, x, y) && [k.opslag].every((b) => x < b.x - 0.8 || y < b.y - 0.8 || x > b.x + b.breed - 0.2 || y > b.y + b.diep - 0.2);
   for (let i = 0; i < aantal; i++) {
     // een dichte zwerm rond de machine, niet erin en niet op de opslag
     let x = mx, y = my;
@@ -93,7 +94,7 @@ export function stapWerkers(s: WerkStaat, soorten: EenheidSoort[], sec: number):
       continue;
     }
     if (w.taak === 'rust') continue;
-    if (beweeg(w, soort.snelheid * sec)) aangekomen(s, w);
+    if (beweeg(s, w, soort.snelheid * sec)) aangekomen(s, w);
   }
 }
 
@@ -159,49 +160,24 @@ function naarOpslag(s: WerkStaat, w: Werker): void {
 }
 
 function loop(s: WerkStaat, w: Werker, x: number, y: number, taak: Taak): void {
+  // een doel op water, een klip of tegen de machine: dan zo dichtbij als het kan
+  if (!vrijOp(s.kaart.lopen, x, y)) {
+    const p = dichtstbijVrij(s.kaart.lopen, x, y);
+    x = p.x + (hash01(w.id * 5 + 1) - 0.5) * 0.8;
+    y = p.y + (hash01(w.id * 5 + 2) - 0.5) * 0.8;
+  }
   w.doelX = x;
   w.doelY = y;
   w.taak = taak;
   w.klok = 0;
-  w.via = omweg(s.kaart.machine, w.x, w.y, x, y);
+  w.via = volgendPunt(s, w);
 }
 
-// Loopt de rechte lijn door de machine? Dan via de hoek die de kortste omweg geeft.
-function omweg(b: Blok, x0: number, y0: number, x1: number, y1: number): { x: number; y: number } | null {
-  const m = 0.7;
-  const r = { l: b.x - 0.5 - m, t: b.y - 0.5 - m, r: b.x + b.breed - 0.5 + m, b: b.y + b.diep - 0.5 + m };
-  if (!snijdt(r, x0, y0, x1, y1)) return null;
-  let beste: { x: number; y: number } | null = null;
-  let lengte = Infinity;
-  for (const h of [{ x: r.l, y: r.t }, { x: r.r, y: r.t }, { x: r.l, y: r.b }, { x: r.r, y: r.b }]) {
-    const l = Math.hypot(h.x - x0, h.y - y0) + Math.hypot(x1 - h.x, y1 - h.y);
-    if (l < lengte) [beste, lengte] = [h, l];
-  }
-  return beste;
-}
+const volgendPunt = (s: WerkStaat, w: Werker) =>
+  routePunt(s.kaart.lopen, w.x, w.y, w.doelX, w.doelY, (hash01(w.id * 7 + 1) - 0.5) * 0.6, (hash01(w.id * 7 + 2) - 0.5) * 0.6);
 
-function snijdt(r: { l: number; t: number; r: number; b: number }, x0: number, y0: number, x1: number, y1: number): boolean {
-  // Liang-Barsky, iets binnen de rand zodat langs de hoek lopen niet telt
-  const e = 0.05;
-  const dx = x1 - x0, dy = y1 - y0;
-  let t0 = 0, t1 = 1;
-  for (const [p, q] of [
-    [-dx, x0 - (r.l + e)], [dx, r.r - e - x0], [-dy, y0 - (r.t + e)], [dy, r.b - e - y0],
-  ]) {
-    if (p === 0) {
-      if (q < 0) return false;
-    } else {
-      const t = q / p;
-      if (p < 0) t0 = Math.max(t0, t);
-      else t1 = Math.min(t1, t);
-      if (t0 > t1) return false;
-    }
-  }
-  return true;
-}
-
-// Beweeg een stuk richting het doel (eerst via de omweg). Geeft true bij aankomst.
-function beweeg(w: Werker, stap: number): boolean {
+// Beweeg een stuk richting het doel, punt voor punt langs de route. Geeft true bij aankomst.
+function beweeg(s: WerkStaat, w: Werker, stap: number): boolean {
   const doel = w.via ?? { x: w.doelX, y: w.doelY };
   const dx = doel.x - w.x, dy = doel.y - w.y;
   const d = Math.hypot(dx, dy);
@@ -211,7 +187,7 @@ function beweeg(w: Werker, stap: number): boolean {
     w.x = doel.x;
     w.y = doel.y;
     if (w.via) {
-      w.via = null;
+      w.via = volgendPunt(s, w);
       return false;
     }
     return true;

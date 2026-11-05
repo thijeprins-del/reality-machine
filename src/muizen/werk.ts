@@ -53,7 +53,8 @@ export function werk(s: SpelStaat): WerkStaat {
   return w;
 }
 
-const daar = (w: Werker, t: Taak) => w.taak === 'rust' && Math.hypot(w.x - t.x, w.y - t.y) < 0.35;
+// de kern zet een doel op een klip of tegen een gebouw net ernaast neer: dichtbij is goed genoeg
+const daar = (w: Werker, t: Taak) => w.taak === 'rust' && Math.hypot(w.x - t.x, w.y - t.y) < 1;
 
 // Een plekje langs de rand van een blok, voor elke muis een eigen.
 function randPlek(b: { x: number; y: number; breed: number; diep: number }, id: number): { x: number; y: number } {

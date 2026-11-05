@@ -15,6 +15,7 @@ import {
   midden, opslagMax, RICHTINGEN, sloop, tegel, vast, zet, type Bouwsel, type Deel, type Maker, type Oordeel,
 } from './industrie';
 import { kanBetalen, kostTekst, naamVan } from './kosten';
+import { werk } from './werk';
 import { tekenRegels, type Regel } from './letters';
 import { KL } from './paneel';
 
@@ -28,6 +29,7 @@ declare global {
       recept: (fabriekId: number, r: Deel | null) => void;
       kies: (fabriekId: number | null) => void;
       sloop: (x: number, y: number) => boolean;
+      taken: () => [number, unknown][];
       scherm: (kol: number, rij: number) => { x: number; y: number };
     };
   }
@@ -371,6 +373,7 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
     },
     kies: (id) => (gekozen = id),
     sloop: (x, y) => sloop(staat(), x, y),
+    taken: () => [...werk(staat()).taken],
     scherm: (kol, rij) => {
       const p = beeld.wereld.toGlobal(iso(kol, rij));
       return { x: p.x, y: p.y };

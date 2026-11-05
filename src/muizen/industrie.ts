@@ -13,6 +13,7 @@
 // - De opslag houdt per grondstof een klein beetje; een stapel voor die grondstof houdt veel meer.
 // - Bij de stream wordt alles buiten de ring ingepakt: de bouwkosten komen terug.
 import { binnenBlok, binnenRing, type Blok } from '../kern/kaart';
+import { TEGEL_WATER } from '../kern/terrein';
 import type { SpelStaat } from '../kern/spel';
 import type { Band, Goed, Grondstof, Richting, Trucje, Voorraad } from '../kern/types';
 import { energie, log, verbruiker } from './energie';
@@ -200,6 +201,7 @@ export const fabriekOp = (s: SpelStaat, x: number, y: number) => industrie(s).fa
 function bezet(s: SpelStaat, x: number, y: number): boolean {
   const k = s.kaart;
   if (x < 1 || y < 1 || x >= k.breed - 1 || y >= k.diep - 1) return true;
+  if (k.soort[y * k.breed + x] === TEGEL_WATER) return true; // niet bouwen in het water
   const v = vast(s);
   return binnenBlok(k.machine, x, y) || binnenBlok(k.opslag, x, y) || binnenBlok(v.erf, x, y) || !!fabriekOp(s, x, y) ||
     Object.values(v.bronnen).some((b) => binnenBlok(b, x, y)) || !!boorOp(s, x, y) || !!paalOp(s, x, y) || !!stapelOp(s, x, y);

@@ -11,7 +11,7 @@ Nog een skelet. Werk dit bij bij elke grote regelwijziging.
   Aanloop (laatste 12 s, alleen met volle stroom): bliksem van de machine naar de ring, schudden, de wereld wordt donker.
   De sprong (`SPRONG_SEC` = 3,5 s): uit de wereld gerukt, de oude grond valt weg, even in het niets (tijd en werk staan
   stil, het stroomnet loopt door), dan landen in de volgende wereld met eigen kleuren (roestduin, kristaltoendra, gifwoud,
-  magmaveld, zoutzee). Het spel begint ook in het niets. Muizen buiten de ring worden nu nog mee naar binnen getrokken.
+  magmaveld, zoutzee, aarde). Het spel begint ook in het niets. Muizen buiten de ring worden nu nog mee naar binnen getrokken.
 - **Stream gemist** (2 nov): heeft de machine op dat moment geen volle stroom, dan springt er niets (rode flits, vonken)
   en begint de dimensie opnieuw. Volgens het plan verlies je dan; voorlopig vergevingsgezind om mee te spelen.
 - Om de stream te halen heeft de reality machine genoeg energie en heelheid nodig. Haal je hem niet: verloren.
@@ -27,7 +27,9 @@ Nog een skelet. Werk dit bij bij elke grote regelwijziging.
 - Winnen: de tegenstander zo meppen dat zijn machine de volgende stream niet haalt, vooral door zijn keten te breken.
 
 ## Kaart en grondstoffen (basis, 2 nov)
-- Kaart van **64 x 64 tegels**: de schijf in het midden, ruim wereld eromheen. Getallen in `src/data/dimensies.ts`.
+- Kaart van standaard **64 x 64 tegels**: de schijf in het midden, ruim wereld eromheen. Getallen in `src/data/dimensies.ts`.
+  Elke wereld kan een eigen maat hebben (`kaart` in `DIMENSIES`, minstens 48), ook niet-vierkant; om te proberen: `?kaart=256x64`
+  of `?kaart=256x64,128x128` om de beurt. Een grotere wereld heeft meer velden, over de hele kaart verspreid.
 - In het midden de reality machine (4x4 tegels) en de opslag (2x2), binnen de gele ring (bouwgrond, geen grondstoffen).
 - Velden met ruwe grondstoffen eromheen: schroot (7 velden, 30 per tegel), hout (6, 25), kristal (3, 15, verder weg).
 - Werkers (eenheden met `werk`) graven een lading, sjouwen die naar de opslag en gaan terug, tot het veld op is;
@@ -37,16 +39,28 @@ Nog een skelet. Werk dit bij bij elke grote regelwijziging.
 ## Terrein (Lieuwe, 5 nov)
 - Elke wereld krijgt heuvels uit Perlin-ruis (`src/kern/terrein.ts`), met per dimensie eigen getallen (`heuvels` in
   `src/data/dimensies.ts`). Een wereld hangt alleen af van de seed en het dimensienummer, niet van wat je speelde.
-- Hoogtes staan op de **hoeken** van tegels, in hele niveaus van -1 tot +5. Eén niveau is 16 schermpixels.
-  Verschillen de hoeken van een tegel 1 niveau: helling. Verschillen ze 2: klip (komt in stap 2).
+- **Elke tegel heeft zijn eigen vier hoekhoogtes**, in hele niveaus van -1 tot +5 (één niveau is 16 schermpixels). Binnen
+  een tegel schelen twee hoeken langs een rand hooguit 1: een tegel is vlak of een helling. Alle hoeken op -1: water.
+- **Een klip is een rand, geen tegel.** Sluiten twee buren op hun gedeelde rand op elkaar aan, dan loopt de grond door.
+  Verschillen ze, dan staat daar een loodrechte wand, zo hoog als het verschil: 1,1,1,3,2,1 wordt `_|-\_`. Zo is elke
+  kaart te tekenen (het zijn blokken met een vlakke of schuine bovenkant) en hoeft er niets gladgestreken te worden.
+- Plateaus: stukken van minstens `MIN_PLATEAU` tegels die `klipHoog` niveaus (per dimensie 2 of 3) boven het glooiende
+  land liggen, een eind van de schijf af. Elk plateau krijgt een oprit van `klipHoog` tegels lang; lukt dat niet, dan
+  verdwijnt het weer.
+- Hoe hoger, hoe lichter (`hoogteTint`): elk niveau is een stap helderder, zodat je hoogte in één oogopslag ziet.
+- Hoogtelijnen: een dunne lijn waar de grond een heel niveau passeert, zoals op een wandelkaart, en een donkerder lijn
+  langs een rand waar het land erachter lager ligt (een wand die van je af kijkt zie je anders niet).
 - De schijf ligt op hoogte 0. Tot 3,5 tegels buiten de ring blijft de wereld vlak, want muizen moeten eraf kunnen.
 - Eenheden en grondstoffen staan op de grond; **eenheden worden altijd boven het terrein getekend**, zodat een muis
   achter een heuvel zichtbaar blijft. Klikken raakt de voorste grond op die plek.
-- **Stap 2:** hoogte -1 wordt water. Klippen en water zijn voor lopende eenheden onbegaanbaar, in beide richtingen.
-  Routes via een richtingenkaart per doel, en de generator garandeert dat de grondstoffen bereikbaar zijn.
-  Begaanbaarheid per manier van bewegen, zodat boten of veerponten later kunnen.
-- **Stap 3:** een tekenscript maakt per dimensie een tegelset uit een basistegel met ruis (ook het water: bruin op
-  Roestduin, gloeiend op Magmaveld, blauw op een nieuwe dimensie Aarde). Tot die tijd is de grond getekende vlakken.
+- Lopende eenheden kunnen niet over water en niet langs een wand, hoe laag ook, in geen van beide richtingen; ze kunnen
+  wel tot vlak tegen een wand komen. Routes via een richtingenkaart per doel (`src/kern/routes.ts`), gedeeld door de
+  hele zwerm. Een klik op water of op land waar je niet kunt komen: zo dichtbij als het kan.
+- Grondstoffen liggen alleen op land dat je kunt bereiken; eilanden blijven onbereikbaar. Begaanbaarheid hoort bij een
+  manier van bewegen (`Doorgang`), zodat boten of veerponten later kunnen.
+- Elke dimensie heeft een eigen tegelset en een plaatje met stukken wand uit `scripts/pixel/terrein.mjs`, met eigen
+  water: bruin op Roestduin, gloeiend op Magmaveld, blauw op Aarde (de zesde dimensie).
+- Terreinbewerker (F2, testgereedschap): BLOK tilt tegels los van hun buren (wand), HEUVEL neemt de buren mee (helling).
 
 ## Samenwerking facties
 Zelfde spelregels, ander gereedschap. De kern weet niets van muizen of otters; een factie is data plus één trucje.

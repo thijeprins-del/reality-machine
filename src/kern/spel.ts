@@ -12,6 +12,7 @@ export interface SpelStaat {
   dimensie: number; // hoeveelste dimensie
   onderweg: number; // seconden nog in het niets tussen twee dimensies (0 = geland)
   gemist: number; // zo vaak kwam de stream terwijl de machine geen volle stroom had
+  klokStil?: boolean; // testgereedschap: de tijd in deze dimensie loopt niet door, dus er komt geen stream
   factie: FactieId;
   kaart: Kaart;
   machine: Machine;
@@ -52,7 +53,7 @@ export function stap(s: SpelStaat, f: Factie, sec: number): void {
   }
   stapWerkers(s, f.eenheden, sec);
   f.trucje.opTik?.(s, sec);
-  s.tijd += sec;
+  if (!s.klokStil) s.tijd += sec;
   while (s.tijd >= DIMENSIE_DUUR_SEC) {
     s.tijd -= DIMENSIE_DUUR_SEC;
     // Alleen met volle stroom op dat moment springt de schijf mee. Anders mis je hem en blijf je hier
@@ -72,7 +73,14 @@ export function stream(s: SpelStaat, f?: Factie): void {
 }
 
 function verhuis(s: SpelStaat): void {
+  const oud = s.kaart.machine;
   s.kaart = maakKaart(s.seed, s.dimensie); // zelfde machine en opslag, nieuw terrein en nieuwe velden
+  // Een wereld van een andere maat heeft zijn midden ergens anders: alles op de schijf verhuist mee.
+  const dx = s.kaart.machine.x - oud.x, dy = s.kaart.machine.y - oud.y;
+  for (const w of s.werkers) {
+    w.x += dx;
+    w.y += dy;
+  }
   const r = s.kaart.ring;
   for (const w of s.werkers) {
     // wat ze droegen gaat mee de opslag in; opdrachten in de oude wereld vervallen

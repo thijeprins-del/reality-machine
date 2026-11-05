@@ -1,13 +1,16 @@
 // Tekent de spelstaat: grond, grondstoffen, gebouwen en eenheden, met een gloedlaag voor het neon.
 // De factie levert de plaatjes (FactieBeeld); de kern weet niet welke factie het is.
-import { Assets, BlurFilter, ColorMatrixFilter, Container, Graphics, Sprite, type Texture } from 'pixi.js';
+import { Assets, BlurFilter, ColorMatrixFilter, Container, Graphics, Rectangle, Sprite, Texture } from 'pixi.js';
 import { naarScherm, TEGEL_B, TEGEL_H } from './iso';
-import { dimensieKleur, DIMENSIE_DUUR_SEC, HOOGTE_PX, SPRONG_SEC, THUIS, type DimensieKleur } from '../data/dimensies';
-import { schijfStraal, type Blok, type Kaart } from './kaart';
+import { dimensieKleur, DIMENSIE_DUUR_SEC, hoogteTint, HOOGTE_MIN, HOOGTE_PX, SPRONG_SEC, THUIS, type DimensieWereld } from '../data/dimensies';
+import { tekenDebug } from './debugbeeld';
+import { opSchijf, schijfStraal, type Blok, type Kaart } from './kaart';
 import type { SpelStaat } from './spel';
-import { hoeken, hoogteOp, knikLinksRechts } from './terrein';
+import { hoeken, hoogteOp, knikLinksRechts, TEGEL_LAND, tegelOnder, TEGEL_WATER } from './terrein';
+import { TerreinBewerker } from './terreinbewerker';
 import { hash01 } from './toeval';
 import type { FactieBeeld, SpriteInfo } from './types';
+import { CEL_B, CEL_H, CEL_X, CEL_Y, celLand, celSchuim, celWand, celWater, KOLOMMEN, SCHUIM_BEELDEN, TEGELSETS, VARIANTEN, WAND_B, WAND_H, WAND_KOLOMMEN, WAND_VARIANTEN, WAND_Y, WATER_BEELDEN, WATER_VARIANTEN, type TegelSet } from './tegels';
 import { WERELD_SPRITES } from './wereld-sprites';
 
 export const PIXEL = 2; // één pixelmaat: elke sprite-pixel is 2 schermpixels bij zoom 1
@@ -69,12 +72,13 @@ export class WereldBeeld {
   }
 
   async laad(): Promise<void> {
-    await Promise.all(
-      Object.entries(this.sprites).flatMap(([naam, s]) => [
+    await Promise.all([
+      ...Object.entries(this.sprites).flatMap(([naam, s]) => [
         this.laadTex(naam, s.url),
         s.gloedUrl ? this.laadTex(`${naam}-gloed`, s.gloedUrl) : Promise.resolve(),
       ]),
-    );
+      ...TEGELSETS.flatMap((set) => [`tegels-${set}`, `wanden-${set}`].map((naam) => this.laadTex(naam, wereldUrl(naam) as string))),
+    ]);
     const k = this.staat.kaart;
     this.wereld.addChild(this.ruimte, this.wereldGrond, this.schijf, this.vloer, this.markering, this.dingen);
     this.dingen.sortableChildren = true;
@@ -90,11 +94,22 @@ export class WereldBeeld {
     this.waas2.blendMode = 'add';
     this.waas2.alpha = 0.8;
     this.wereld.addChild(this.waas2, this.waas, this.scherp);
+    // De gloed van de grond hoort op de grond: onder de schijf en alles wat erop staat, anders krijgt een boom voor een
+    // gloeiend meer de kleur van dat meer.
     this.grondGloed.blendMode = 'add';
-    this.scherp.addChild(this.grondGloed);
+    this.wereld.addChildAt(this.grondGloed, this.wereld.getChildIndex(this.wereldGrond) + 1);
     const los = new Container();
     this.wereld.addChildAt(los, this.wereld.getChildIndex(this.dingen) + 1);
     this.fx.hang(this.scherp, this.waas, los);
+    this.debug.visible = false;
+    this.wereld.addChild(this.debug, this.kwastLijn);
+    this.bewerker = new TerreinBewerker(() => this.staat, () => (this.terreinVuil = true), this.kwastLijn);
+    window.addEventListener('keydown', (e) => {
+      if (e.key !== 'F1') return;
+      e.preventDefault(); // anders opent de browser zijn hulppagina
+      this.debugAan = !this.debugAan;
+      this.debugGetekend = null;
+    });
 
     const vast = { position: 'fixed', inset: '0', opacity: '0', pointerEvents: 'none' };
     Object.assign(this.flits.style, vast, { background: '#fff', zIndex: '9' });
@@ -104,12 +119,15 @@ export class WereldBeeld {
     });
     document.body.append(this.duister, this.flits);
     this.schijf.addChild(tekenSchijf(k));
+    this.schijfVan = k.machine;
+    this.machineNu = k.machine;
     this.dimensie = this.staat.dimensie;
     this.gemist = this.staat.gemist;
     this.bouwWereld();
     for (const [naam, b] of [['machine', k.machine], ['opslag', k.opslag]] as [string, Blok][]) {
       const st = this.maak(naam);
       this.zetGebouw(st, b.x, b.y, b.breed, 1);
+      this.opSchijfStukken.push(st);
     }
     for (const w of this.staat.werkers) this.werkers.push(this.maak(w.soort, true));
     if (this.staat.onderweg > 0) {
@@ -134,16 +152,135 @@ export class WereldBeeld {
     const k: Kaart = this.staat.kaart;
     for (const st of this.afzettingen.values()) for (const d of st.delen) d.destroy();
     this.afzettingen.clear();
-    for (const c of this.grondGloed.removeChildren()) c.destroy();
-    const [grond, gloed] = tekenGrond(k, dimensieKleur(this.staat.dimensie));
-    this.wereldGrond.addChild(grond);
-    this.grondGloed.addChild(gloed);
+    this.bouwGrond(k);
     for (const a of k.afzettingen) {
       const naam = `${a.goed}-${a.variant + 1}`;
       const st = this.maak(naam);
-      this.zetGebouw(st, a.x, a.y, 1, (hash01(a.id) < 0.5 ? 1 : -1) as 1 | -1);
+      this.zetAfzetting(st, a);
       this.afzettingen.set(a.id, st);
     }
+  }
+
+  private zetAfzetting(st: Stuk, a: Kaart['afzettingen'][number]): void {
+    this.zetGebouw(st, a.x, a.y, 1, (hash01(a.id) < 0.5 ? 1 : -1) as 1 | -1);
+  }
+
+  // Het terrein is veranderd (terreinbewerker): de grond opnieuw leggen, grondstoffen op hun nieuwe hoogte.
+  private legGrondOpnieuw(): void {
+    const k = this.staat.kaart;
+    for (const c of this.wereldGrond.removeChildren()) c.destroy({ children: true });
+    this.bouwGrond(k);
+    for (const a of k.afzettingen) {
+      const st = this.afzettingen.get(a.id);
+      if (st) this.zetAfzetting(st, a);
+    }
+    this.debugGetekend = null;
+  }
+
+  private bouwGrond(k: Kaart): void {
+    for (const c of this.grondGloed.removeChildren()) c.destroy();
+    const wereld = dimensieKleur(this.staat.dimensie);
+    this.golven = [];
+    this.wereldGrond.addChild(this.legTegels(k, wereld, wereld.tegelset));
+    this.wereldGrond.addChild(tekenHoogtelijnen(k));
+  }
+
+  // Eén cel uit het plaatje van een tegelset. Bewaard, want duizenden tegels delen dezelfde paar cellen.
+  private cel(set: TegelSet, i: number): Texture {
+    const naam = `${set}/${i}`;
+    let t = this.cellen.get(naam);
+    if (!t) {
+      const rx = (i % KOLOMMEN) * CEL_B, ry = Math.floor(i / KOLOMMEN) * CEL_H;
+      t = new Texture({ source: this.texturen.get(`tegels-${set}`)!.source, frame: new Rectangle(rx, ry, CEL_B, CEL_H) });
+      this.cellen.set(naam, t);
+    }
+    return t;
+  }
+
+  // Eén stuk wand uit het wandenplaatje van een tegelset.
+  private wandCel(set: TegelSet, i: number): Texture {
+    const naam = `${set}/w${i}`;
+    let t = this.cellen.get(naam);
+    if (!t) {
+      const rx = (i % WAND_KOLOMMEN) * WAND_B, ry = Math.floor(i / WAND_KOLOMMEN) * WAND_H;
+      t = new Texture({ source: this.texturen.get(`wanden-${set}`)!.source, frame: new Rectangle(rx, ry, WAND_B, WAND_H) });
+      this.cellen.set(naam, t);
+    }
+    return t;
+  }
+
+  // De grond als tegels, van achter naar voor: wat hoger ligt valt vanzelf over wat erachter ligt, ook over water.
+  // Na elke tegel de wanden op zijn twee achterranden, waar de buur erachter hoger ligt. Een wand die van je af kijkt
+  // hoeft niet: daar staat de hoge tegel zelf voor.
+  private legTegels(k: Kaart, wereld: DimensieWereld, set: TegelSet): Container {
+    const c = new Container();
+    c.isRenderGroup = true; // de tegels staan stil: niet elk beeld opnieuw rekenen
+    const gl = new Graphics(); // wat gloeit: lava, gif en kristal
+    const leg = (i: number, kol: number, rij: number, laag: number, tint = 1) => {
+      const p = naarScherm(kol, rij, laag);
+      const s = new Sprite(this.cel(set, i));
+      s.tint = grijs(tint);
+      s.scale.set(PIXEL);
+      s.position.set(p.x - CEL_X * PIXEL, p.y - CEL_Y * PIXEL);
+      c.addChild(s);
+      return s;
+    };
+    // Een wand tussen de rand van de hoge buur (tP links, tQ rechts op het scherm) en de eigen rand eronder (bP, bQ).
+    // (x, y) is het roosterpunt waar de rand links begint.
+    const wand = (richting: number, x: number, y: number, tP: number, tQ: number, bP: number, bQ: number, h: number) => {
+      if (tP - bP <= 0 && tQ - bQ <= 0) return;
+      const p = naarScherm(x, y, tP);
+      const s = new Sprite(this.wandCel(set, celWand(Math.floor(h * WAND_VARIANTEN), richting, tQ - tP, bQ - bP, tP - bP)));
+      s.tint = grijs(hoogteTint(Math.max(tP, tQ)));
+      s.scale.set(PIXEL);
+      s.position.set(p.x, p.y - WAND_Y * PIXEL);
+      c.addChild(s);
+    };
+    const { breed, diep } = k;
+    for (let rij = 0; rij < diep; rij++)
+      for (let kol = 0; kol < breed; kol++) {
+        if (opSchijf(k, kol, rij)) continue;
+        const h = hash01(rij * 1000 + kol + 77);
+        const c4 = hoeken(k, kol, rij);
+        if (k.soort[rij * breed + kol] === TEGEL_WATER) {
+          // De gloed ligt boven alles, dus alleen op water dat je ook echt ziet: niet achter een heuvel.
+          if (wereld.waterGloeit) {
+            const p = naarScherm(kol, rij, HOOGTE_MIN);
+            const voor = tegelOnder(k, p.x, p.y);
+            if (voor.kol === kol && voor.rij === rij) gl.poly(ruit(p.x, p.y)).fill({ color: wereld.water[Math.floor(h * wereld.water.length)], alpha: 0.3 });
+          }
+          const variant = Math.floor(h * WATER_VARIANTEN), fase = Math.floor(hash01(h * 1e5) * WATER_BEELDEN);
+          this.golven.push({ s: leg(celWater(variant, fase), kol, rij, HOOGTE_MIN), set, cel: (b) => celWater(variant, (b + fase) % WATER_BEELDEN) });
+          // schuim op de randen waar het water iets anders raakt
+          for (const [rand, dk, dr] of [[0, 0, -1], [1, 1, 0], [2, 0, 1], [3, -1, 0]]) {
+            const nk = kol + dk, nr = rij + dr;
+            if (nk < 0 || nr < 0 || nk >= breed || nr >= diep || k.soort[nr * breed + nk] === TEGEL_WATER) continue;
+            const f = Math.floor(hash01(h * 3e5 + rand) * SCHUIM_BEELDEN);
+            this.golven.push({ s: leg(celSchuim(rand, f), kol, rij, HOOGTE_MIN), set, cel: (b) => celSchuim(rand, (b + f) % SCHUIM_BEELDEN) });
+          }
+        } else {
+          const laag = Math.min(c4.a, c4.r, c4.v, c4.l);
+          leg(celLand(c4.a - laag, c4.r - laag, c4.v - laag, c4.l - laag, Math.floor(h * VARIANTEN)), kol, rij, laag, hoogteTint((c4.a + c4.r + c4.v + c4.l) / 4));
+          const v = hash01(h * 1e6);
+          if (wereld.vlekGloeit && v < wereld.vlekKans) {
+            const p = naarScherm(kol, rij, hoogteOp(k, kol, rij));
+            gl.rect(Math.round((p.x - 8 + Math.round(v * 400) % 14) / PIXEL) * PIXEL, Math.round((p.y - 2 + Math.round(v * 900) % 4) / PIXEL) * PIXEL, 4 + Math.round(v * 77) % 6, PIXEL).fill(wereld.vlek);
+          }
+        }
+        // achter-links: de buur (kol - 1, rij), van de linkerhoek naar de achterhoek
+        if (kol > 0) {
+          const n = hoeken(k, kol - 1, rij);
+          wand(1, kol - 0.5, rij + 0.5, n.v, n.r, c4.l, c4.a, hash01(h * 7e5));
+        }
+        // achter-rechts: de buur (kol, rij - 1), van de achterhoek naar de rechterhoek
+        if (rij > 0) {
+          const n = hoeken(k, kol, rij - 1);
+          wand(0, kol - 0.5, rij - 0.5, n.l, n.v, c4.a, c4.r, hash01(h * 9e5));
+        }
+      }
+    c.addChild(tekenRand(k, wereld));
+    this.grondGloed.addChild(gl);
+    return c;
   }
 
   private flitsNu(kleur: string, sterk: number, uit: number): void {
@@ -166,6 +303,17 @@ export class WereldBeeld {
     this.oudeGrond = new Container();
     this.oudeGrond.addChild(...this.wereldGrond.removeChildren());
     this.wereld.addChildAt(this.oudeGrond, 1);
+    // Andere maat: de schijf ligt nu op andere tegels. De oude grond schuift mee, zodat hij er nog steeds onder ligt.
+    const verschuif = naarScherm(k.machine.x - this.machineNu.x, k.machine.y - this.machineNu.y);
+    this.oudeGrond.position.set(verschuif.x, verschuif.y);
+    this.oudeGrondY = verschuif.y;
+    this.machineNu = k.machine;
+    const schijfNaar = naarScherm(k.machine.x - this.schijfVan.x, k.machine.y - this.schijfVan.y);
+    this.schijf.position.set(schijfNaar.x, schijfNaar.y);
+    this.opSchijfStukken.forEach((st, i) => {
+      const b = i === 0 ? k.machine : k.opslag;
+      this.zetGebouw(st, b.x, b.y, b.breed, 1);
+    });
     this.bouwWereld();
     this.wereldGrond.visible = false;
     this.grondGloed.visible = false;
@@ -180,10 +328,25 @@ export class WereldBeeld {
     this.landing = false;
   }
   private landing = true;
+  private schijfVan!: Blok; // de machine zoals de schijf getekend is; waar hij nu ligt bepaalt de verschuiving
+  private machineNu!: Blok;
+  private opSchijfStukken: Stuk[] = []; // de machine en de opslag
+  private oudeGrondY = 0;
+  private cellen = new Map<string, Texture>();
+  private debug = new Graphics();
+  private kwastLijn = new Graphics();
+  private terreinVuil = false;
+  bewerker!: TerreinBewerker;
+  private debugAan = false;
+  private debugGetekend: Kaart | null = null; // voor welke kaart het debugbeeld nu klopt
+  private golven: { s: Sprite; set: TegelSet; cel: (beeld: number) => number }[] = []; // water en schuim die bewegen
+  private golfBeeld = 0;
+  private landTijd = -10; // wanneer we landden (op de klok van this.t)
 
   private landt(): void {
     const k = this.staat.kaart;
     this.landing = true;
+    this.landTijd = this.t;
     this.oudeGrond?.destroy({ children: true });
     this.oudeGrond = null;
     this.wereldGrond.visible = true;
@@ -251,7 +414,7 @@ export class WereldBeeld {
       if (this.oudeGrond) {
         // de oude wereld valt weg en dooft
         const v = Math.min(1, fase / 1.1);
-        this.oudeGrond.y = v * v * 900;
+        this.oudeGrond.y = this.oudeGrondY + v * v * 900;
         this.oudeGrond.alpha = 1 - v;
         if (v >= 1) {
           this.oudeGrond.destroy({ children: true });
@@ -268,7 +431,8 @@ export class WereldBeeld {
       this.ruimte.visible = false;
     }
     // de nieuwe wereld flikkert binnen na de landing
-    this.wereldGrond.alpha = s.onderweg > 0 ? 0 : Math.min(1, (fase - SPRONG_SEC) / 0.6 + 0.4) * (Math.random() < 0.1 && fase < SPRONG_SEC + 1 ? 0.5 : 1);
+    const geland = this.t - this.landTijd;
+    this.wereldGrond.alpha = s.onderweg > 0 ? 0 : Math.min(1, geland / 0.6 + 0.4) * (Math.random() < 0.1 && geland < 1 ? 0.5 : 1);
     this.duister.style.opacity = String(duister);
 
     // schudden
@@ -276,6 +440,25 @@ export class WereldBeeld {
     const sx = (Math.random() - 0.5) * 2 * this.schud, sy = (Math.random() - 0.5) * 2 * this.schud;
     this.wereld.pivot.set(Math.round(sx / PIXEL) * PIXEL, Math.round(sy / PIXEL) * PIXEL);
     this.fx.werk(sec);
+
+    // de bewerker kan meerdere keren per beeld verven; één keer opnieuw leggen is genoeg
+    if (this.terreinVuil) {
+      this.terreinVuil = false;
+      this.legGrondOpnieuw();
+    }
+    // F1: raster en hoogtes. Pas tekenen als het aan staat, en opnieuw bij een nieuwe wereld.
+    this.debug.visible = this.debugAan && s.onderweg <= 0;
+    if (this.debug.visible && this.debugGetekend !== k) {
+      tekenDebug(k, this.debug);
+      this.debugGetekend = k;
+    }
+
+    // water: vier beelden per seconde is genoeg, en pixelart hoort een beetje te haperen
+    const beeld = Math.floor(this.t * 4);
+    if (beeld !== this.golfBeeld) {
+      this.golfBeeld = beeld;
+      for (const g of this.golven) g.s.texture = this.cel(g.set, g.cel(beeld));
+    }
 
     this.grondGloed.alpha = 0.7 + 0.3 * Math.sin(this.t * 1.7);
     const hapering = Math.random() < 0.015 ? 0.35 : 1;
@@ -394,53 +577,63 @@ export class WereldBeeld {
   }
 }
 
-// Is tegel (kol, rij) deel van je eigen schijf?
-function opSchijf(k: Kaart, kol: number, rij: number): boolean {
-  const dx = kol - k.ring.x, dy = rij - k.ring.y;
-  return Math.hypot(dx, dy) <= schijfStraal(k, Math.atan2(dy, dx));
-}
-
-// Een stuk schuine grond iets lichter of donkerder: het licht komt van linksboven. gk en gr = hoeveel niveaus de grond
-// stijgt per tegel in kolom- en rijrichting. De getallen zijn voorlopig; straks zit dit in de tegelset.
-function belicht(kleur: number, gk: number, gr: number): number {
-  const f = 1 + (gk - gr) * 0.3 - (gk + gr) * 0.1;
-  const kanaal = (schuif: number) => Math.max(0, Math.min(255, Math.round(((kleur >> schuif) & 255) * f)));
-  return (kanaal(16) << 16) | (kanaal(8) << 8) | kanaal(0);
-}
-
+const grijs = (f: number) => {
+  const w = Math.round(f * 255);
+  return (w << 16) | (w << 8) | w;
+};
 const ruit = (x: number, y: number) => [x, y - TEGEL_H / 2, x + TEGEL_B / 2, y, x, y + TEGEL_H / 2, x - TEGEL_B / 2, y];
 
-// De wereld eromheen in de kleuren van de dimensie, met heuvels. Vlekken die gloeien (lava, gif, kristal) gaan ook in de
-// gloedlaag. Aan de voorkant een rand aarde en rots. Onder de schijf hoeft niets.
-// Van achter naar voor getekend, dus een heuvel valt vanzelf over de grond erachter.
-function tekenGrond(k: Kaart, wereld: DimensieKleur): [Graphics, Graphics] {
+// Hoogtelijnen, zoals op een wandelkaart: een dunne lijn waar de grond een heel niveau passeert. Die loopt altijd langs een
+// tegelrand of de knik in een tegel, waar twee hoeken even hoog zijn; tussen twee vlakke tegels is er geen lijn.
+// En een donkerder lijn langs de rand van een tegel waar het land erachter lager ligt: daar staat een wand die van je af
+// kijkt, en zo zie je toch dat de grond er ophoudt. Wat achter een heuvel verdwijnt, tekenen we niet.
+function tekenHoogtelijnen(k: Kaart): Graphics {
   const g = new Graphics();
-  const gl = new Graphics();
   const { breed, diep } = k;
-  for (let rij = 0; rij < diep; rij++)
-    for (let kol = 0; kol < breed; kol++) {
-      if (opSchijf(k, kol, rij)) continue;
-      const { x, y } = naarScherm(kol, rij);
-      const h = hash01(rij * 1000 + kol + k.afzettingen.length * 7919);
-      const kleur = wereld.grond[Math.floor(h * wereld.grond.length)];
-      const c = hoeken(k, kol, rij);
-      const A = [x, y - TEGEL_H / 2 - c.a * HOOGTE_PX], R = [x + TEGEL_B / 2, y - c.r * HOOGTE_PX];
-      const V = [x, y + TEGEL_H / 2 - c.v * HOOGTE_PX], L = [x - TEGEL_B / 2, y - c.l * HOOGTE_PX];
-      if (c.a + c.v === c.r + c.l) g.poly([...A, ...R, ...V, ...L]).fill(belicht(kleur, c.r - c.a, c.l - c.a));
-      else if (knikLinksRechts(c.a, c.r, c.v, c.l)) {
-        g.poly([...A, ...R, ...L]).fill(belicht(kleur, c.r - c.a, c.l - c.a));
-        g.poly([...V, ...L, ...R]).fill(belicht(kleur, c.v - c.l, c.v - c.r));
-      } else {
-        g.poly([...A, ...R, ...V]).fill(belicht(kleur, c.r - c.a, c.v - c.r));
-        g.poly([...A, ...V, ...L]).fill(belicht(kleur, c.v - c.l, c.l - c.a));
+  const land = (x: number, y: number) => x >= 0 && y >= 0 && x < breed && y < diep && k.soort[y * breed + x] === TEGEL_LAND && !opSchijf(k, x, y);
+  const vlak = (c: { a: number; r: number; v: number; l: number }) => c.a === c.r && c.a === c.v && c.a === c.l;
+  const zacht: number[] = [], hard: number[] = [];
+  const lijn = (naar: number[], x0: number, y0: number, z0: number, x1: number, y1: number, z1: number, kol: number, rij: number) => {
+    const p = naarScherm(x0, y0, z0), q = naarScherm(x1, y1, z1);
+    const t = tegelOnder(k, (p.x + q.x) / 2, (p.y + q.y) / 2);
+    if (Math.abs(t.kol - kol) > 1.5 || Math.abs(t.rij - rij) > 1.5) return; // verborgen achter iets dat ervoor staat
+    naar.push(p.x, p.y, q.x, q.y);
+  };
+  for (let y = 0; y < diep; y++)
+    for (let x = 0; x < breed; x++) {
+      if (!land(x, y)) continue;
+      const c = hoeken(k, x, y);
+      // de knik in de tegel, als die op één hoogte ligt
+      if (!vlak(c)) {
+        if (knikLinksRechts(c.a, c.r, c.v, c.l)) {
+          if (c.r === c.l) lijn(zacht, x + 0.5, y - 0.5, c.r, x - 0.5, y + 0.5, c.l, x, y);
+        } else if (c.a === c.v) lijn(zacht, x - 0.5, y - 0.5, c.a, x + 0.5, y + 0.5, c.v, x, y);
       }
-      const v = hash01(h * 1e6);
-      if (v < wereld.vlekKans) {
-        const vx = x - 8 + Math.round(v * 400) % 14, vy = y - 2 + Math.round(v * 900) % 4 - Math.round(hoogteOp(k, kol, rij) * HOOGTE_PX / PIXEL) * PIXEL;
-        g.rect(vx, vy, 4 + Math.round(v * 77) % 6, 2).fill(wereld.vlek);
-        if (wereld.vlekGloeit) gl.rect(vx, vy, 4 + Math.round(v * 77) % 6, 2).fill(wereld.vlek);
-      }
+      // de twee achterranden: [buur, eigen hoogtes links en rechts, die van de buur, de twee roosterpunten]
+      const randen: [number, number, number, number, number, number, number, number, number, number][] = [
+        [x - 1, y, c.l, c.a, 0, 0, x - 0.5, y + 0.5, x - 0.5, y - 0.5],
+        [x, y - 1, c.a, c.r, 0, 0, x - 0.5, y - 0.5, x + 0.5, y - 0.5],
+      ];
+      randen.forEach(([bx, by, e1, e2, , , x0, y0, x1, y1], i) => {
+        if (bx < 0 || by < 0) return;
+        const n = hoeken(k, bx, by);
+        const n1 = i === 0 ? n.v : n.l, n2 = i === 0 ? n.r : n.v;
+        if (e1 === n1 && e2 === n2) {
+          if (e1 === e2 && land(bx, by) && !(vlak(c) && vlak(n))) lijn(zacht, x0, y0, e1, x1, y1, e2, x, y);
+        } else if (e1 >= n1 && e2 >= n2 && !opSchijf(k, bx, by)) lijn(hard, x0, y0, e1, x1, y1, e2, x, y);
+      });
     }
+  for (let i = 0; i < zacht.length; i += 4) g.moveTo(zacht[i], zacht[i + 1]).lineTo(zacht[i + 2], zacht[i + 3]);
+  g.stroke({ width: PIXEL, color: 0x000000, alpha: 0.15 });
+  for (let i = 0; i < hard.length; i += 4) g.moveTo(hard[i], hard[i + 1]).lineTo(hard[i + 2], hard[i + 3]);
+  g.stroke({ width: PIXEL, color: 0x000000, alpha: 0.55 });
+  return g;
+}
+
+// De rand aarde en rots aan de voorkant van de wereld.
+function tekenRand(k: Kaart, wereld: DimensieWereld): Graphics {
+  const g = new Graphics();
+  const { breed, diep } = k;
   const dikte = 40;
   for (let i = 0; i < breed; i++) {
     const { x, y } = naarScherm(i, diep - 1);
@@ -452,7 +645,7 @@ function tekenGrond(k: Kaart, wereld: DimensieKleur): [Graphics, Graphics] {
     const c = hoeken(k, breed - 1, i);
     g.poly([x, y + TEGEL_H / 2 - c.v * HOOGTE_PX, x + TEGEL_B / 2, y - c.r * HOOGTE_PX, x + TEGEL_B / 2, y + dikte, x, y + TEGEL_H / 2 + dikte]).fill(wereld.rand[1]);
   }
-  return [g, gl];
+  return g;
 }
 
 // Je eigen schijf: grauwe tegels, grof afgebroken rand die boven de wereld uitsteekt (rotswand aan de voorkant,
