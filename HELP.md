@@ -6,7 +6,7 @@ Je eiland springt van dimensie naar dimensie. Linksboven zie je hoe lang het nog
 Kies je factie. De muizen zijn speelbaar; de otters volgen nog.
 
 Je begint met je reality machine (de grote toren), een opslag ernaast en honderden muizen. Meer muizen krijg je
-niet, dus zuinig zijn. Rond de machine liggen velden met schroot, hout (dode bomen) en kristal.
+niet, dus zuinig zijn. Rond de machine liggen velden met schroot, hout (dode bomen) en kristal, tussen de heuvels van de wereld.
 
 ## De gele ring en de stream
 Om je machine ligt een gele ring van geverfde streepjes. Elke minuut komt de stream: alles binnen de ring springt naar

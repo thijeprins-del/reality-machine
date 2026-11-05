@@ -27,12 +27,26 @@ Nog een skelet. Werk dit bij bij elke grote regelwijziging.
 - Winnen: de tegenstander zo meppen dat zijn machine de volgende stream niet haalt, vooral door zijn keten te breken.
 
 ## Kaart en grondstoffen (basis, 2 nov)
-- Kaart van **44 x 44 tegels**: groot, maar net genoeg ruimte om te bouwen. Getallen in `src/data/dimensies.ts`.
+- Kaart van **64 x 64 tegels**: de schijf in het midden, ruim wereld eromheen. Getallen in `src/data/dimensies.ts`.
 - In het midden de reality machine (4x4 tegels) en de opslag (2x2), binnen de gele ring (bouwgrond, geen grondstoffen).
-- Velden met ruwe grondstoffen eromheen: schroot (5 velden, 30 per tegel), hout (4, 25), kristal (2, 15, verder weg).
+- Velden met ruwe grondstoffen eromheen: schroot (7 velden, 30 per tegel), hout (6, 25), kristal (3, 15, verder weg).
 - Werkers (eenheden met `werk`) graven een lading, sjouwen die naar de opslag en gaan terug, tot het veld op is;
   dan zoeken ze binnen 8 tegels verder. Rechte lijnen, alleen om de machine heen. Geen botsingen tussen werkers.
 - Start: menu met factiekeuze. Een factie zonder data staat er wel, maar is niet te kiezen.
+
+## Terrein (Lieuwe, 5 nov)
+- Elke wereld krijgt heuvels uit Perlin-ruis (`src/kern/terrein.ts`), met per dimensie eigen getallen (`heuvels` in
+  `src/data/dimensies.ts`). Een wereld hangt alleen af van de seed en het dimensienummer, niet van wat je speelde.
+- Hoogtes staan op de **hoeken** van tegels, in hele niveaus van -1 tot +5. Eén niveau is 16 schermpixels.
+  Verschillen de hoeken van een tegel 1 niveau: helling. Verschillen ze 2: klip (komt in stap 2).
+- De schijf ligt op hoogte 0. Tot 3,5 tegels buiten de ring blijft de wereld vlak, want muizen moeten eraf kunnen.
+- Eenheden en grondstoffen staan op de grond; **eenheden worden altijd boven het terrein getekend**, zodat een muis
+  achter een heuvel zichtbaar blijft. Klikken raakt de voorste grond op die plek.
+- **Stap 2:** hoogte -1 wordt water. Klippen en water zijn voor lopende eenheden onbegaanbaar, in beide richtingen.
+  Routes via een richtingenkaart per doel, en de generator garandeert dat de grondstoffen bereikbaar zijn.
+  Begaanbaarheid per manier van bewegen, zodat boten of veerponten later kunnen.
+- **Stap 3:** een tekenscript maakt per dimensie een tegelset uit een basistegel met ruis (ook het water: bruin op
+  Roestduin, gloeiend op Magmaveld, blauw op een nieuwe dimensie Aarde). Tot die tijd is de grond getekende vlakken.
 
 ## Samenwerking facties
 Zelfde spelregels, ander gereedschap. De kern weet niets van muizen of otters; een factie is data plus één trucje.

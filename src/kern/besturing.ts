@@ -4,13 +4,14 @@
 import { Graphics, type Application, type Container } from 'pixi.js';
 import { naarScherm, TEGEL_B, TEGEL_H } from './iso';
 import type { SpelStaat } from './spel';
+import { hoogteOp, tegelOnder } from './terrein';
 
 export interface Besturing {
   selectie: Set<number>;
   werk(sec: number): void;
 }
 
-// Scherm (in de wereld-container) naar de tegel eronder.
+// Scherm (in de wereld-container) naar de tegel eronder, op vlakke grond. Met heuvels: tegelOnder in terrein.ts.
 export function naarTegel(x: number, y: number): { kol: number; rij: number } {
   const a = x / (TEGEL_B / 2), b = y / (TEGEL_H / 2);
   return { kol: Math.round((a + b) / 2), rij: Math.round((b - a) / 2) };
@@ -69,7 +70,7 @@ export function maakBesturing(
 
   // werker-posities op het scherm
   const opScherm = (x: number, y: number) => {
-    const p = naarScherm(x, y);
+    const p = naarScherm(x, y, hoogteOp(staat().kaart, x, y));
     return { x: wereld.position.x + p.x * zoom, y: wereld.position.y + (p.y - 8) * zoom };
   };
 
@@ -85,7 +86,7 @@ export function maakBesturing(
     }
     if (e.button === 2 && selectie.size) {
       const p = wereld.toLocal({ x: e.offsetX, y: e.offsetY });
-      const t = naarTegel(p.x, p.y);
+      const t = tegelOnder(staat().kaart, p.x, p.y);
       opdracht([...selectie], t.kol, t.rij);
     }
   });
