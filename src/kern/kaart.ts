@@ -1,7 +1,7 @@
 // De kaart van een dimensie: de machine en de opslag in het midden, velden met grondstoffen eromheen.
 import { dimensieHeuvels, dimensieKaart, KAART_BREED, KAART_DIEP, KAART_MIN, RING_STRAAL, VELDEN } from '../data/dimensies';
 import type { Doorgang } from './routes';
-import { maakHoogtes, ruimKorteKlippenOp, TEGEL_LAND, tegelSoorten, verbindLand, type Terrein } from './terrein';
+import { maakTerrein, openRanden, tegelSoorten, type Terrein } from './terrein';
 import { hash01, volgende } from './toeval';
 import type { Grondstof } from './types';
 
@@ -22,7 +22,7 @@ export interface Blok {
 }
 
 export interface Kaart extends Terrein {
-  soort: Uint8Array; // per tegel: TEGEL_LAND, TEGEL_WATER of TEGEL_KLIP
+  soort: Uint8Array; // per tegel: TEGEL_LAND of TEGEL_WATER
   lopen: Doorgang; // waar lopende eenheden kunnen komen
   afzettingen: Afzetting[];
   machine: Blok;
@@ -58,6 +58,12 @@ function kaartMaat(dimensie: number): [number, number] {
   return [Math.max(KAART_MIN, b), Math.max(KAART_MIN, d)];
 }
 
+// Is tegel (kol, rij) deel van je eigen schijf?
+export function opSchijf(k: Kaart, kol: number, rij: number): boolean {
+  const dx = kol - k.ring.x, dy = rij - k.ring.y;
+  return Math.hypot(dx, dy) <= schijfStraal(k, Math.atan2(dy, dx));
+}
+
 export function maakKaart(seed: number, dimensie: number): Kaart {
   const [breed, diep] = kaartMaat(dimensie);
   const mx = Math.floor(breed / 2) - 2;
@@ -67,10 +73,7 @@ export function maakKaart(seed: number, dimensie: number): Kaart {
   const midden = { x: mx + 2, y: my + 2 };
   const ring = { x: mx + 1.5, y: my + 1.5, r: RING_STRAAL };
   const stroom = stroomVoor(seed, dimensie, 1);
-  const terrein: Terrein = { breed, diep, hoogte: maakHoogtes(breed, diep, ring, dimensieHeuvels(dimensie), stroom) };
-  ruimKorteKlippenOp(terrein);
-  verbindLand(terrein, { x: midden.x, y: midden.y }, stroom);
-  ruimKorteKlippenOp(terrein); // een oprit kan een klip in twee korte stukken knippen
+  const terrein = maakTerrein(breed, diep, ring, dimensieHeuvels(dimensie), stroom, midden);
   const soort = tegelSoorten(terrein);
   const lopen = maakLopen(terrein, soort, midden, machine);
 
@@ -118,29 +121,37 @@ export function maakKaart(seed: number, dimensie: number): Kaart {
   return { ...terrein, soort, lopen, afzettingen, machine, opslag, ring };
 }
 
-// Het terrein is veranderd (debug, F1): tegelsoorten en routes opnieuw.
+// Het terrein is veranderd (terreinbewerker): tegelsoorten en routes opnieuw.
 export function herberekenTerrein(k: Kaart): void {
   k.soort = tegelSoorten(k);
   k.lopen = maakLopen(k, k.soort, { x: k.machine.x + 2, y: k.machine.y + 2 }, k.machine);
 }
 
-// Waar lopende eenheden kunnen staan: land dat je vanaf de machine kunt bereiken, niet op of vlak tegen de machine.
+// Waar lopende eenheden kunnen staan: land dat je vanaf de machine kunt bereiken zonder over water of langs een wand te gaan,
+// niet op of vlak tegen de machine.
 function maakLopen(t: Terrein, soort: Uint8Array, start: { x: number; y: number }, machine: Blok): Doorgang {
   const { breed, diep } = t;
+  const open = openRanden(t, soort);
   const vrij = new Uint8Array(breed * diep);
   const stapel = [start.y * breed + start.x];
   vrij[stapel[0]] = 1;
   while (stapel.length) {
     const o = stapel.pop() as number, x = o % breed;
-    for (const b of [x > 0 ? o - 1 : -1, x < breed - 1 ? o + 1 : -1, o - breed, o + breed]) {
-      if (b < 0 || b >= vrij.length || vrij[b] || soort[b] !== TEGEL_LAND) continue;
+    const buren = [
+      x < breed - 1 && open[o] & 1 ? o + 1 : -1,
+      x > 0 && open[o - 1] & 1 ? o - 1 : -1,
+      o + breed < vrij.length && open[o] & 2 ? o + breed : -1,
+      o >= breed && open[o - breed] & 2 ? o - breed : -1,
+    ];
+    for (const b of buren) {
+      if (b < 0 || vrij[b]) continue;
       vrij[b] = 1;
       stapel.push(b);
     }
   }
   for (let y = machine.y - 1; y <= machine.y + machine.diep; y++)
     for (let x = machine.x - 1; x <= machine.x + machine.breed; x++) vrij[y * breed + x] = 0;
-  return { breed, diep, vrij, velden: new Map() };
+  return { breed, diep, vrij, open, velden: new Map() };
 }
 
 export function afzettingOp(k: Kaart, x: number, y: number): Afzetting | undefined {

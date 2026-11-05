@@ -18,7 +18,7 @@ stream gemist.
 ## Besturing
 - **Slepen** met de linkermuisknop: muizen selecteren. Met **shift** erbij. **Dubbelklik**: alle muizen in beeld.
 - **Rechtsklik** op een veld grondstoffen: de geselecteerde muizen gaan graven en sjouwen alles naar de opslag,
-  tot het veld leeg is. Rechtsklik ergens anders: daarheen lopen. Over klippen en water kunnen muizen niet; ze lopen eromheen.
+  tot het veld leeg is. Rechtsklik ergens anders: daarheen lopen. Over water en langs rotswanden kunnen muizen niet; ze lopen eromheen of nemen een oprit.
 - **WASD**, de **pijltjes** of slepen met de **middelste muisknop**: rondkijken. **Scrollen**: zoomen.
   **Spatie**: terug naar de machine. **Esc**: niets meer geselecteerd.
 

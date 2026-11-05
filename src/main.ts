@@ -16,6 +16,8 @@ declare global {
       staat: SpelStaat;
       stap: (sec: number) => void;
       zaai: (seed: number) => void;
+      terrein: () => string;
+      laadTerrein: (json: string) => void;
       stream: () => void;
       stuur: (ids: number[] | 'alle', kol: number, rij: number) => void;
     };
@@ -62,6 +64,8 @@ async function start(): Promise<void> {
       staat = nieuwSpel(seed, factie.data);
     },
     stream: () => stream(staat, factie.data),
+    terrein: () => beeld.bewerker.alsJson(),
+    laadTerrein: (json) => beeld.bewerker.laadJson(json),
     stuur: (ids, kol, rij) => stuur(staat, ids === 'alle' ? staat.werkers.map((w) => w.id) : ids, kol, rij),
   };
 
@@ -70,7 +74,7 @@ async function start(): Promise<void> {
   app.stage.addChild(beeld.wereld);
   const besturing = maakBesturing(app, beeld.wereld, () => staat, (z) => beeld.zoom(z), (ids, kol, rij) =>
     stuur(staat, ids, kol, rij),
-  (omhoog, kol, rij) => beeld.terreinKlik(omhoog, kol, rij),
+  beeld.bewerker,
   );
   const balk = maakBalk();
   const paneel = factie.paneel ? (await factie.paneel())(() => staat) : null;

@@ -4,6 +4,7 @@
 import { Graphics, type Application, type Container } from 'pixi.js';
 import { naarScherm, TEGEL_B, TEGEL_H } from './iso';
 import type { SpelStaat } from './spel';
+import type { TerreinBewerker } from './terreinbewerker';
 import { hoogteOp, tegelOnder } from './terrein';
 
 export interface Besturing {
@@ -23,7 +24,7 @@ export function maakBesturing(
   staat: () => SpelStaat,
   opZoom: (z: number) => void,
   opdracht: (ids: number[], kol: number, rij: number) => void,
-  terreinKlik?: (omhoog: boolean, kol: number, rij: number) => boolean, // debug: true = de klik is hiermee afgehandeld
+  bewerker?: TerreinBewerker, // testgereedschap (F2): als het open staat, verft de linkerknop terrein
 ): Besturing {
   const selectie = new Set<number>();
   const kader = new Graphics();
@@ -76,12 +77,20 @@ export function maakBesturing(
   let sleep: { x0: number; y0: number; x1: number; y1: number; extra: boolean } | null = null;
   let kijk: { x: number; y: number } | null = null;
   let laatsteKlik = 0;
+  let verven = false;
+  let laatsteVerf = { kol: -1, rij: -1 };
+  const tegelOnderMuis = (x: number, y: number) => {
+    const p = wereld.toLocal({ x, y });
+    return tegelOnder(staat().kaart, p.x, p.y);
+  };
 
   canvas.addEventListener('pointerdown', (e) => {
-    if ((e.button === 0 || e.button === 2) && !e.shiftKey && terreinKlik) {
-      const p = wereld.toLocal({ x: e.offsetX, y: e.offsetY });
-      const t = tegelOnder(staat().kaart, p.x, p.y);
-      if (terreinKlik(e.button === 0, t.kol, t.rij)) return;
+    if (e.button === 0 && !e.shiftKey && bewerker?.actief) {
+      const t = tegelOnderMuis(e.offsetX, e.offsetY);
+      bewerker.neer(t.kol, t.rij);
+      verven = true;
+      laatsteVerf = t;
+      return;
     }
     if (e.button === 0) sleep = { x0: e.offsetX, y0: e.offsetY, x1: e.offsetX, y1: e.offsetY, extra: e.shiftKey };
     if (e.button === 1) {
@@ -97,6 +106,17 @@ export function maakBesturing(
   window.addEventListener('pointermove', (e) => {
     const r = canvas.getBoundingClientRect();
     const x = e.clientX - r.left, y = e.clientY - r.top;
+    if (bewerker?.actief) {
+      if (e.target !== canvas && !verven) bewerker.zweef(null, null);
+      else {
+        const t = tegelOnderMuis(x, y);
+        if (!verven) bewerker.zweef(t.kol, t.rij);
+        else if (t.kol !== laatsteVerf.kol || t.rij !== laatsteVerf.rij) {
+          bewerker.sleep(t.kol, t.rij);
+          laatsteVerf = t;
+        }
+      }
+    }
     if (sleep) {
       sleep.x1 = x;
       sleep.y1 = y;
@@ -109,6 +129,7 @@ export function maakBesturing(
     }
   });
   window.addEventListener('pointerup', (e) => {
+    if (e.button === 0) verven = false;
     if (e.button === 1) kijk = null;
     if (e.button !== 0 || !sleep) return;
     const s = sleep;

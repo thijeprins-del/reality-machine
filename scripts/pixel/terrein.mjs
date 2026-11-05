@@ -1,9 +1,10 @@
 // Tekenscript voor de tegelsets van het terrein: per dimensie één plaatje met alle tegelvormen, water en schuim.
 // Draai: node scripts/pixel/terrein.mjs. Schrijft assets/wereld/tegels-<naam>.png en src/kern/tegels.ts.
 //
-// Een vorm is de hoogte van de vier hoeken (achter, rechts, voor, links) ten opzichte van de laagste: 0, 1 of 2.
-// Verschil 1 is een helling, verschil 2 een klip. De kern kiest de vorm; het absolute niveau is alleen een verschuiving,
-// dus de hoogtes van het spel kunnen veranderen zonder dat hier iets hoeft.
+// Een vorm is de hoogte van de vier hoeken (achter, rechts, voor, links) ten opzichte van de laagste: 0, 1 of 2. Langs een
+// rand schelen twee hoeken hooguit 1, dus een tegel is vlak of een helling (19 vormen). De kern kiest de vorm; het absolute
+// niveau is alleen een verschuiving. Klippen zijn geen tegels maar wanden tussen twee tegels: die staan in een eigen plaatje
+// (assets/wereld/wanden-<naam>.png), een stuk per combinatie van bovenrand, voet en hoogte.
 import { Doek, hex, ruis } from './pixel.mjs';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -19,6 +20,10 @@ const KOLOMMEN = 27, VARIANTEN = 3;
 const WATER_VARIANTEN = 3, WATER_BEELDEN = 4, SCHUIM_BEELDEN = 2;
 const CEL_WATER = 81 * VARIANTEN, CEL_SCHUIM = CEL_WATER + WATER_VARIANTEN * WATER_BEELDEN;
 const CELLEN = CEL_SCHUIM + 4 * SCHUIM_BEELDEN;
+// De wanden: een stuk is één tegelrand breed. WAND_Y = de rij waar de bovenrand links begint; WAND_MAX = de hoogste wand.
+const WAND_B = 16, WAND_H = 96, WAND_Y = 24, WAND_KOLOMMEN = 16, WAND_MAX = 6, WAND_VARIANTEN = 2;
+const WAND_CELLEN = WAND_VARIANTEN * 2 * 3 * 3 * (WAND_MAX + 2);
+const celWand = (variant, richting, dt, db, hP) => (((variant * 2 + richting) * 3 + dt + 1) * 3 + db + 1) * (WAND_MAX + 2) + hP + 1;
 
 // Per dimensie de kleurtrappen, van donker naar licht. Grond: de vlakke grond zit op trede 3.
 const SETS = {
@@ -131,72 +136,51 @@ function landDriehoek(c, set, t, n) {
   }
 }
 
-// Een klip is een echte wand: de tegel is vlakke grond op zijn laagste hoogte (die legt het spel eronder), en waar hij
-// tegen hogere hoeken aan ligt staat de wand loodrecht omhoog. 1,1,1,3,2,1 wordt dus _|-\_ en geen steile helling.
-// Zo'n cel bevat alleen de wanden. Alleen de achterste twee randen staan in beeld; een wand aan de voorkant kijkt van je af.
-function tekenKlip(c, set, a, r, v, l, zaad) {
+// Een wand: het rechte stuk rots tussen twee tegels die niet op elkaar aansluiten. De bovenrand volgt de rand van de hoge tegel
+// (dt = hoeveel die van links naar rechts stijgt), de voet die van de lage (db), en links is hij hP niveaus hoog. Kruisen de
+// twee randen elkaar, dan is het een driehoek. richting 0 = de rand loopt op het scherm naar rechts omlaag (de wand kijkt naar
+// linksonder en vangt het licht), 1 = naar rechts omhoog (hij kijkt naar rechtsonder, in de schaduw).
+function tekenWand(d, ox, oy, set, richting, dt, db, hP, zaad) {
   const n = ruis(zaad);
-  const { A, R, V, L } = driehoeken(a, r, v, l);
-  const hoogst = Math.max(a, r, v, l);
-  const vloerY = (x, p, q) => { // waar de voet van de wand zit: de rand op hoogte 0
-    const t2 = (x + 0.5 - p.x) / (q.x - p.x);
-    return p.y + p.z * NIVEAU + ((q.y + q.z * NIVEAU) - (p.y + p.z * NIVEAU)) * t2;
-  };
-  const topY = (x, p, q) => p.y + (q.y - p.y) * ((x + 0.5 - p.x) / (q.x - p.x));
-  // Eén lage hoek: de klip loopt schuin door de tegel. De drie hoge hoeken houden hun driehoek bovenop, alleen de lage hoek
-  // zakt. Anders is de hele tegel laag, en wordt een schuine rand een zigzag van losse ruiten.
-  const lage = [A, R, V, L].filter((p) => p.z === 0);
-  if (lage.length === 1) {
-    const laag = lage[0];
-    const boven = laag === V ? [A, R, L, r - a, l - a] : laag === A ? [V, L, R, v - l, v - r] : laag === R ? [A, V, L, v - l, l - a] : [A, R, V, r - a, v - r];
-    landDriehoek(c, set, boven, n);
-    if (laag === V) wand(L, R, 3);
-    else if (laag === A) richel(L, R);
-    else {
-      // de wand staat precies op zijn kant: je ziet alleen een naad tussen hoog en laag
-      const x = laag === R ? CX : CX - 1;
-      const y0 = Math.round(A.y), y1 = Math.round(V.y + V.z * NIVEAU);
-      for (let y = y0; y <= y1; y++) c.d.zet(c.x + x, c.y + y, y === y0 ? set.rand : trede(set.rots, 1 + n()));
+  const basis = richting === 0 ? 3.4 : 2.2;
+  const scheuren = Array.from({ length: WAND_B }, () => n() < 0.16);
+  for (let x = 0; x < WAND_B; x++) {
+    const s = (x + 0.5) / WAND_B;
+    const h = hP + (dt - db) * s; // de hoogte van de wand in deze kolom, in niveaus
+    if (h <= 0) continue;
+    const yT = WAND_Y + (richting === 0 ? 8 : -8) * s - dt * NIVEAU * s;
+    const y0 = Math.floor(yT), y1 = Math.floor(yT + h * NIVEAU);
+    for (let y = y0; y <= y1; y++) {
+      // de lagen tellen vanaf de bovenrand, zodat ze in de stukken ernaast doorlopen
+      const laag = Math.floor((y - y0 + Math.sin((x * Math.PI) / 4 + set.zaad) * 0.8) / 3);
+      let i = basis + (laag % 2 ? 0.7 : -0.5) + (n() - 0.5) * 0.7;
+      if (scheuren[x]) i -= 1.4;
+      if (y1 - y < 2 && h >= 0.5) i -= 1.6; // de voet
+      d.zet(ox + x, oy + y, trede(set.rots, i));
     }
-    return;
+    d.zet(ox + x, oy + y0, n() < 0.8 ? set.rand : set.rots[5]); // lichte bovenrand
+    // een randje schaduw en wat puin op de grond voor de wand
+    for (let k = 1; k <= 3; k++) if (n() < 0.75 - k * 0.18) d.zet(ox + x, oy + y1 + k, [0, 0, 0, 90]);
+    if (n() < 0.25) d.zet(ox + x, oy + y1 + 1 + Math.floor(n() * 3), trede(set.rots, 3 + n() * 2));
   }
-  // [van links naar rechts, helderheid]: de wand die naar linksonder kijkt vangt het licht, die naar rechtsonder niet
-  for (const [p, q, basis] of [[L, A, 2.2], [A, R, 3.4]]) {
-    if (Math.min(p.z, q.z) === 0) continue; // loopt tot de grond: dat is een buitenhoek, de wanden ernaast maken hem af
-    wand(p, q, basis);
-  }
-  // Aan de voorkant kijkt de wand van je af en is hij verborgen: een richel van rots, zodat je ziet dat de grond daar ophoudt.
-  for (const [p, q] of [[R, V], [V, L]]) if (p.z === hoogst && q.z === hoogst) richel(p, q);
+}
 
-  function wand(p, q, basis) {
-    const scheuren = Array.from({ length: 33 }, () => n() < 0.2);
-    for (let x = Math.min(p.x, q.x); x < Math.max(p.x, q.x); x++) {
-      const y0 = Math.round(topY(x, p, q)), y1 = Math.round(vloerY(x, p, q));
-      const scheur = scheuren[x - Math.min(p.x, q.x)];
-      for (let y = y0; y <= y1; y++) {
-        const boven = y1 - y;
-        const laag = Math.floor((boven + Math.sin(x * 0.7 + zaad) * 0.8) / 3);
-        let i = basis + (laag % 2 ? 0.7 : -0.5) + (n() - 0.5) * 0.7;
-        if (scheur) i -= 1.4;
-        if (boven < 2) i -= 1.6; // de voet
-        c.d.zet(c.x + x, c.y + y, trede(set.rots, i));
-      }
-      c.d.zet(c.x + x, c.y + y0, n() < 0.8 ? set.rand : set.rots[5]); // lichte bovenrand
-      // een randje schaduw en wat puin op de grond voor de wand
-      for (let d = 1; d <= 3; d++) if (n() < 0.75 - d * 0.18) c.d.zet(c.x + x, c.y + y1 + d, [0, 0, 0, 90]);
-      if (n() < 0.3) c.d.zet(c.x + x, c.y + y1 + 1 + Math.floor(n() * 4), trede(set.rots, 3 + n() * 2));
-    }
-  }
-
-  function richel(p, q) {
-    const stappen = Math.max(Math.abs(q.x - p.x), Math.abs(q.y - p.y));
-    for (let s = 0; s <= stappen; s++) {
-      const x = Math.min(CEL_B - 1, Math.floor(p.x + ((q.x - p.x) * s) / stappen));
-      const y = Math.min(CEL_H - 1, Math.floor(p.y + ((q.y - p.y) * s) / stappen));
-      c.d.zet(c.x + x, c.y + y - 1, n() < 0.75 ? set.rots[4] : set.rots[3]);
-      c.d.zet(c.x + x, c.y + y, set.rots[1]);
-    }
-  }
+function tekenWanden(naam, set) {
+  const d = new Doek(WAND_KOLOMMEN * WAND_B, Math.ceil(WAND_CELLEN / WAND_KOLOMMEN) * WAND_H);
+  let stukken = 0;
+  for (let variant = 0; variant < WAND_VARIANTEN; variant++)
+    for (let richting = 0; richting < 2; richting++)
+      for (let dt = -1; dt <= 1; dt++)
+        for (let db = -1; db <= 1; db++)
+          for (let hP = -1; hP <= WAND_MAX; hP++) {
+            const hQ = hP + dt - db;
+            if ((hP <= 0 && hQ <= 0) || hQ < -1 || hQ > WAND_MAX) continue;
+            const i = celWand(variant, richting, dt, db, hP);
+            tekenWand(d, (i % WAND_KOLOMMEN) * WAND_B, Math.floor(i / WAND_KOLOMMEN) * WAND_H, set, richting, dt, db, hP, set.zaad * 5000 + i);
+            stukken++;
+          }
+  d.png(join(wortel, 'assets', 'wereld', `wanden-${naam}.png`));
+  return stukken;
 }
 
 // Water: een vlakke ruit, met strepen die over de beelden heen opkomen en wegebben.
@@ -249,11 +233,11 @@ function tekenSet(naam, set) {
     for (let code = 0; code < 81; code++) {
       const a = Math.floor(code / 27) % 3, r = Math.floor(code / 9) % 3, v = Math.floor(code / 3) % 3, l = code % 3;
       if (Math.min(a, r, v, l) !== 0) continue; // de laagste hoek is altijd 0
-      if (!variant) vormen++;
       const c = cel(d, code + variant * 81);
       const zaad = set.zaad * 1000 + code * 7 + variant * 311;
-      if (Math.max(a, r, v, l) >= 2) tekenKlip(c, set, a, r, v, l, zaad);
-      else tekenLand(c, set, a, r, v, l, zaad);
+      if (Math.max(Math.abs(a - r), Math.abs(r - v), Math.abs(v - l), Math.abs(l - a)) >= 2) continue; // zo steil is een tegel nooit
+      if (!variant) vormen++;
+      tekenLand(c, set, a, r, v, l, zaad);
     }
   for (let variant = 0; variant < WATER_VARIANTEN; variant++)
     for (let beeld = 0; beeld < WATER_BEELDEN; beeld++)
@@ -265,7 +249,7 @@ function tekenSet(naam, set) {
   return vormen;
 }
 
-for (const [naam, set] of Object.entries(SETS)) console.log(`${naam}: ${tekenSet(naam, set)} vormen`);
+for (const [naam, set] of Object.entries(SETS)) console.log(`${naam}: ${tekenSet(naam, set)} vormen, ${tekenWanden(naam, set)} stukken wand`);
 
 writeFileSync(
   join(wortel, 'src', 'kern', 'tegels.ts'),
@@ -281,5 +265,12 @@ export const celLand = (a: number, r: number, v: number, l: number, variant: num
 export const celWater = (variant: number, beeld: number) => ${CEL_WATER} + variant * WATER_BEELDEN + beeld;
 // rand: 0 = achter-rechts, 1 = rechts-voor, 2 = voor-links, 3 = links-achter
 export const celSchuim = (rand: number, beeld: number) => ${CEL_SCHUIM} + rand * SCHUIM_BEELDEN + beeld;
+
+// De wanden (assets/wereld/wanden-<naam>.png). Een stuk is één tegelrand breed; de bovenrand begint links op rij WAND_Y.
+export const WAND_B = ${WAND_B}, WAND_H = ${WAND_H}, WAND_Y = ${WAND_Y}, WAND_KOLOMMEN = ${WAND_KOLOMMEN}, WAND_MAX = ${WAND_MAX}, WAND_VARIANTEN = ${WAND_VARIANTEN};
+// richting: 0 = de rand loopt op het scherm naar rechts omlaag, 1 = naar rechts omhoog. dt en db: hoeveel de bovenrand en de
+// voet van links naar rechts stijgen (-1, 0, 1). hP: hoe hoog de wand links is (-1 als de randen elkaar kruisen).
+export const celWand = (variant: number, richting: number, dt: number, db: number, hP: number) =>
+  (((variant * 2 + richting) * 3 + dt + 1) * 3 + db + 1) * (WAND_MAX + 2) + hP + 1;
 `,
 );

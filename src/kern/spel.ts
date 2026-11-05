@@ -12,6 +12,7 @@ export interface SpelStaat {
   dimensie: number; // hoeveelste dimensie
   onderweg: number; // seconden nog in het niets tussen twee dimensies (0 = geland)
   gemist: number; // zo vaak kwam de stream terwijl de machine geen volle stroom had
+  klokStil?: boolean; // testgereedschap: de tijd in deze dimensie loopt niet door, dus er komt geen stream
   factie: FactieId;
   kaart: Kaart;
   machine: Machine;
@@ -52,7 +53,7 @@ export function stap(s: SpelStaat, f: Factie, sec: number): void {
   }
   stapWerkers(s, f.eenheden, sec);
   f.trucje.opTik?.(s, sec);
-  s.tijd += sec;
+  if (!s.klokStil) s.tijd += sec;
   while (s.tijd >= DIMENSIE_DUUR_SEC) {
     s.tijd -= DIMENSIE_DUUR_SEC;
     // Alleen met volle stroom op dat moment springt de schijf mee. Anders mis je hem en blijf je hier
