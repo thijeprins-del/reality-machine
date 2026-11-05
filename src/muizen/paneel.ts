@@ -293,7 +293,7 @@ export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(
     const rijen: [string, number, string, string][] = [
       ['BUILDING', tel.bouw, KL.geel, 'FINISHING BUILD SITES. COMES FIRST'],
       ['MAKING', tel.fab, KL.cyaan, 'WORKING IN A FABRICATOR THAT HAS A RECIPE'],
-      ['HAULING', tel.haal + tel.breng, KL.amber, 'EMPTYING DRILLS AND FABRICATORS WITHOUT A BELT'],
+      ['HAULING', tel.haal + tel.breng + tel.lever, KL.amber, 'BRINGING PARTS TO BUILD SITES, INPUT TO FABRICATORS, OUTPUT TO THE STOCK'],
       ['MINING', tel.graaf, KL.groen, 'DIGGING RESOURCES BY HAND, WHILE THERE IS ROOM'],
       ['IDLE', tel.vrij, KL.label, 'NOTHING TO DO: STOCK FULL OR NOTHING TO BUILD'],
     ];

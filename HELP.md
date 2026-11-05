@@ -40,6 +40,8 @@ Bouwen kost onderdelen: **platen** (PLATE) en **balken** (BEAM). Die maak je in 
 - **P Paal** (POLE): brengt stroom verder. Kabels lopen van paal naar paal; een rode paal hangt nergens aan.
 - **O Stapel** (STOCKPILE): meer opslag voor één grondstof (**R** wisselt welke). Binnen de ring.
 - **X Slopen** (DEMOLISH): klik of sleep. Je krijgt de kosten terug.
+- Je kunt alles neerzetten, ook als het er nog niet is: muizen brengen de spullen uit de opslag zodra ze er liggen.
+  Het balkje boven een bouwplek is eerst cyaan (spullen gebracht), dan geel (gebouwd).
 - **Muizen werken zelf**: eerst bouwen, dan de fabricators, dan boren en fabricators leeghalen, en anders zelf graven.
   Stuur je ze ergens heen, dan doen ze dat.
 - Bij de stream wordt alles buiten de ring ingepakt en krijg je de bouwkosten terug. Alle tekst in het spel is Engels.

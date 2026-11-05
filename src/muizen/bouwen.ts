@@ -7,7 +7,7 @@ import { naarScherm } from '../kern/iso';
 import type { Blok } from '../kern/kaart';
 import type { SpelStaat } from '../kern/spel';
 import { hoogteOp, tegelOnder } from '../kern/terrein';
-import type { Goed, Grondstof, Richting } from '../kern/types';
+import type { Goed, Grondstof, Richting, Voorraad } from '../kern/types';
 import { PIXEL, type Stuk, type WereldBeeld } from '../kern/wereldbeeld';
 import { energie, verbruiker } from './energie';
 import {
@@ -189,6 +189,8 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
       R(10, y, Math.round((SW - 20) * f.klok), 4, KL.cyaan);
       y += 7;
       txt(`OUTPUT ${f.buffer.length}/${G.fabricator.buffer}  MICE ${f.ploeg}/${G.fabricator.ploeg}`, 10, y, KL.label, SW - 20);
+      y += 8;
+      txt(f.af ? `NEEDS ${kostTekst(f.nodig, true)}` : `INPUT ${kostTekst(f.invoer, true).replace('FREE', 'NONE')}`, 10, y, KL.label, SW - 20);
       y += 10;
       for (const d of [...DELEN, null] as (Deel | null)[]) {
         const n = vakken.length;
@@ -358,13 +360,17 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
   };
   const toon = (st: Stuk, aan: boolean) => st.delen.forEach((d) => (d.visible = aan));
   const half = (st: Stuk, af: number) => st.delen.forEach((d, i) => (d.alpha = af > 0 ? (i ? 0 : 0.45 + 0.1 * Math.sin(t * 6)) : 1));
-  function voortgang(b: Blok, af: number, werk: number): void {
+  // balkje boven een bouwplek: cyaan = spullen gebracht, geel = gebouwd
+  function voortgang(b: Blok, af: number, werk: number, nodig?: Voorraad, kost?: Voorraad): void {
     if (af <= 0) return;
     const c = midden(b);
     const p = iso(c.x, c.y);
     const w = 40;
     balken.rect(p.x - w / 2, p.y - 30, w, PIXEL * 2).fill(0x050505);
-    balken.rect(p.x - w / 2, p.y - 30, Math.round(w * (1 - af / werk)), PIXEL * 2).fill(0xffd23f);
+    const tot = Object.values(kost ?? {}).reduce((a: number, n) => a + (n ?? 0), 0);
+    const rest = Object.values(nodig ?? {}).reduce((a: number, n) => a + (n ?? 0), 0);
+    if (rest > 0) balken.rect(p.x - w / 2, p.y - 30, Math.round(w * (1 - rest / (tot || 1))), PIXEL * 2).fill(0x4ef2ff);
+    else balken.rect(p.x - w / 2, p.y - 30, Math.round(w * (1 - af / werk)), PIXEL * 2).fill(0xffd23f);
   }
 
   function machineTop(s: SpelStaat) {
@@ -434,7 +440,7 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
     }
     for (const f of ind.fabrieken) {
       vastAan(`fab-${f.id}`, 'pers', blok2(f), 2, true, f.af, (f.x + f.y + 2) * 10);
-      voortgang(blok2(f), f.af, G.fabricator.werk);
+      voortgang(blok2(f), f.af, G.fabricator.werk, f.nodig, G.bouw.fabricator);
       if (!f.af && f.recept && !f.geblokt && Math.sin(t * 30) > 0) for (const d of vaste.get(`fab-${f.id}`)!.delen) d.y -= PIXEL;
       if (f.id === gekozen) balken.poly(ruitPad(f.x, f.y, 2, 2)).stroke({ width: PIXEL, color: 0x4ef2ff, alpha: 0.4 + 0.3 * Math.sin(t * 5) });
       lasten(f, 2);
@@ -443,11 +449,11 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
     // stapels en palen
     for (const p of ind.stapels) {
       vastAan(`stapel-${p.id}`, 'stapel', blok2(p), 2, true, p.af, (p.x + p.y) * 10 - 5);
-      voortgang(blok2(p), p.af, G.stapel.werk);
+      voortgang(blok2(p), p.af, G.stapel.werk, p.nodig, G.bouw.stapel);
     }
     for (const p of ind.palen) {
       vastAan(`paal-${p.id}`, 'mast', { x: p.x, y: p.y, breed: 1, diep: 1 }, 1, true, p.af);
-      voortgang({ x: p.x, y: p.y, breed: 1, diep: 1 }, p.af, G.paal.werk);
+      voortgang({ x: p.x, y: p.y, breed: 1, diep: 1 }, p.af, G.paal.werk, p.nodig, G.bouw.paal);
     }
     for (const [k, st] of vaste) if (!gezien.has(k)) { beeld.weg(st); vaste.delete(k); }
 
@@ -475,7 +481,7 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
         if (Math.random() < 0.6) deeltjes.push({ x, y: y - 40, vx: (Math.random() - 0.5) * 30, vy: 20, leeft: 0.5, kleur: 0x2a2724, maat: PIXEL * 2 });
       } else {
         if (r.vloog) plof(b.x + 0.5, b.y + 0.5);
-        voortgang(blok2(b), b.af, G.boor.werk);
+        voortgang(blok2(b), b.af, G.boor.werk, b.nodig, G.bouw.boor);
         if (b.graaft && Math.sin(t * 40 + b.id) > 0) for (const d of r.st.delen) d.y -= PIXEL;
         if (b.graaft && Math.random() < sec * 6) {
           const p = iso(b.x + 0.5 + (Math.random() - 0.5), b.y + 0.5 + (Math.random() - 0.5));

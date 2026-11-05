@@ -28,9 +28,10 @@ export const TERREIN_VOL = 10;
 
 // Velden met grondstoffen: hoeveel velden, hoeveel tegels per veld, hoeveel per tegel, hoe ver van de machine.
 export const VELDEN: Record<Grondstof, { aantal: number; tegels: [number, number]; perTegel: number; afstand: [number, number] }> = {
-  schroot: { aantal: 7, tegels: [6, 11], perTegel: 30, afstand: [19, 25] },
-  hout: { aantal: 6, tegels: [5, 9], perTegel: 25, afstand: [19, 27] },
-  kristal: { aantal: 3, tegels: [3, 6], perTegel: 15, afstand: [23, 28] },
+  // Weinig velden die veel geven: een boor neerzetten moet de moeite waard zijn (Thije, 5 nov).
+  schroot: { aantal: 3, tegels: [8, 12], perTegel: 200, afstand: [19, 25] },
+  hout: { aantal: 3, tegels: [6, 10], perTegel: 150, afstand: [19, 27] },
+  kristal: { aantal: 2, tegels: [4, 6], perTegel: 80, afstand: [23, 28] },
 };
 
 // Elke dimensie ziet er echt anders uit. Binnen de ring blijft je eigen grauwe grond; erbuiten de kleuren van de wereld.

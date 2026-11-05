@@ -33,7 +33,7 @@ export const MUIZEN_ENERGIE: EnergieGetallen = {
 // werk = muis-seconden bouwen op de plek. bouw = wat het neerzetten kost uit de opslag (grondstof en onderdelen).
 // Onderdelen maak je in een fabricator: klik erop en kies een recept. Wat eruit komt gaat naar de opslag.
 export const MUIZEN_INDUSTRIE: IndustrieGetallen = {
-  boor: { kW: 2, sec: BOOR_SEC, buffer: 12, bereik: 1, vliegSec: 1.3, werk: 8 },
+  boor: { kW: 2, sec: BOOR_SEC, buffer: 12, bereik: 3, vliegSec: 1.3, werk: 8 },
   band: { kW: 0.05, tegelsPerSec: 2, werk: 1.2 },
   paal: { link: 8, bereik: 5, werk: 3 }, // palen verbinden tot 8 tegels, geven stroom tot 5 tegels
   stapel: { extra: 150, werk: 6 },

@@ -2,7 +2,9 @@
 // machine naast grondstoffen gooit), lompe lopende banden, palen met kabels en een stapel per grondstof.
 // Puur regels, geen tekenen en geen Math.random. Getallen in src/data/muizen.ts (MUIZEN_INDUSTRIE).
 //
-// - Bouwen kost onderdelen uit de opslag. Die maak je in een fabricator (zelf ook te bouwen): klik erop en kies een
+// - Bouwen kost onderdelen; muizen halen ze uit de opslag en brengen ze naar de bouwplek, pas dan bouwen ze.
+//   Een fabricator krijgt zijn grondstof ook gebracht (muizen of een band die erin loopt).
+// - Onderdelen Die maak je in een fabricator (zelf ook te bouwen): klik erop en kies een
 //   recept. Hij vraagt grondstof, stroom en muizen; wat eruit komt gaat op een band of muizen brengen het naar de opslag.
 // - Neerzetten maakt een bouwplek; muizen bouwen het af (werk.ts). Pas dan doet het iets.
 // - Boren en de fabricator draaien alleen op stroom: binnen bereik van de machine of van een aangesloten paal.
@@ -39,6 +41,7 @@ interface Ding {
   x: number; // tegel linksachter
   y: number;
   af: number; // werk dat nog moet (muis-seconden); 0 = klaar
+  nodig: Voorraad; // bouwspullen die muizen nog moeten brengen; pas als dit leeg is kan er gebouwd worden
 }
 // Iets met een uitgang: boor en fabricator. Wat erin ligt gaat op een band tegen de voet, of muizen halen het.
 export interface Maker extends Ding {
@@ -52,6 +55,7 @@ export interface Boor extends Maker {
 }
 export interface Fabriek extends Maker {
   recept: Deel | null;
+  invoer: Voorraad; // gebrachte grondstof (door muizen of over een band)
   klok: number; // 0..1 van het huidige stuk
   betaald: boolean;
   ploeg: number; // muizen die er nu werken (zet werk.ts)
@@ -63,7 +67,17 @@ export interface Stapel extends Ding {
 }
 export interface MBand extends Band {
   af: number;
+  nodig: Voorraad;
 }
+// Is alles gebracht? En wat is er al gebracht (voor slopen en inpakken)?
+export const leeg = (v: Voorraad) => !Object.values(v).some((n) => (n ?? 0) > 0);
+export function gebracht(d: Bouwsel, nodig: Voorraad): Voorraad {
+  const uit: Voorraad = {};
+  for (const [g, n] of Object.entries(G.bouw[d])) uit[g] = (n ?? 0) - (nodig[g] ?? 0);
+  return uit;
+}
+// Hoeveel invoer een fabricator wil hebben liggen: genoeg voor een paar keer.
+export const invoerMax = (f: Fabriek, g: Goed) => (f.recept ? (G.recepten[f.recept].in[g] ?? 0) * 3 : 0);
 export interface IndustrieStaat {
   boren: Boor[];
   fabrieken: Fabriek[];
@@ -92,7 +106,7 @@ export function industrie(s: SpelStaat): IndustrieStaat {
     i = {
       boren: [],
       fabrieken: [],
-      palen: [{ id: 1, x: m.x - 1, y: m.y + m.diep + 1, af: 0 }], // de mini-paal waarmee je begint
+      palen: [{ id: 1, x: m.x - 1, y: m.y + m.diep + 1, af: 0, nodig: {} }], // de mini-paal waarmee je begint
       stapels: [],
       banden: new Map(),
       volGemeld: {},
@@ -199,8 +213,9 @@ export interface Oordeel {
   ok: boolean;
   reden: string;
 }
+// Neerzetten kan altijd; muizen brengen de spullen zodra ze in de opslag liggen.
 const kostOk = (s: SpelStaat, d: Bouwsel): Oordeel | null =>
-  kanBetalen(s.voorraad, G.bouw[d]) ? null : { ok: false, reden: `NEED ${kostTekst(G.bouw[d], true)}` };
+  kanBetalen(s.voorraad, G.bouw[d]) ? null : { ok: true, reden: `NOT IN STOCK YET: ${kostTekst(G.bouw[d], true)}. MICE BRING IT LATER` };
 
 export function kanZetten(s: SpelStaat, d: Bouwsel, x: number, y: number, goed?: Grondstof): Oordeel {
   const i = industrie(s);
@@ -208,13 +223,13 @@ export function kanZetten(s: SpelStaat, d: Bouwsel, x: number, y: number, goed?:
   if (d === 'boor') {
     if (!vrijVoorBlok(s, x, y, 2)) return { ok: false, reden: 'NOT HERE: NEXT TO THE FIELD, NOT ON IT' };
     if (!bereikVan(s, x, y).length) return { ok: false, reden: 'NO RESOURCES IN RANGE' };
-    return kostOk(s, d) ?? { ok: true, reden: gevoed(s, blok2({ id: 0, x, y, af: 0 })) ? `DRILL HERE. ${G.boor.kW} KW` : 'DRILL HERE. NO POWER YET: PLACE A POLE' };
+    return kostOk(s, d) ?? { ok: true, reden: gevoed(s, blok2({ id: 0, x, y, af: 0, nodig: {} })) ? `DRILL HERE. ${G.boor.kW} KW` : 'DRILL HERE. NO POWER YET: PLACE A POLE' };
   }
   if (d === 'stapel' || d === 'fabricator') {
     if (!vrijVoorBlok(s, x, y, 2)) return { ok: false, reden: 'SOMETHING IS IN THE WAY' };
     for (const [dx, dy] of [[0, 0], [1, 0], [0, 1], [1, 1]]) if (!binnenRing(s.kaart, x + dx, y + dy)) return { ok: false, reden: 'ONLY INSIDE THE RING' };
     if (d === 'stapel') return kostOk(s, d) ?? { ok: true, reden: `STOCKPILE FOR ${naamVan(goed ?? 'schroot')}: +${G.stapel.extra}. R = OTHER RESOURCE` };
-    return kostOk(s, d) ?? { ok: true, reden: gevoed(s, blok2({ id: 0, x, y, af: 0 })) ? `FABRICATOR HERE. ${G.fabricator.kW} KW` : 'FABRICATOR HERE. NO POWER YET: PLACE A POLE' };
+    return kostOk(s, d) ?? { ok: true, reden: gevoed(s, blok2({ id: 0, x, y, af: 0, nodig: {} })) ? `FABRICATOR HERE. ${G.fabricator.kW} KW` : 'FABRICATOR HERE. NO POWER YET: PLACE A POLE' };
   }
   if (d === 'paal') {
     if (!vrijVoorBlok(s, x, y, 1)) return { ok: false, reden: 'SOMETHING IS IN THE WAY' };
@@ -234,19 +249,19 @@ export function zet(s: SpelStaat, d: Bouwsel, x: number, y: number, goed: Gronds
     return false;
   }
   const i = industrie(s);
-  betaal(s.voorraad, G.bouw[d]);
   const id = i.volgendeId++;
+  const nodig = { ...G.bouw[d] };
   if (d === 'boor') {
-    i.boren.push({ id, x, y, af: G.boor.werk, vlieg: G.boor.vliegSec, klok: 0, buffer: [], graaft: false, uitvoer: 0 });
-    log(e, 'DRILL THROWN! MICE ARE BUILDING IT', 'groen');
+    i.boren.push({ id, x, y, af: G.boor.werk, nodig, vlieg: G.boor.vliegSec, klok: 0, buffer: [], graaft: false, uitvoer: 0 });
+    log(e, `DRILL THROWN! MICE BRING ${kostTekst(nodig, true)} AND BUILD IT`, 'groen');
   } else if (d === 'fabricator') {
-    i.fabrieken.push({ id, x, y, af: G.fabricator.werk, buffer: [], uitvoer: 0, recept: null, klok: 0, betaald: false, ploeg: 0, geblokt: '' });
+    i.fabrieken.push({ id, x, y, af: G.fabricator.werk, nodig, buffer: [], uitvoer: 0, recept: null, invoer: {}, klok: 0, betaald: false, ploeg: 0, geblokt: '' });
     log(e, 'FABRICATOR SITE PLACED. CLICK IT TO PICK A RECIPE', 'groen');
   } else if (d === 'stapel') {
-    i.stapels.push({ id, x, y, af: G.stapel.werk, goed });
+    i.stapels.push({ id, x, y, af: G.stapel.werk, nodig, goed });
     log(e, `STOCKPILE FOR ${naamVan(goed)} PLACED`, 'groen');
   } else if (d === 'paal') {
-    i.palen.push({ id, x, y, af: G.paal.werk });
+    i.palen.push({ id, x, y, af: G.paal.werk, nodig });
     log(e, 'POLE PLACED', 'groen');
   }
   return true;
@@ -267,11 +282,7 @@ export function legBand(s: SpelStaat, pad: { x: number; y: number; naar: Richtin
       oud.naar = p.naar;
       continue;
     }
-    if (!betaal(s.voorraad, G.bouw.band)) {
-      log(e, `OUT OF ${kostTekst(G.bouw.band, true).replace(/^1 /, '')}: MAKE MORE IN A FABRICATOR`, 'rood');
-      break;
-    }
-    i.banden.set(tegel(p.x, p.y), { x: p.x, y: p.y, naar: p.naar, voortgang: 0, af: G.band.werk });
+    i.banden.set(tegel(p.x, p.y), { x: p.x, y: p.y, naar: p.naar, voortgang: 0, af: G.band.werk, nodig: { ...G.bouw.band } });
     nieuw++;
   }
   // Sluit aan: een band die doodloopt naast het begin van dit stuk, draait er vanzelf naartoe.
@@ -295,7 +306,7 @@ export function sloop(s: SpelStaat, x: number, y: number): boolean {
   if (band) {
     if (band.goed) v[band.goed] = (v[band.goed] ?? 0) + 1;
     i.banden.delete(tegel(x, y));
-    terug(v, G.bouw.band);
+    terug(v, gebracht('band', band.nodig));
     return true;
   }
   const lijsten: [Bouwsel, Ding[]][] = [['boor', i.boren], ['fabricator', i.fabrieken], ['stapel', i.stapels]];
@@ -304,15 +315,18 @@ export function sloop(s: SpelStaat, x: number, y: number): boolean {
     if (!t) continue;
     for (const g of (t as Maker).buffer ?? []) v[g] = (v[g] ?? 0) + 1;
     const f = t as Fabriek;
-    if (d === 'fabricator' && f.betaald && f.recept) terug(v, G.recepten[f.recept].in);
+    if (d === 'fabricator') {
+      if (f.betaald && f.recept) terug(v, G.recepten[f.recept].in);
+      terug(v, f.invoer);
+    }
     lijst.splice(lijst.indexOf(t), 1);
-    terug(v, G.bouw[d]);
+    terug(v, gebracht(d, t.nodig));
     return true;
   }
   const q = paalOp(s, x, y);
   if (q) {
     i.palen.splice(i.palen.indexOf(q), 1);
-    terug(v, G.bouw.paal);
+    terug(v, gebracht('paal', q.nodig));
     return true;
   }
   return false;
@@ -322,6 +336,11 @@ export function sloop(s: SpelStaat, x: number, y: number): boolean {
 export function kiesRecept(s: SpelStaat, f: Fabriek, r: Deel | null): void {
   if (f.recept === r) return;
   if (f.betaald && f.recept) terug(s.voorraad, G.recepten[f.recept].in);
+  // wat er lag en het nieuwe recept niet gebruikt, gaat terug naar de opslag
+  for (const [g, n] of Object.entries(f.invoer)) if (!r || !G.recepten[r].in[g]) {
+    s.voorraad[g] = (s.voorraad[g] ?? 0) + (n ?? 0);
+    delete f.invoer[g];
+  }
   f.recept = r;
   f.betaald = false;
   f.klok = 0;
@@ -347,8 +366,8 @@ function stapFabrieken(s: SpelStaat, sec: number): void {
       continue;
     }
     if (!f.betaald) {
-      if (!betaal(s.voorraad, r.in)) {
-        f.geblokt = `NEEDS ${kostTekst(r.in, true)}`;
+      if (!betaal(f.invoer, r.in)) {
+        f.geblokt = `WAITING FOR ${kostTekst(r.in, true)}`;
         continue;
       }
       f.betaald = true;
@@ -417,6 +436,7 @@ function stapIndustrie(s: SpelStaat, sec: number): void {
   const snel = G.band.tegelsPerSec * k * sec;
   if (snel <= 0) return;
   const volgorde = [...i.banden.values()].filter((t) => t.goed && !t.af).sort((a, b) => afstandTotEind(i, a) - afstandTotEind(i, b));
+  let fab: Fabriek | undefined;
   for (const t of volgorde) {
     t.voortgang += snel;
     if (t.voortgang < 1) continue;
@@ -431,6 +451,10 @@ function stapIndustrie(s: SpelStaat, sec: number): void {
         t.goed = undefined;
         t.voortgang = 0;
       } else t.voortgang = 1;
+    } else if (!volgende && (fab = fabriekOp(s, nx, ny)) && !fab.af && (fab.invoer[g] ?? 0) < invoerMax(fab, g)) {
+      fab.invoer[g] = (fab.invoer[g] ?? 0) + 1; // de band loopt de fabricator in
+      t.goed = undefined;
+      t.voortgang = 0;
     } else if (!volgende && inOpslag(s, nx, ny, g) && (v[g] ?? 0) < opslagMax(s, g)) {
       v[g] = (v[g] ?? 0) + 1;
       t.goed = undefined;
@@ -493,13 +517,13 @@ function opStream(s: SpelStaat): void {
   i.boren = i.boren.filter((b) => {
     if (binnenRing(k, b.x + 0.5, b.y + 0.5)) return true;
     for (const g of b.buffer) v[g] = (v[g] ?? 0) + 1;
-    terug(v, G.bouw.boor);
+    terug(v, gebracht('boor', b.nodig));
     n++;
     return false;
   });
   i.palen = i.palen.filter((p) => {
     if (binnenRing(k, p.x, p.y)) return true;
-    terug(v, G.bouw.paal);
+    terug(v, gebracht('paal', p.nodig));
     n++;
     return false;
   });
@@ -507,7 +531,7 @@ function opStream(s: SpelStaat): void {
     if (binnenRing(k, t.x, t.y)) continue;
     if (t.goed) v[t.goed] = (v[t.goed] ?? 0) + 1;
     i.banden.delete(sleutel);
-    terug(v, G.bouw.band);
+    terug(v, gebracht('band', t.nodig));
     n++;
   }
   if (n) log(energie(s), `PACKED UP ${n} THINGS OUTSIDE THE RING. COSTS REFUNDED`, 'cyaan');

@@ -100,6 +100,12 @@ Energie gaat om keuzes, niet om alles overeind houden. Er is geen zekering en ge
   vol is. Wat eruit komt gaat op een band tegen zijn voet of muizen brengen het naar de opslag. Kosten: boor 3 platen +
   1 balk, band 1 plaat per tegel, paal 1 balk, stapel 4 balken, dynamo 5 platen + 2 balken. Je begint met 4 platen en
   2 balken. Het bouwmenu rechts laat per ding zien wat het kost (groen = genoeg, rood = te weinig).
+- **Alles wordt gebracht (5 nov):** neerzetten kan altijd; muizen halen de bouwspullen uit de opslag (of een stapel) en
+  brengen ze naar de bouwplek, pas dan bouwen ze (balkje: cyaan = gebracht, geel = gebouwd). Een fabricator krijgt zijn
+  grondstof ook gebracht, door muizen of een band die erin loopt (tot 3 keer het recept). Wat hij maakt gaat via band of
+  muizen naar de opslag. Brengen en bouwen gaat voor zelf graven: ook gravende muizen worden ervoor weggehaald.
+- **Velden (5 nov):** weinig velden die veel geven (schroot 3 velden x 200 per tegel, hout 3 x 150, kristal 2 x 80), en
+  een boor haalt tot 3 tegels om zich heen. Een boor neerzetten moet de moeite waard zijn (`VELDEN` in dimensies.ts).
 - **Muizen werken zelf**, in deze volgorde: bouwplaatsen afbouwen, de fabricator bemannen, boren zonder band
   leeghalen, en anders zelf graven (de grondstof die het leegst is eerst, alleen als er nog plek is). Je kunt muizen
   zelf ergens heen sturen; dan laten ze hun klus los.
