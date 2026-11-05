@@ -29,6 +29,7 @@ export const MUIZEN_SPRITES = {
   'last-balk': { w: 18, h: 16, ankerX: 9, ankerY: 13, tegels: 0, gloed: false },
   'hoop-balk': { w: 28, h: 24, ankerX: 14, ankerY: 19, tegels: 0, gloed: false },
   'stapel': { w: 80, h: 60, ankerX: 40, ankerY: 28, tegels: 2, gloed: true },
+  'stapel-1': { w: 48, h: 40, ankerX: 24, ankerY: 16, tegels: 1, gloed: true },
   'houtbrander': { w: 88, h: 130, ankerX: 44, ankerY: 90, tegels: 2, gloed: true },
   'rad-0': { w: 88, h: 130, ankerX: 44, ankerY: 90, tegels: 2, gloed: true },
   'rad-1': { w: 88, h: 130, ankerX: 44, ankerY: 90, tegels: 2, gloed: true },

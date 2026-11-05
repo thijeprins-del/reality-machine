@@ -28,7 +28,7 @@ export const MUIZEN_ENERGIE: EnergieGetallen = {
   ],
   mkMaal: { stroom: [1, 1.7, 2.5], verbruik: [1, 1.4, 1.9] }, // per MK
   overladen: { hitte: 8, af: 3, afKoeling: 9, zwakTot: 0.5 }, // hitte/s erbij bij overladen, eraf normaal en met koeling; bij 100 hitte levert hij nog maar 50%
-  vraag: { machine: 6, koeling: 1, lampen: 2 },
+  vraag: { machine: 4, koeling: 1, lampen: 2 }, // machine = wat het looprad op NORMAL geeft (Thije, 5 nov)
   lampenSneller: 0.6,
 };
 
@@ -39,7 +39,7 @@ export const MUIZEN_INDUSTRIE: IndustrieGetallen = {
   boor: { kW: 2, sec: BOOR_SEC, buffer: 12, bereik: 3, vliegSec: 1.3, werk: 8 },
   band: { kW: 0.05, tegelsPerSec: 2, werk: 1.2 },
   paal: { link: 8, bereik: 5, werk: 3 }, // palen verbinden tot 8 tegels, geven stroom tot 5 tegels
-  stapel: { extra: 150, werk: 6 },
+  stapel: { extra: 150, werk: 6, klein: { extra: 40, werk: 2 } }, // 2x2, en klein = 1 tegel
   fabricator: { kW: 2, ploeg: 2, buffer: 6, werk: 10 }, // ploeg = muizen voor volle snelheid
   bouw: {
     fabricator: { schroot: 15, hout: 10 },
@@ -47,6 +47,7 @@ export const MUIZEN_INDUSTRIE: IndustrieGetallen = {
     band: { plaat: 1 }, // per tegel
     paal: { balk: 1 },
     stapel: { balk: 4 },
+    kist: { balk: 1 },
   },
   recepten: {
     plaat: { in: { schroot: 2 }, uit: 2, sec: 3 },

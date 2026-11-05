@@ -7,11 +7,11 @@ import { naarScherm } from '../kern/iso';
 import type { Blok } from '../kern/kaart';
 import type { SpelStaat } from '../kern/spel';
 import { hoogteOp, tegelOnder } from '../kern/terrein';
-import type { Goed, Grondstof, Richting, Voorraad } from '../kern/types';
+import type { Goed, Richting, Voorraad } from '../kern/types';
 import { PIXEL, type Stuk, type WereldBeeld } from '../kern/wereldbeeld';
 import { energie, verbruiker } from './energie';
 import {
-  aangesloten, blok2, DELEN, fabriekOp, getallen, GOEDEREN, GRONDSTOFFEN, industrie, kanBandOp, kanZetten, kiesRecept, legBand,
+  aangesloten, blok2, DELEN, fabriekOp, PRIOS, stapelExtra, stapelOp, stapelPrio, stapelVoor, stapelVolgorde, getallen, GOEDEREN, industrie, kanBandOp, kanZetten, kiesRecept, legBand,
   midden, opslagMax, RICHTINGEN, sloop, tegel, vast, zet, type Bouwsel, type Deel, type Maker, type Oordeel,
 } from './industrie';
 import { kanBetalen, kostTekst, naamVan } from './kosten';
@@ -23,7 +23,7 @@ declare global {
     MUIZEN: {
       industrie: () => ReturnType<typeof industrie>;
       zoekBoorplek: (goed: string) => [number, number] | null;
-      zet: (d: Bouwsel, x: number, y: number, goed?: Grondstof) => boolean;
+      zet: (d: Bouwsel, x: number, y: number, goed?: Goed) => boolean;
       band: (a: [number, number], b: [number, number]) => number;
       recept: (fabriekId: number, r: Deel | null) => void;
       kies: (fabriekId: number | null) => void;
@@ -39,17 +39,18 @@ const KNOPPEN: { id: Exclude<Modus, null>; naam: string; toets: string; uitleg: 
   { id: 'boor', naam: 'DRILL', toets: 'B', uitleg: 'CLICK NEXT TO A FIELD. THE MACHINE THROWS IT THERE' },
   { id: 'band', naam: 'BELT', toets: 'L', uitleg: 'DRAG FROM A DRILL OR FABRICATOR TO THE STOCK. R = TURN' },
   { id: 'paal', naam: 'POLE', toets: 'P', uitleg: 'CARRIES POWER. CABLES RUN FROM POLE TO POLE' },
-  { id: 'stapel', naam: 'STOCKPILE', toets: 'O', uitleg: 'MORE STOCK FOR ONE RESOURCE. R = OTHER RESOURCE' },
+  { id: 'stapel', naam: 'STOCKPILE', toets: 'O', uitleg: 'MORE STOCK FOR ONE GOOD, 2X2. R = OTHER GOOD. A BELT NEXT TO IT PULLS FROM IT' },
+  { id: 'kist', naam: 'SMALL PILE', toets: 'K', uitleg: 'A SMALL STOCKPILE OF 1 TILE. R = OTHER GOOD. A BELT NEXT TO IT PULLS FROM IT' },
   { id: 'sloop', naam: 'DEMOLISH', toets: 'X', uitleg: 'CLICK OR DRAG. YOU GET THE BUILD COST BACK' },
 ];
-const SW = 136, SH = 340; // bouwmenu in menu-eenheden
+const SW = 136, SH = 364; // bouwmenu in menu-eenheden
 const RIJ = 24; // hoogte van een knop
 
 export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(sec: number): void } {
   const canvas = document.body.querySelector('canvas') as HTMLCanvasElement; // het spel zelf (eerste canvas)
   let modus: Modus = null;
   let draai: Richting = 'O'; // richting van een losse bandtegel (R draait)
-  let stapelGoed: Grondstof = 'schroot'; // voor welke grondstof een nieuwe stapel is (R wisselt)
+  let stapelGoed: Goed = 'schroot'; // voor welk goed een nieuwe stapel is (R wisselt)
   let muis: { kol: number; rij: number } | null = null;
   let sleep: { kol: number; rij: number } | null = null;
   let melding: Oordeel | null = null;
@@ -177,10 +178,36 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
     }
     // de aangeklikte fabricator
     const f = i.fabrieken.find((x) => x.id === gekozen);
-    if (!f) gekozen = null;
+    const st = i.stapels.find((x) => x.id === gekozen);
+    if (!f && !st) gekozen = null;
     y += 4;
     R(6, y - 2, SW - 10, 1, '#353837');
-    if (f) {
+    if (st) {
+      // aangeklikte stockpile: wat erin komt en welke prio
+      txt('STOCKPILE', 8, y + 2, KL.cyaan);
+      y += 11;
+      txt(st.af ? 'BEING BUILT' : `TAKES ${naamVan(st.goed)}, +${stapelExtra(st)}`, 10, y, st.af ? KL.geel : KL.groen, SW - 20);
+      y += 10;
+      const bw = (SW - 14) / 2;
+      GOEDEREN.forEach((g, n) => {
+        const bx = 6 + (n % 2) * (bw + 4), by = y + Math.floor(n / 2) * 14;
+        const m = vakken.length;
+        knopVlak(bx, by, bw, 12, st.goed === g, wijst === m);
+        txt(naamVan(g), bx + 4, by + 4, st.goed === g ? KL.groen : '#e8e4d4');
+        vak(bx, by, bw, 12, () => stapelVoor(s, st, g), `THIS STOCKPILE TAKES ${naamVan(g)}`);
+      });
+      y += Math.ceil(GOEDEREN.length / 2) * 14 + 2;
+      txt('PRIORITY', 10, y, KL.label);
+      y += 8;
+      const pw = (SW - 18) / 3;
+      PRIOS.forEach((naam, n) => {
+        const bx = 6 + n * (pw + 4), m = vakken.length;
+        knopVlak(bx, y, pw, 12, st.prio === n, wijst === m);
+        txt(naam, bx + 3, y + 4, st.prio === n ? KL.groen : '#e8e4d4', pw - 5);
+        vak(bx, y, pw, 12, () => stapelPrio(s, st, n as 0 | 1 | 2), n === 2 ? 'HIGH: MICE BRING HERE FIRST AND IT FILLS FIRST' : n === 0 ? 'LOW: FILLS LAST' : 'NORMAL: FILLS AFTER THE MAIN STOCK');
+      });
+      y += 14;
+    } else if (f) {
       txt('FABRICATOR', 8, y + 2, KL.cyaan);
       y += 11;
       const status = f.af ? 'BEING BUILT' : f.geblokt || `MAKING ${naamVan(f.recept!)}`;
@@ -205,9 +232,9 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
         y += 14;
       }
     } else {
-      txt('FABRICATOR', 8, y + 2, KL.dim);
+      txt('SELECTED', 8, y + 2, KL.dim);
       y += 11;
-      for (const z of zinnen(i.fabrieken.length ? 'CLICK A FABRICATOR TO PICK WHAT IT MAKES' : 'BUILD A FABRICATOR (F) TO MAKE PARTS', 30, 3)) {
+      for (const z of zinnen(i.fabrieken.length ? 'CLICK A FABRICATOR OR STOCKPILE TO SET IT UP' : 'BUILD A FABRICATOR (F) TO MAKE PARTS. CLICK A STOCKPILE TO SET IT UP', 30, 3)) {
         txt(z, 10, y, KL.dim);
         y += 8;
       }
@@ -284,7 +311,7 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
       // een fabricator aanklikken: dan kies je rechts wat hij maakt
       if (e.button !== 0) return;
       const tg = opTegel(e);
-      const f = fabriekOp(staat(), tg.kol, tg.rij);
+      const f = fabriekOp(staat(), tg.kol, tg.rij) ?? stapelOp(staat(), tg.kol, tg.rij);
       gekozen = f ? f.id : null;
       if (f) {
         e.stopPropagation();
@@ -323,7 +350,7 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
       gekozen = null;
     }
     if (t === 'R' && modus === 'band') draai = ({ O: 'Z', Z: 'W', W: 'N', N: 'O' } as const)[draai];
-    if (t === 'R' && modus === 'stapel') stapelGoed = GRONDSTOFFEN[(GRONDSTOFFEN.indexOf(stapelGoed) + 1) % 3];
+    if (t === 'R' && (modus === 'stapel' || modus === 'kist')) stapelGoed = GOEDEREN[(GOEDEREN.indexOf(stapelGoed) + 1) % GOEDEREN.length];
   });
 
   // Testhaak voor de console en de rooktest
@@ -459,8 +486,9 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
 
     // stapels en palen
     for (const p of ind.stapels) {
-      vastAan(`stapel-${p.id}`, 'stapel', blok2(p), 2, true, p.af, (p.x + p.y) * 10 - 5);
-      voortgang(blok2(p), p.af, G.stapel.werk, p.nodig, G.bouw.stapel);
+      vastAan(`stapel-${p.id}`, p.maat === 1 ? 'stapel-1' : 'stapel', blok2(p), p.maat, true, p.af, (p.x + p.y) * 10 - 5);
+      if (p.id === gekozen) balken.poly(ruitPad(p.x, p.y, p.maat, p.maat)).stroke({ width: PIXEL, color: 0x4ef2ff, alpha: 0.4 + 0.3 * Math.sin(t * 5) });
+      voortgang(blok2(p), p.af, p.maat === 1 ? G.stapel.klein.werk : G.stapel.werk, p.nodig, p.maat === 1 ? G.bouw.kist : G.bouw.stapel);
     }
     for (const p of ind.palen) {
       vastAan(`paal-${p.id}`, 'mast', { x: p.x, y: p.y, breed: 1, diep: 1 }, 1, true, p.af);
@@ -547,15 +575,18 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
       }
     };
     for (const [gi, g] of GOEDEREN.entries()) {
+      // verdeeld op prio: stapels met HIGH eerst vol, dan het erf, dan de rest
       let rest = Math.ceil((s.voorraad[g] ?? 0) / G.hoop - 0.01);
-      const opErf = Math.min(rest, Math.floor(G.opslagMax / G.hoop), 4);
-      rest -= opErf;
-      berg(g, V.erf.x + [0.05, 0.5, 0.95, 0.95, 0.05][gi], V.erf.y + [0.95, 0.5, 0.05, 0.95, 0.05][gi], opErf);
-      for (const p of ind.stapels) {
-        if (p.goed !== g || p.af) continue;
-        const hier = Math.min(rest, Math.floor(G.stapel.extra / G.hoop), LAGEN.length);
+      for (const p of stapelVolgorde(s, g)) {
+        if (p === 'erf') {
+          const opErf = Math.min(rest, Math.floor(G.opslagMax / G.hoop), 4);
+          rest -= opErf;
+          berg(g, V.erf.x + [0.05, 0.5, 0.95, 0.95, 0.05][gi], V.erf.y + [0.95, 0.5, 0.05, 0.95, 0.05][gi], opErf);
+          continue;
+        }
+        const hier = Math.min(rest, Math.floor(stapelExtra(p) / G.hoop), p.maat === 1 ? 4 : LAGEN.length);
         rest -= hier;
-        berg(g, p.x + 0.5, p.y + 0.5, hier);
+        berg(g, p.x + (p.maat - 1) / 2, p.y + (p.maat - 1) / 2, hier);
       }
     }
     for (let i = n; i < hopen.length; i++) toon(hopen[i], false);
@@ -670,12 +701,12 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
     }
     if (!muis) return;
     const { kol, rij } = muis;
-    if (modus === 'boor' || modus === 'stapel' || modus === 'paal' || modus === 'fabricator') {
+    if (modus === 'boor' || modus === 'stapel' || modus === 'kist' || modus === 'paal' || modus === 'fabricator') {
       const o = kanZetten(s, modus, kol, rij, stapelGoed);
       melding = o;
       const kleur = o.ok ? 0x9dff2e : 0xff2a3a;
-      const naam = modus === 'paal' ? 'mast' : modus === 'fabricator' ? 'pers' : modus;
-      const w = modus === 'paal' ? 1 : 2;
+      const naam = modus === 'paal' ? 'mast' : modus === 'fabricator' ? 'pers' : modus === 'kist' ? 'stapel-1' : modus;
+      const w = modus === 'paal' || modus === 'kist' ? 1 : 2;
       if (!geestStuk || geestStuk.naam !== naam) {
         if (geestStuk) beeld.weg(geestStuk);
         geestStuk = beeld.maak(naam);

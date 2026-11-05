@@ -64,9 +64,12 @@ function pakPlek(s: SpelStaat, g: Goed, w: Werker): { x: number; y: number } {
   return randPlek(beste, w.id);
 }
 
-// Waar breng je een grondstof heen? De dichtstbijzijnde stapel voor die grondstof, anders de opslag.
+// Waar breng je een goed heen? Naar de stapel voor dat goed met de hoogste prio (bij gelijke prio de dichtstbijzijnde),
+// anders de opslag.
 function brengPlek(s: SpelStaat, g: Goed, w: Werker): { x: number; y: number } {
-  const st = industrie(s).stapels.filter((p) => p.goed === g && !p.af);
+  const alle = industrie(s).stapels.filter((p) => p.goed === g && !p.af);
+  const top = Math.max(-1, ...alle.map((p) => p.prio));
+  const st = alle.filter((p) => p.prio === top);
   let beste = midden(s.kaart.opslag), af = Infinity;
   for (const p of st) {
     const c = midden(blok2(p));

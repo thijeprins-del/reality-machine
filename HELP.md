@@ -39,7 +39,8 @@ Bouwen kost onderdelen: **platen** (PLATE) en **balken** (BEAM). Die maak je in 
 - **B Boor** (DRILL): klik naast een veld grondstoffen. De machine gooit de boor erheen. Hij heeft stroom nodig.
 - **L Band** (BELT): sleep van een boor of fabricator naar de opslag of een stapel. **R** draait een losse tegel.
 - **P Paal** (POLE): brengt stroom verder. Kabels lopen van paal naar paal; een rode paal hangt nergens aan.
-- **O Stapel** (STOCKPILE): meer opslag voor één grondstof (**R** wisselt welke). Binnen de ring.
+- **O Stapel** (STOCKPILE, 2x2) en **K Kleine stapel** (SMALL PILE, 1 tegel): meer opslag voor één goed. Binnen de ring.
+  Klik erop om te kiezen wat erin komt en welke prio hij heeft. Een band ernaast die er niet in loopt, trekt er goed uit.
 - **X Slopen** (DEMOLISH): klik of sleep. Je krijgt de kosten terug.
 - Je kunt alles neerzetten, ook als het er nog niet is: muizen brengen de spullen uit de opslag zodra ze er liggen.
   Het balkje boven een bouwplek is eerst cyaan (spullen gebracht), dan geel (gebouwd).

@@ -18,8 +18,8 @@ import type { Band, Goed, Grondstof, Richting, Trucje, Voorraad } from '../kern/
 import { energie, log, verbruiker } from './energie';
 import { betaal, kanBetalen, kostTekst, naamVan, terug } from './kosten';
 
-export type Bouwsel = 'fabricator' | 'boor' | 'band' | 'paal' | 'stapel';
-export const BOUWSELS: Bouwsel[] = ['fabricator', 'boor', 'band', 'paal', 'stapel'];
+export type Bouwsel = 'fabricator' | 'boor' | 'band' | 'paal' | 'stapel' | 'kist'; // kist = kleine stapel van 1 tegel
+export const BOUWSELS: Bouwsel[] = ['fabricator', 'boor', 'band', 'paal', 'stapel', 'kist'];
 export type Deel = 'plaat' | 'balk';
 export const DELEN: Deel[] = ['plaat', 'balk'];
 
@@ -27,7 +27,7 @@ export interface IndustrieGetallen {
   boor: { kW: number; sec: number; buffer: number; bereik: number; vliegSec: number; werk: number };
   band: { kW: number; tegelsPerSec: number; werk: number };
   paal: { link: number; bereik: number; werk: number };
-  stapel: { extra: number; werk: number };
+  stapel: { extra: number; werk: number; klein: { extra: number; werk: number } };
   fabricator: { kW: number; ploeg: number; buffer: number; werk: number };
   bouw: Record<Bouwsel, Voorraad>;
   recepten: Record<Deel, { in: Voorraad; uit: number; sec: number }>;
@@ -63,7 +63,9 @@ export interface Fabriek extends Maker {
 }
 export type Paal = Ding;
 export interface Stapel extends Ding {
-  goed: Grondstof;
+  goed: Goed; // wat erin komt (instelbaar: klik erop)
+  maat: 1 | 2; // 1 tegel of 2x2
+  prio: 0 | 1 | 2; // LOW, NORMAL, HIGH: muizen brengen eerst naar een hoge prio, en daar vult hij zich eerst
 }
 export interface MBand extends Band {
   af: number;
@@ -131,13 +133,18 @@ export function vast(s: SpelStaat): { erf: Blok; bronnen: Record<string, Blok> }
     },
   };
 }
-const blok2 = (d: Ding): Blok => ({ x: d.x, y: d.y, breed: 2, diep: 2 });
+// Het blok van een ding: 2x2, behalve een kleine stapel (maat 1).
+const blok2 = (d: Ding): Blok => {
+  const m = (d as Partial<Stapel>).maat ?? 2;
+  return { x: d.x, y: d.y, breed: m, diep: m };
+};
+export const stapelExtra = (p: Stapel) => (p.maat === 1 ? G.stapel.klein.extra : G.stapel.extra);
 export const boorBlok = blok2;
 export const stapelBlok = blok2;
 const midden = (b: Blok) => ({ x: b.x + b.breed / 2 - 0.5, y: b.y + b.diep / 2 - 0.5 });
 
 export function opslagMax(s: SpelStaat, g: Goed): number {
-  return G.opslagMax + industrie(s).stapels.filter((p) => p.goed === g && !p.af).length * G.stapel.extra;
+  return G.opslagMax + industrie(s).stapels.filter((p) => p.goed === g && !p.af).reduce((n, p) => n + stapelExtra(p), 0);
 }
 
 // ---- het stroomnet van palen ----
@@ -187,7 +194,7 @@ export function inOpslag(s: SpelStaat, x: number, y: number, goed?: Goed): boole
 }
 export const boorOp = (s: SpelStaat, x: number, y: number) => industrie(s).boren.find((b) => binnenBlok(blok2(b), x, y));
 const paalOp = (s: SpelStaat, x: number, y: number) => industrie(s).palen.find((p) => p.x === x && p.y === y);
-const stapelOp = (s: SpelStaat, x: number, y: number) => industrie(s).stapels.find((p) => binnenBlok(blok2(p), x, y));
+export const stapelOp = (s: SpelStaat, x: number, y: number) => industrie(s).stapels.find((p) => binnenBlok(blok2(p), x, y));
 export const fabriekOp = (s: SpelStaat, x: number, y: number) => industrie(s).fabrieken.find((f) => binnenBlok(blok2(f), x, y));
 
 function bezet(s: SpelStaat, x: number, y: number): boolean {
@@ -218,7 +225,7 @@ export interface Oordeel {
 const kostOk = (s: SpelStaat, d: Bouwsel): Oordeel | null =>
   kanBetalen(s.voorraad, G.bouw[d]) ? null : { ok: true, reden: `NOT IN STOCK YET: ${kostTekst(G.bouw[d], true)}. MICE BRING IT LATER` };
 
-export function kanZetten(s: SpelStaat, d: Bouwsel, x: number, y: number, goed?: Grondstof): Oordeel {
+export function kanZetten(s: SpelStaat, d: Bouwsel, x: number, y: number, goed?: Goed): Oordeel {
   const i = industrie(s);
   if (s.onderweg > 0) return { ok: false, reden: 'WAIT FOR THE LANDING' };
   if (d === 'boor') {
@@ -226,10 +233,11 @@ export function kanZetten(s: SpelStaat, d: Bouwsel, x: number, y: number, goed?:
     if (!bereikVan(s, x, y).length) return { ok: false, reden: 'NO RESOURCES IN RANGE' };
     return kostOk(s, d) ?? { ok: true, reden: gevoed(s, blok2({ id: 0, x, y, af: 0, nodig: {} })) ? `DRILL HERE. ${G.boor.kW} KW` : 'DRILL HERE. NO POWER YET: PLACE A POLE' };
   }
-  if (d === 'stapel' || d === 'fabricator') {
-    if (!vrijVoorBlok(s, x, y, 2)) return { ok: false, reden: 'SOMETHING IS IN THE WAY' };
-    for (const [dx, dy] of [[0, 0], [1, 0], [0, 1], [1, 1]]) if (!binnenRing(s.kaart, x + dx, y + dy)) return { ok: false, reden: 'ONLY INSIDE THE RING' };
-    if (d === 'stapel') return kostOk(s, d) ?? { ok: true, reden: `STOCKPILE FOR ${naamVan(goed ?? 'schroot')}: +${G.stapel.extra}. R = OTHER RESOURCE` };
+  if (d === 'stapel' || d === 'kist' || d === 'fabricator') {
+    const w = d === 'kist' ? 1 : 2;
+    if (!vrijVoorBlok(s, x, y, w)) return { ok: false, reden: 'SOMETHING IS IN THE WAY' };
+    for (let dy = 0; dy < w; dy++) for (let dx = 0; dx < w; dx++) if (!binnenRing(s.kaart, x + dx, y + dy)) return { ok: false, reden: 'ONLY INSIDE THE RING' };
+    if (d !== 'fabricator') return kostOk(s, d) ?? { ok: true, reden: `STOCKPILE FOR ${naamVan(goed ?? 'schroot')}: +${d === 'kist' ? G.stapel.klein.extra : G.stapel.extra}. R = OTHER GOODS. CLICK IT LATER TO CHANGE` };
     return kostOk(s, d) ?? { ok: true, reden: gevoed(s, blok2({ id: 0, x, y, af: 0, nodig: {} })) ? `FABRICATOR HERE. ${G.fabricator.kW} KW` : 'FABRICATOR HERE. NO POWER YET: PLACE A POLE' };
   }
   if (d === 'paal') {
@@ -242,7 +250,7 @@ export function kanZetten(s: SpelStaat, d: Bouwsel, x: number, y: number, goed?:
   return { ok: kanBandOp(s, x, y), reden: '' };
 }
 
-export function zet(s: SpelStaat, d: Bouwsel, x: number, y: number, goed: Grondstof = 'schroot'): boolean {
+export function zet(s: SpelStaat, d: Bouwsel, x: number, y: number, goed: Goed = 'schroot'): boolean {
   const o = kanZetten(s, d, x, y, goed);
   const e = energie(s);
   if (!o.ok) {
@@ -258,8 +266,9 @@ export function zet(s: SpelStaat, d: Bouwsel, x: number, y: number, goed: Gronds
   } else if (d === 'fabricator') {
     i.fabrieken.push({ id, x, y, af: G.fabricator.werk, nodig, buffer: [], uitvoer: 0, recept: null, invoer: {}, klok: 0, betaald: false, ploeg: 0, geblokt: '' });
     log(e, 'FABRICATOR SITE PLACED. CLICK IT TO PICK A RECIPE', 'groen');
-  } else if (d === 'stapel') {
-    i.stapels.push({ id, x, y, af: G.stapel.werk, nodig, goed });
+  } else if (d === 'stapel' || d === 'kist') {
+    const klein = d === 'kist';
+    i.stapels.push({ id, x, y, af: klein ? G.stapel.klein.werk : G.stapel.werk, nodig, goed, maat: klein ? 1 : 2, prio: 1 });
     log(e, `STOCKPILE FOR ${naamVan(goed)} PLACED`, 'groen');
   } else if (d === 'paal') {
     i.palen.push({ id, x, y, af: G.paal.werk, nodig });
@@ -321,7 +330,7 @@ export function sloop(s: SpelStaat, x: number, y: number): boolean {
       terug(v, f.invoer);
     }
     lijst.splice(lijst.indexOf(t), 1);
-    terug(v, gebracht(d, t.nodig));
+    terug(v, gebracht(d === 'stapel' && (t as Stapel).maat === 1 ? 'kist' : d, t.nodig));
     return true;
   }
   const q = paalOp(s, x, y);
@@ -331,6 +340,26 @@ export function sloop(s: SpelStaat, x: number, y: number): boolean {
     return true;
   }
   return false;
+}
+
+// ---- stapels instellen ----
+export const PRIOS = ['LOW', 'NORMAL', 'HIGH'] as const;
+export function stapelVoor(s: SpelStaat, p: Stapel, g: Goed): void {
+  if (p.goed === g) return;
+  const oud = p.goed;
+  p.goed = g;
+  const max = opslagMax(s, oud);
+  if ((s.voorraad[oud] ?? 0) > max) log(energie(s), `NO ROOM: ${Math.ceil((s.voorraad[oud] ?? 0) - max)} ${naamVan(oud)} IS LOST`, 'rood');
+  log(energie(s), `STOCKPILE NOW TAKES ${naamVan(g)}`, 'cyaan');
+}
+export function stapelPrio(s: SpelStaat, p: Stapel, prio: 0 | 1 | 2): void {
+  p.prio = prio;
+  log(energie(s), `STOCKPILE FOR ${naamVan(p.goed)}: ${PRIOS[prio]} PRIORITY`, 'cyaan');
+}
+// Volgorde waarin de voorraad van een goed over de plekken verdeeld wordt: hoge prio eerst, dan het erf, dan de rest.
+export function stapelVolgorde(s: SpelStaat, g: Goed): (Stapel | 'erf')[] {
+  const st = industrie(s).stapels.filter((p) => p.goed === g && !p.af).sort((a, b) => b.prio - a.prio);
+  return [...st.filter((p) => p.prio === 2), 'erf', ...st.filter((p) => p.prio < 2)];
 }
 
 // ---- fabricators ----
@@ -407,6 +436,7 @@ function stapIndustrie(s: SpelStaat, sec: number): void {
   }
 
   stapFabrieken(s, sec);
+  uitStapels(s);
 
   // boren
   const k = kracht(s);
@@ -489,11 +519,31 @@ export function heeftBand(i: IndustrieStaat, b: Maker): boolean {
     return !!t && !t.af;
   });
 }
+// De tegels rondom een blok (voor banden die ertegenaan liggen), met de klok mee.
 const randVan = (b: Ding): [number, number][] => {
   const r: [number, number][] = [];
-  for (let d = 0; d < 2; d++) r.push([b.x + d, b.y - 1], [b.x + 2, b.y + d], [b.x + 1 - d, b.y + 2], [b.x - 1, b.y + 1 - d]);
+  const m = blok2(b).breed;
+  for (let d = 0; d < m; d++) r.push([b.x + d, b.y - 1], [b.x + m, b.y + d], [b.x + m - 1 - d, b.y + m], [b.x - 1, b.y + m - 1 - d]);
   return r;
 };
+// Een band naast een stapel trekt er goed uit (als hij er niet in loopt). Zo haal je voorraad weer op een band.
+function uitStapels(s: SpelStaat): void {
+  const i = industrie(s);
+  const v = s.voorraad;
+  for (const p of i.stapels) {
+    if (p.af) continue;
+    for (const [x, y] of randVan(p)) {
+      if ((v[p.goed] ?? 0) < 1) break;
+      const t = i.banden.get(tegel(x, y));
+      if (!t || t.goed || t.af) continue;
+      const [dx, dy] = RICHTINGEN[t.naar];
+      if (binnenBlok(blok2(p), t.x + dx, t.y + dy) || inOpslag(s, t.x + dx, t.y + dy)) continue; // die loopt erin
+      t.goed = p.goed;
+      t.voortgang = 0;
+      v[p.goed] = (v[p.goed] ?? 0) - 1;
+    }
+  }
+}
 function zetOpBand(i: IndustrieStaat, b: Maker): void {
   const rand = randVan(b);
   for (let n = 0; n < rand.length; n++) {

@@ -89,7 +89,7 @@ Energie gaat om keuzes, niet om alles overeind houden. Er is geen zekering en ge
   eerst bouwen; de reactor komt alleen uit loot. Per MK meer stroom (x1, 1,7, 2,5) en meer brandstof.
 - **Overladen** mag altijd: veel stroom, maar de bron wordt heet. Daarna is hij tijdelijk zwakker (tot 50% bij volle
   hitte) tot hij is afgekoeld. Koeling laat sneller afkoelen.
-- Verbruikers staan op volgorde van voorrang: machine (6 kW), industrie (fabricator, boren, banden), lampen (2 kW,
+- Verbruikers staan op volgorde van voorrang: machine (4 kW, precies wat het looprad op normaal geeft), industrie (fabricator, boren, banden), lampen (2 kW,
   muizen graven sneller), koeling (1 kW). Wat niet past krijgt niets; met **^** schuif je iets omhoog. Het paneel
   noemt de eerste die tekort komt. Je kiest dus wat je nu wilt: de machine voeden, of eerst je industrie laten draaien.
 - Bediening via een pixelart-paneel linksonder (`src/muizen/paneel.ts`), regels in `src/muizen/energie.ts`,
@@ -106,6 +106,10 @@ Energie gaat om keuzes, niet om alles overeind houden. Er is geen zekering en ge
   brengen ze naar de bouwplek, pas dan bouwen ze (balkje: cyaan = gebracht, geel = gebouwd). Een fabricator krijgt zijn
   grondstof ook gebracht, door muizen of een band die erin loopt (tot 3 keer het recept). Wat hij maakt gaat via band of
   muizen naar de opslag. Brengen en bouwen gaat voor zelf graven: ook gravende muizen worden ervoor weggehaald.
+- **Stockpiles instellen (5 nov):** klik op een stockpile en kies rechts welk goed erin komt (ook platen en balken) en
+  de prio (LOW, NORMAL, HIGH). Muizen brengen naar de hoogste prio; die vult zich ook eerst (dan het erf, dan de rest).
+  Twee maten: STOCKPILE (2x2, 4 balken, +150) en SMALL PILE (1 tegel, 1 balk, +40). Eén goed per stockpile.
+  Een band naast een stockpile die er niet in loopt, trekt er goed uit: zo zet je voorraad weer op een band.
 - **Velden (5 nov):** weinig velden die veel geven (schroot 3 velden x 200 per tegel, hout 3 x 150, kristal 2 x 80), en
   een boor haalt tot 3 tegels om zich heen. Een boor neerzetten moet de moeite waard zijn (`VELDEN` in dimensies.ts).
 - **Muizen werken zelf**, in deze volgorde: bouwplaatsen afbouwen, de fabricator bemannen, boren zonder band

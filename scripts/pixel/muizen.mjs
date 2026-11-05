@@ -622,6 +622,22 @@ function tekenStapel() {
 }
 
 
+// KLEINE STAPEL (1 tegel): hetzelfde, maar een vloertje met vier paaltjes.
+function tekenKist() {
+  const d = new Doek(48, 40);
+  const r = ruis(94);
+  const ax = 24, ay = 16;
+  const g = schaal(isoPunt(ax, ay));
+  const B = (k, rr, z, u, v, h, ramp, o = {}) => d.blokS(...g(k, rr, z), u * F, v * F, h * F, ramp, { r, ...o });
+  const vloer = B(0, 0, 0, 4, 4, 1, T.beton);
+  gevaar(d, [vloer.P3[0], vloer.P3[1] - 1], 16, 2, 'kol');
+  for (const [k, rr] of [[0, 0], [3.5, 0], [0, 3.5], [3.5, 3.5]]) B(k, rr, 1, 0.5, 0.5, 4, T.staal);
+  d.omlijn(K.lijn);
+  d.vuil(0.07, K.olie, 0.45, r);
+  d.neon(...g(3.75, 3.75, 5.5), N.natrium, 1);
+  bewaar('stapel-1', d, ax, ay, 1);
+}
+
 // HOUTBRANDER (2x2 tegels): de eerste stroombron. Lompe ijzeren oven met een vuurdeur, een schoorsteen, een stapel
 // stammen ernaast en een dynamo die door de stoom draait. Het vuur is het felste ding: oranje neon.
 function tekenHoutbrander() {
@@ -860,6 +876,7 @@ for (const g of ['schroot', 'hout', 'kristal', 'plaat', 'balk']) {
   tekenHoop(g);
 }
 tekenStapel();
+tekenKist();
 tekenHoutbrander();
 for (const st of [0, 1, 2]) tekenRad(st);
 
