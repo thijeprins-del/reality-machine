@@ -178,10 +178,12 @@ export class WereldBeeld {
     this.landing = false;
   }
   private landing = true;
+  private landTijd = -10; // wanneer we landden (op de klok van this.t)
 
   private landt(): void {
     const k = this.staat.kaart;
     this.landing = true;
+    this.landTijd = this.t;
     this.oudeGrond?.destroy({ children: true });
     this.oudeGrond = null;
     this.wereldGrond.visible = true;
@@ -266,7 +268,8 @@ export class WereldBeeld {
       this.ruimte.visible = false;
     }
     // de nieuwe wereld flikkert binnen na de landing
-    this.wereldGrond.alpha = s.onderweg > 0 ? 0 : Math.min(1, (fase - SPRONG_SEC) / 0.6 + 0.4) * (Math.random() < 0.1 && fase < SPRONG_SEC + 1 ? 0.5 : 1);
+    const geland = this.t - this.landTijd;
+    this.wereldGrond.alpha = s.onderweg > 0 ? 0 : Math.min(1, geland / 0.6 + 0.4) * (Math.random() < 0.1 && geland < 1 ? 0.5 : 1);
     this.duister.style.opacity = String(duister);
 
     // schudden
