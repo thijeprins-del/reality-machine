@@ -17,6 +17,23 @@ export const MUIZEN_SPRITES = {
   'kabels': { w: 36, h: 30, ankerX: 9, ankerY: 43, tegels: 2, gloed: true },
   'machine': { w: 150, h: 330, ankerX: 75, ankerY: 258, tegels: 4, gloed: true },
   'opslag': { w: 80, h: 80, ankerX: 40, ankerY: 44, tegels: 2, gloed: true },
+  'band-leeg': { w: 40, h: 30, ankerX: 22, ankerY: 13, tegels: 1, gloed: true },
+  'last-schroot': { w: 18, h: 16, ankerX: 9, ankerY: 13, tegels: 0, gloed: false },
+  'hoop-schroot': { w: 28, h: 24, ankerX: 14, ankerY: 19, tegels: 0, gloed: false },
+  'last-hout': { w: 18, h: 16, ankerX: 9, ankerY: 13, tegels: 0, gloed: false },
+  'hoop-hout': { w: 28, h: 24, ankerX: 14, ankerY: 19, tegels: 0, gloed: false },
+  'last-kristal': { w: 18, h: 16, ankerX: 9, ankerY: 13, tegels: 0, gloed: true },
+  'hoop-kristal': { w: 28, h: 24, ankerX: 14, ankerY: 19, tegels: 0, gloed: true },
+  'last-plaat': { w: 18, h: 16, ankerX: 9, ankerY: 13, tegels: 0, gloed: false },
+  'hoop-plaat': { w: 28, h: 24, ankerX: 14, ankerY: 19, tegels: 0, gloed: false },
+  'last-balk': { w: 18, h: 16, ankerX: 9, ankerY: 13, tegels: 0, gloed: false },
+  'hoop-balk': { w: 28, h: 24, ankerX: 14, ankerY: 19, tegels: 0, gloed: false },
+  'stapel': { w: 80, h: 60, ankerX: 40, ankerY: 28, tegels: 2, gloed: true },
+  'stapel-1': { w: 48, h: 40, ankerX: 24, ankerY: 16, tegels: 1, gloed: true },
+  'houtbrander': { w: 88, h: 130, ankerX: 44, ankerY: 90, tegels: 2, gloed: true },
+  'rad-0': { w: 88, h: 130, ankerX: 44, ankerY: 90, tegels: 2, gloed: true },
+  'rad-1': { w: 88, h: 130, ankerX: 44, ankerY: 90, tegels: 2, gloed: true },
+  'rad-2': { w: 88, h: 130, ankerX: 44, ankerY: 90, tegels: 2, gloed: true },
 } as const;
 
 export type MuizenSprite = keyof typeof MUIZEN_SPRITES;

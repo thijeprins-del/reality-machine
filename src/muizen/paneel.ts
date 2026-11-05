@@ -1,23 +1,31 @@
 // Het controlepaneel van de muizen: pixelart, schuin linksonder over de wereld. Elke knop en elk scherm doet iets.
 // Gewoon canvas 2D bovenop Pixi. Regels staan in energie.ts; dit bestand tekent alleen en vertaalt klikken.
 import type { SpelStaat } from '../kern/spel';
+import type { WereldBeeld } from '../kern/wereldbeeld';
+import { maakBouwen } from './bouwen';
 import type { Grondstof } from '../kern/types';
 import { MUIZEN_ENERGIE } from '../data/muizen';
-import { draaiKnop, energie, noodstop, resetZekering, zetBron, zetVerbruiker, type Bron, type EnergieStaat } from './energie';
+import { draaiKnop, energie, MAX_MK, omhoog, STANDEN, stroomVan, upgradeBron, upgradeKosten, verbruikVan, zetBron, zetVerbruiker, zwakte, type Bron, type EnergieStaat } from './energie';
+import { industrie, industrieVraag, opslagMax } from './industrie';
+import { werk } from './werk';
+import { kanBetalen, kostTekst, naamVan } from './kosten';
+import { tekenRegels, type Regel } from './letters';
+
+const kw = (n: number) => (Math.abs(n % 1) > 0.05 ? n.toFixed(1) : String(Math.round(n)));
 
 const PW = 484, PH = 212;
 // Omtrek: hoog aan de linkerkant, schuin omlaag naar een lager rechterdeel.
 const OMTREK: [number, number][] = [[0, 0], [184, 0], [244, 60], [476, 60], [484, 68], [484, 212], [0, 212]];
 const MOD: Record<string, [number, number, number, number, string]> = {
-  bronnen: [4, 6, 178, 98, 'BRONNEN'],
-  voorraad: [4, 108, 178, 44, 'OPSLAG'],
-  nood: [4, 156, 74, 52, 'NOOD'],
-  net: [186, 64, 142, 100, 'STROOMNET'],
-  verbruik: [332, 64, 148, 100, 'VERBRUIKERS'],
-  log: [186, 168, 294, 40, 'LOGBOEK'],
+  bronnen: [4, 6, 178, 98, 'POWER SOURCES'],
+  voorraad: [4, 108, 178, 44, 'STOCK'],
+  muizen: [4, 156, 178, 52, 'MICE'],
+  net: [186, 64, 142, 100, 'POWER GRID'],
+  verbruik: [332, 64, 148, 100, 'CONSUMERS'],
+  log: [186, 168, 294, 40, 'LOG'],
 };
 
-const FONT: Record<string, string> = {
+export const FONT: Record<string, string> = {
   A: '010101111101101', B: '110101110101110', C: '011100100100011', D: '110101101101110', E: '111100110100111', F: '111100110100100', G: '011100101101011',
   H: '101101111101101', I: '111010010010111', J: '001001001101010', K: '101101110101101', L: '100100100100111', M: '101111111101101', N: '110101101101101',
   O: '010101101101010', P: '110101110100100', Q: '010101101110011', R: '110101110101101', S: '011100010001110', T: '111010010010010', U: '101101101101111',
@@ -27,8 +35,8 @@ const FONT: Record<string, string> = {
   '.': '000000000000010', ':': '000010000010000', '-': '000000111000000', '+': '000010111010000', '/': '001001010100100', '%': '101001010100101',
   '!': '010010010000010', '?': '110001010000010', ' ': '000000000000000', ',': '000000000010100', '(': '010100100100010', ')': '010001001001010', '^': '010101000000000',
 };
-const KL = { groen: '#9dff2e', amber: '#ff9a1f', rood: '#ff2a3a', cyaan: '#4ef2ff', magenta: '#ff2fb0', geel: '#ffd23f', label: '#8d9189', dim: '#3a3d3b', stencil: '#a8861c' };
-const GRONDSTOFKLEUR: Record<Grondstof, string> = { schroot: '#a8a49a', hout: '#b07a3c', kristal: KL.cyaan };
+export const KL = { groen: '#9dff2e', amber: '#ff9a1f', rood: '#ff2a3a', cyaan: '#4ef2ff', magenta: '#ff2fb0', geel: '#ffd23f', label: '#8d9189', dim: '#3a3d3b', stencil: '#a8861c' };
+export const GRONDSTOFKLEUR: Record<Grondstof, string> = { schroot: '#a8a49a', hout: '#b07a3c', kristal: KL.cyaan };
 
 const hash = (x: number, y: number, s = 0) => {
   let h = (x * 374761393 + y * 668265263 + s * 1442695041) | 0;
@@ -47,10 +55,10 @@ const doek = (w: number, h: number) => Object.assign(document.createElement('can
 
 interface Hit { x: number; y: number; w: number; h: number; doe: (() => void) | null; hulp: string }
 
-export function maakPaneel(staat: () => SpelStaat): { werk(sec: number): void } {
+export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(sec: number): void } {
   const pv = doek(PW, PH);
   pv.id = 'paneel';
-  pv.setAttribute('aria-label', 'Controlepaneel van de muizen: bronnen, opslag, stroomnet, verbruikers, logboek en noodstop');
+  pv.setAttribute('aria-label', 'Mouse control panel: power sources, stock, mice, power grid, consumers and log');
   Object.assign(pv.style, { position: 'fixed', left: '0', bottom: '0', zIndex: '5', pointerEvents: 'none', display: 'block' });
   document.body.appendChild(pv);
   const pvc = pv.getContext('2d')!;
@@ -82,18 +90,13 @@ export function maakPaneel(staat: () => SpelStaat): { werk(sec: number): void } 
     R(x, y, w, h, k);
     R(x, y, w, h, k, pg);
   };
+  // tekst komt in een rij en wordt na het opschalen scherp getekend (letters.ts); alleen de gloed blijft pixels
+  let regels: Regel[] = [];
+  let stil = false; // tekst onder een afdekking: niet tekenen
   function txt(s: string, x: number, y: number, k: string, sz = 1, gloed = false, c: CanvasRenderingContext2D = pc): number {
-    for (const ch of s.toUpperCase()) {
-      const f = FONT[ch] ?? FONT['?'];
-      for (let i = 0; i < 15; i++)
-        if (f[i] === '1') {
-          const xx = x + (i % 3) * sz, yy = y + Math.floor(i / 3) * sz;
-          R(xx, yy, sz, sz, k, c);
-          if (gloed) R(xx, yy, sz, sz, k, pg);
-        }
-      x += 4 * sz;
-    }
-    return x;
+    const t = s.toUpperCase();
+    if (!stil && c === pc) regels.push({ s: t, x, y, k, sz, gloed });
+    return x + 4 * sz * t.length;
   }
   function verzonken(x: number, y: number, w: number, h: number, bg = '#0e0f0f'): void {
     R(x, y, w, h, bg);
@@ -153,13 +156,6 @@ export function maakPaneel(staat: () => SpelStaat): { werk(sec: number): void } 
         lx += 4;
       }
     }
-    // ventilatierooster tussen noodknop en logboek
-    for (let y = 160; y < 204; y += 3) {
-      c.fillStyle = '#0b0c0c';
-      c.fillRect(86, y, 92, 2);
-      c.fillStyle = '#383b3a';
-      c.fillRect(86, y + 2, 92, 1);
-    }
     // een paar kabels over de plaat
     c.strokeStyle = '#07070a';
     c.lineWidth = 1;
@@ -192,7 +188,7 @@ export function maakPaneel(staat: () => SpelStaat): { werk(sec: number): void } 
       }
     const hoeken = [-Math.PI * 0.8, -Math.PI / 2, -Math.PI * 0.2];
     for (let i = 1; i <= 5; i++) G(Math.round(cx + Math.cos(hoeken[stand]) * i), Math.round(cy + Math.sin(hoeken[stand]) * i), 1, 1, kleur);
-    ['L', 'M', 'H'].forEach((l, i) =>
+    ['L', 'N', 'O'].forEach((l, i) =>
       txt(l, Math.round(cx + Math.cos(hoeken[i]) * 10) - 1, Math.round(cy + Math.sin(hoeken[i]) * 10) - 2, i === stand ? kleur : KL.dim, 1, i === stand),
     );
   }
@@ -207,37 +203,80 @@ export function maakPaneel(staat: () => SpelStaat): { werk(sec: number): void } 
   }
 
   function bron(s: SpelStaat, b: Bron, cx: number, cy: number, knipper: boolean): void {
+    stil = !b.mk;
     verzonken(cx, cy, 54, 88, '#101111');
-    txt(b.naam, cx + 3, cy + 3, KL.label);
-    const lamp = b.storing ? (knipper ? KL.rood : '#300') : b.levert > 0 ? (b.hitte > 85 ? KL.amber : KL.groen) : '#1d1f1e';
-    if (b.storing || b.levert > 0) G(cx + 46, cy + 3, 5, 5, lamp);
+    txt(b.kort, cx + 3, cy + 3, KL.label);
+    const over = b.stand === 2 && b.levert > 0;
+    const lamp = over ? (knipper ? KL.amber : '#402000') : b.levert > 0 ? KL.groen : '#1d1f1e';
+    if (b.levert > 0) G(cx + 46, cy + 3, 5, 5, lamp);
     else R(cx + 46, cy + 3, 5, 5, lamp);
-    hit(cx + 2, cy + 1, 50, 9, null, `${b.naam}: ${b.brandstof.toUpperCase()} UIT DE OPSLAG WORDT STROOM`);
-    hendel(cx + 3, cy + 11, b.aan, b.kleur, b.storing);
-    hit(cx + 3, cy + 11, 14, 32, () => zetBron(s, b), `HENDEL: ${b.naam} AAN/UIT (TOETS ${b.toets})`);
-    knop(cx + 28, cy + 25, b.stand, b.kleur);
-    hit(cx + 18, cy + 13, 21, 23, () => draaiKnop(s, b), `KNOP L/M/H: MEER STROOM, HITTE EN ${b.brandstof.toUpperCase()}`);
+    hit(cx + 2, cy + 1, 30, 9, null, b.renners ? `${b.naam}: MICE RUN IN IT. MORE MICE, MORE POWER. NO FUEL` : `${b.naam}: TURNS ${naamVan(b.brandstof!)} FROM STOCK INTO POWER`);
+    hendel(cx + 3, cy + 11, b.aan, b.kleur, false);
+    hit(cx + 3, cy + 11, 14, 32, () => zetBron(s, b), `LEVER: ${b.naam} ON/OFF (KEY ${b.toets})`);
+    knop(cx + 28, cy + 25, b.stand, b.stand === 2 ? KL.amber : b.kleur);
+    hit(cx + 18, cy + 13, 21, 23, () => draaiKnop(s, b), `DIAL LOW/NORMAL/OVERCHARGE (SHIFT+${b.toets}). OVERCHARGE = LOTS OF POWER, WEAKER AFTERWARDS`);
     hitteBalk(cx + 45, cy + 11, 6, 50, b.hitte);
-    txt(String(Math.round(b.hitte)).padStart(3, ' '), cx + 40, cy + 64, b.hitte > 85 ? KL.rood : KL.label);
-    hit(cx + 42, cy + 11, 11, 58, null, `HITTE ${b.naam}: OP 100 STORING, TOT HIJ ONDER ${MUIZEN_ENERGIE.storingTot} IS`);
+    txt(String(Math.round(b.hitte)).padStart(3, ' '), cx + 40, cy + 64, b.hitte > 60 ? KL.amber : KL.label);
+    hit(cx + 42, cy + 11, 11, 58, null, `HEAT FROM OVERCHARGE: NOW ${Math.round(zwakte(b) * 100)}% STRENGTH. COOLS DOWN BY ITSELF`);
+    // upgradeknop naast de naam: + = er kan een MK bij
+    const up = upgradeKosten(b);
+    const kan = !!up && kanBetalen(s.voorraad, up);
+    verzonken(cx + 34, cy + 1, 9, 9, '#070707');
+    stil = false;
+    if (up) txt('+', cx + 37, cy + 3, kan ? KL.geel : KL.dim, 1, kan);
+    else txt(String(b.mk), cx + 37, cy + 3, KL.groen, 1, true);
+    stil = !b.mk;
+    hit(cx + 34, cy + 1, 9, 9, () => upgradeBron(s, b), up ? `UPGRADE TO MK${b.mk + 1}: ${kostTekst(up, true)}. MORE POWER, MORE FUEL` : `${b.naam} IS MK${MAX_MK}, THE MAXIMUM`);
     verzonken(cx + 3, cy + 46, 36, 15, '#050806');
-    txt(b.levert > 0 ? `+${b.levert}` : '--', cx + 6, cy + 49, b.levert > 0 ? KL.groen : '#173014', 2, b.levert > 0);
-    hit(cx + 3, cy + 46, 36, 15, null, `${b.naam} LEVERT NU ${b.levert} KW (STAND: ${b.stroom[b.stand]} KW)`);
-    R(cx + 3, cy + 65, 4, 4, GRONDSTOFKLEUR[b.brandstof]);
-    txt(`-${b.verbruik[b.stand].toFixed(2).replace(/^0/, '')}/S`, cx + 9, cy + 65, b.aan ? KL.amber : KL.dim);
-    const status = b.storing ? 'STORING' : !b.aan ? 'UIT' : b.hitte > 85 ? 'HEET!' : 'DRAAIT';
-    txt(status, cx + 3, cy + 77, b.storing ? KL.rood : !b.aan ? KL.dim : b.hitte > 85 ? KL.amber : KL.groen, 1, b.storing || b.aan);
+    const lev = kw(b.levert);
+    txt(b.levert > 0 ? `+${lev}` : '--', cx + 6, cy + 49, b.levert > 0 ? (over ? KL.amber : KL.groen) : '#173014', lev.length > 2 ? 1 : 2, b.levert > 0);
+    hit(cx + 3, cy + 46, 36, 15, null, `${b.naam} NOW GIVES ${lev} KW. ${STANDEN.map((n, i) => `${n[0]} ${kw(stroomVan(b, i as 0 | 1 | 2))}`).join(' ')}`);
+    if (b.renners) {
+      // looprad: hoeveel muizen erin rennen tegen hoeveel er nodig zijn
+      const nodig = b.renners[b.stand];
+      R(cx + 3, cy + 65, 4, 4, '#d8cfc0');
+      txt(`${b.rennen}/${nodig}`, cx + 9, cy + 65, !b.aan ? KL.dim : b.rennen >= nodig ? KL.groen : KL.amber);
+      hit(cx + 2, cy + 63, 36, 8, null, `MICE IN THE WHEEL: ${b.rennen} OF ${nodig}. LOW ${b.renners[0]}, NORMAL ${b.renners[1]}, OVERCHARGE ${b.renners[2]}`);
+    } else {
+      R(cx + 3, cy + 65, 4, 4, GRONDSTOFKLEUR[b.brandstof!]);
+      txt(`-${verbruikVan(b).toFixed(2).replace(/^0/, '')}/S`, cx + 9, cy + 65, b.aan ? KL.amber : KL.dim);
+    }
+    const zwak = b.hitte > 3 && b.stand !== 2;
+    const status = !b.aan ? 'OFF' : over ? 'OVER!' : zwak ? `WEAK${Math.round(zwakte(b) * 100)}` : 'RUNNING';
+    txt(status, cx + 3, cy + 77, !b.aan ? KL.dim : over ? KL.amber : zwak ? KL.geel : KL.groen, 1, b.aan);
+    if (b.mk) txt(`MK${b.mk}`, cx + 39, cy + 77, KL.stencil);
+    else {
+      // nog niet gebouwd: een lege plek met een bouwknop (of alleen uit loot)
+      R(cx + 1, cy + 10, 52, 77, 'rgba(8,9,9,.88)');
+      stil = false;
+      if (b.loot) {
+        txt('ONLY', cx + 19, cy + 30, KL.dim);
+        txt('FROM LOOT', cx + 9, cy + 38, KL.magenta, 1, true);
+        hit(cx + 1, cy + 10, 52, 77, null, `${b.naam}: ONLY FROM LOOT`);
+        return;
+      }
+      const k = b.bouw[0];
+      const kan2 = kanBetalen(s.voorraad, k);
+      txt('NOT', cx + 21, cy + 24, KL.dim);
+      txt('BUILT', cx + 17, cy + 31, KL.dim);
+      verzonken(cx + 7, cy + 44, 40, 13, '#070707');
+      txt('BUILD', cx + 17, cy + 48, kan2 ? KL.geel : KL.dim, 1, kan2);
+      txt(kostTekst(k), cx + 27 - kostTekst(k).length * 2, cy + 64, kan2 ? KL.amber : KL.dim);
+      hit(cx + 1, cy + 10, 52, 77, () => upgradeBron(s, b), `BUILD ${b.naam}: ${kostTekst(k, true)}. BURNS ${naamVan(b.brandstof ?? '')}`);
+    }
   }
 
   function teken(s: SpelStaat, e: EnergieStaat): void {
     hits = [];
+    regels = [];
     pc.clearRect(0, 0, PW, PH);
     pc.drawImage(plaat, 0, 0);
     pg.clearRect(0, 0, PW, PH);
     const knipper = Math.floor(tijd * 4) % 2 === 0;
 
     // BRONNEN
-    e.bronnen.forEach((b, i) => bron(s, b, 8 + i * 58, 14, knipper));
+    // hooguit drie kaarten; een bron die alleen uit loot komt en er nog niet is, staat er niet bij
+    e.bronnen.filter((b) => b.mk || !b.loot).slice(0, 3).forEach((b, i) => bron(s, b, 8 + i * 58, 14, knipper));
 
     // OPSLAG (de voorraad die de muizen aanslepen)
     (['schroot', 'hout', 'kristal'] as Grondstof[]).forEach((g, i) => {
@@ -245,36 +284,38 @@ export function maakPaneel(staat: () => SpelStaat): { werk(sec: number): void } 
       verzonken(8, y - 1, 170, 10, '#0a0b0b');
       if (g === 'kristal') G(10, y + 1, 5, 5, GRONDSTOFKLEUR[g]);
       else R(10, y + 1, 5, 5, GRONDSTOFKLEUR[g]);
-      txt(g, 18, y + 1, KL.label);
+      txt(naamVan(g), 18, y + 1, KL.label);
       const w = Math.floor(s.voorraad[g] ?? 0);
-      txt(String(w).padStart(4, '0'), 62, y + 1, w < 4 ? (knipper ? KL.rood : '#501010') : '#ffe08a', 1, true);
+      const max = opslagMax(s, g);
+      txt(String(w).padStart(3, '0'), 50, y + 1, w < 4 ? (knipper ? KL.rood : '#501010') : w >= max ? (knipper ? KL.rood : KL.amber) : '#ffe08a', 1, true);
+      txt(`/${max}`, 62, y + 1, KL.dim);
+      // vulmeter
+      R(80, y + 6, 26, 1, '#050505');
+      G(80, y + 6, Math.round((26 * Math.min(w, max)) / max), 1, w >= max ? KL.rood : GRONDSTOFKLEUR[g]);
       const tr = e.trend[g];
-      txt(`${tr >= 0 ? '+' : ''}${tr.toFixed(2)}/S`, 86, y + 1, tr > 0.01 ? KL.groen : tr < -0.01 ? KL.rood : KL.dim);
-      const wie = e.bronnen.find((b) => b.brandstof === g);
-      txt(wie ? wie.naam.slice(0, 6) : '', 146, y + 1, wie && wie.levert > 0 ? KL.amber : KL.dim);
-      hit(8, y - 1, 170, 10, null, `${g.toUpperCase()} IN DE OPSLAG. STUUR MUIZEN EROP (RECHTSKLIK)`);
+      txt(`${tr >= 0 ? '+' : ''}${tr.toFixed(2)}/S`, 110, y + 1, tr > 0.01 ? KL.groen : tr < -0.01 ? KL.rood : KL.dim);
+      hit(8, y - 1, 170, 10, null, w >= max ? `${naamVan(g)} FULL! BUILD A STOCKPILE FOR ${naamVan(g)}` : `${naamVan(g)} IN STOCK, MAX ${max}. MORE = A STOCKPILE FOR ${naamVan(g)}`);
     });
 
-    // NOODSTOP
-    const nk = 41, nyc = 182, laden = e.nood > 0;
-    for (let y = -14; y <= 14; y++)
-      for (let x = -14; x <= 14; x++) {
-        const d2 = x * x + y * y;
-        if (d2 > 196) continue;
-        let k: string;
-        if (d2 > 156) k = '#0a0a0a';
-        else if (laden) k = d2 < 30 && x + y < 0 ? '#4a1010' : '#2c0808';
-        else k = d2 < 44 && x + y < -2 ? '#ff5a5a' : x + y < 0 ? '#c8141e' : '#7a0a10';
-        R(nk + x, nyc + y + (laden ? 1 : 0), 1, 1, k);
-      }
-    if (!laden) {
-      txt('STOP', nk - 7, nyc - 2, '#2a0204');
-      pg.fillStyle = '#ff2a3a55';
-      pg.fillRect(nk - 9, nyc - 9, 18, 18);
-    } else txt(String(Math.ceil(e.nood)), nk - 2, nyc - 1, KL.rood);
-    for (let i = 0; i < 66; i++)
-      for (let j = 0; j < 2; j++) R(8 + i, 204 + j, 1, 1, Math.floor((i + j) / 3) % 2 ? '#0a0a0a' : '#8a7016');
-    hit(nk - 14, nyc - 14, 29, 29, () => noodstop(s), laden ? `NOODSTOP LAADT OP (${Math.ceil(e.nood)} S)` : 'NOODSTOP (N): ALLES UIT, 40 HITTE ERAF');
+    // MUIZEN: wat ze uit zichzelf aan het doen zijn
+    const tel = werk(s).telling;
+    const rijen: [string, number, string, string][] = [
+      ['BUILDING', tel.bouw, KL.geel, 'FINISHING BUILD SITES. COMES FIRST'],
+      ['WHEEL+FAB', tel.ren + tel.fab, KL.cyaan, 'RUNNING IN THE WHEEL AND WORKING IN FABRICATORS'],
+      ['HAULING', tel.haal + tel.breng + tel.lever, KL.amber, 'BRINGING PARTS TO BUILD SITES, INPUT TO FABRICATORS, OUTPUT TO THE STOCK'],
+      ['MINING', tel.graaf, KL.groen, 'DIGGING RESOURCES BY HAND, WHILE THERE IS ROOM'],
+      ['IDLE', tel.vrij, KL.label, 'NOTHING TO DO: STOCK FULL OR NOTHING TO BUILD'],
+    ];
+    const totaal = s.werkers.length || 1;
+    rijen.forEach(([naam, n, k, hulp], i) => {
+      const y = 166 + i * 8;
+      txt(naam, 8, y, KL.label);
+      txt(String(n).padStart(3, ' '), 54, y, n ? k : KL.dim, 1, n > 0);
+      verzonken(70, y, 104, 6, '#070707');
+      const bw = Math.round((102 * n) / totaal);
+      for (let x = 0; x < bw; x += 2) G(71 + x, y + 1, 1, 4, k);
+      hit(6, y - 1, 170, 8, null, `${naam}: ${hulp}`);
+    });
 
     // STROOMNET
     const nx = 190, ny = 73;
@@ -297,85 +338,89 @@ export function maakPaneel(staat: () => SpelStaat): { werk(sec: number): void } 
         for (let i = 1; i < n; i++) lijn(nx + 1 + 132 - n + i, yv(H[i].h[j]), yv(H[i - 1].h[j]), b.kleur);
       });
       R(nx + 1, yv(85), 132, 1, '#5a1010');
-      txt('HITTE', nx + 3, ny + 3, '#2c6b3a');
+      txt('HEAT', nx + 3, ny + 3, '#2c6b3a');
     }
     for (let y = ny + 1; y < ny + 51; y += 2) R(nx + 1, y, 132, 1, 'rgba(0,0,0,.25)');
     hit(nx, ny, 134, 52, () => {
       scoop = 1 - scoop;
-    }, scoop ? 'SCOOP: HITTE PER BRON. KLIK: STROOM' : 'SCOOP: GROEN AANBOD, AMBER VRAAG. KLIK: HITTE');
+    }, scoop ? 'SCOPE: HEAT PER SOURCE. CLICK: POWER' : 'SCOPE: GREEN SUPPLY, AMBER DEMAND. CLICK: HEAT');
     const netto = e.aanbod - e.vraag;
-    txt('AANBOD', nx, ny + 56, KL.label);
-    txt(String(e.aanbod), nx, ny + 63, KL.groen, 2, true);
-    txt('VRAAG', nx + 34, ny + 56, KL.label);
-    txt(String(e.vraag), nx + 34, ny + 63, KL.amber, 2, true);
-    txt('NETTO', nx + 68, ny + 56, KL.label);
-    txt((netto > 0 ? '+' : '') + netto, nx + 68, ny + 63, netto < 0 ? KL.rood : netto > 0 ? KL.geel : KL.groen, 2, true);
-    hit(nx, ny + 55, 98, 20, null, netto > 0 ? `${netto} KW OVER: DAT WORDT HITTE IN JE BRONNEN` : netto < 0 ? 'TEKORT: ALLES DRAAIT TRAAG, ZEKERING LIJDT' : 'PRECIES IN BALANS');
+    txt('SUPPLY', nx, ny + 56, KL.label);
+    txt(kw(e.aanbod), nx, ny + 63, KL.groen, kw(e.aanbod).length > 3 ? 1 : 2, true);
+    txt('DEMAND', nx + 34, ny + 56, KL.label);
+    txt(kw(e.vraag), nx + 34, ny + 63, KL.amber, kw(e.vraag).length > 3 ? 1 : 2, true);
+    txt('NET', nx + 68, ny + 56, KL.label);
+    const nt = (netto > 0 ? '+' : '') + kw(netto);
+    txt(nt, nx + 68, ny + 63, netto < 0 ? KL.rood : netto > 0 ? KL.geel : KL.groen, nt.length > 3 ? 1 : 2, true);
+    hit(nx, ny + 55, 98, 20, null, netto > 0 ? `${kw(netto)} KW SPARE: SWITCH MORE ON OR BURN LESS` : netto < 0 ? 'SHORTAGE: WHATEVER IS AT THE BOTTOM GETS NOTHING' : 'EXACTLY IN BALANCE');
     verzonken(nx, ny + 77, 92, 8, '#070707');
     R(nx + 45, ny + 78, 1, 6, '#3a3d3b');
     G(nx + 45 + Math.round(Math.min(1, Math.max(-1, netto / 8)) * 42), ny + 78, 2, 6, netto < 0 ? KL.rood : netto > 2 ? KL.geel : KL.groen);
-    // zekering
+    // tekort: wie valt er uit
     const zx = nx + 100, zy = ny + 54;
     verzonken(zx, zy, 34, 32, '#0c0d0d');
-    txt('ZEKER', zx + 3, zy + 2, KL.label);
-    R(zx + 3, zy + 10, 3, 9, '#8e918c');
-    R(zx + 28, zy + 10, 3, 9, '#8e918c');
-    R(zx + 6, zy + 11, 22, 7, '#0c1a1e');
-    R(zx + 6, zy + 11, 22, 1, '#2a4a50');
-    if (e.zekering.heel) {
-      for (let x = 0; x < 22; x++) G(zx + 6 + x, zy + 14 + (x % 4 === 0 ? -1 : x % 4 === 2 ? 1 : 0), 1, 1, e.aanbod < e.vraag ? KL.amber : '#ffe08a');
-      txt('HEEL', zx + 9, zy + 21, KL.groen, 1, true);
+    const wie = e.verbruikers.find((c) => c.id === e.tekort);
+    if (!wie) {
+      txt('GRID', zx + 9, zy + 6, KL.label);
+      txt('OK', zx + 13, zy + 17, KL.groen, 1, true);
     } else {
-      R(zx + 6, zy + 14, 8, 1, '#3a3a3a');
-      R(zx + 21, zy + 14, 7, 1, '#3a3a3a');
-      txt('RESET', zx + 7, zy + 21, knipper ? KL.rood : '#4a1010', 1, knipper);
+      txt('SHORT', zx + 7, zy + 6, knipper ? KL.rood : '#701010', 1, knipper);
+      txt(wie.naam.slice(0, 7), zx + 17 - Math.min(7, wie.naam.length) * 2, zy + 17, KL.amber, 1, true);
     }
-    R(zx + 3, zy + 28, 28, 2, '#050505');
-    G(zx + 3, zy + 28, Math.round((28 * e.zekering.spanning) / MUIZEN_ENERGIE.zekeringSec), 2, KL.rood);
-    hit(zx, zy, 34, 32, () => resetZekering(s), e.zekering.heel ? `ZEKERING: SLAAT DOOR NA ${MUIZEN_ENERGIE.zekeringSec} S TEKORT` : 'ZEKERING DOOR! KLIK OF Z: NIEUWE ERIN');
+    hit(zx, zy, 34, 32, null, wie ? `${wie.naam} GETS TOO LITTLE. SWITCH SOMETHING OFF OR MOVE IT UP (^)` : 'EVERYONE GETS ENOUGH POWER');
 
     // VERBRUIKERS
     const m = s.machine;
     e.verbruikers.forEach((c, i) => {
-      const x0 = 336, y0 = 73 + i * 30;
-      verzonken(x0, y0, 140, 27, '#101111');
-      R(x0 + 3, y0 + 4, 9, 16, '#050505');
+      const x0 = 336, y0 = 72 + i * 23;
+      verzonken(x0, y0, 140, 22, '#101111');
+      R(x0 + 3, y0 + 3, 9, 16, '#050505');
       if (c.aan) {
-        R(x0 + 4, y0 + 5, 7, 7, '#4c5051');
-        G(x0 + 5, y0 + 6, 5, 2, c.storing ? KL.rood : KL.groen);
-        R(x0 + 4, y0 + 12, 7, 7, '#1c1f21');
+        R(x0 + 4, y0 + 4, 7, 7, '#4c5051');
+        G(x0 + 5, y0 + 5, 5, 2, KL.groen);
+        R(x0 + 4, y0 + 11, 7, 7, '#1c1f21');
       } else {
-        R(x0 + 4, y0 + 5, 7, 7, '#1c1f21');
-        R(x0 + 4, y0 + 12, 7, 7, '#4c5051');
-        R(x0 + 5, y0 + 16, 5, 2, '#2a0a0a');
+        R(x0 + 4, y0 + 4, 7, 7, '#1c1f21');
+        R(x0 + 4, y0 + 11, 7, 7, '#4c5051');
+        R(x0 + 5, y0 + 15, 5, 2, '#2a0a0a');
       }
-      hit(x0 + 1, y0 + 1, 13, 25, () => zetVerbruiker(s, c), `${c.naam} AAN/UIT (TOETS ${c.toets}). VRAAGT ${c.vraag} KW`);
-      txt(c.naam, x0 + 16, y0 + 4, KL.label);
-      txt(`${c.vraag} KW`, x0 + 16, y0 + 12, c.aan ? KL.amber : KL.dim);
-      const led = c.storing ? (knipper ? KL.rood : '#300') : c.krijgt >= 0.999 ? KL.groen : c.krijgt > 0 ? KL.amber : c.aan ? KL.rood : '#1d1f1e';
-      if (c.aan || c.storing) G(x0 + 130, y0 + 4, 5, 5, led);
-      else R(x0 + 130, y0 + 4, 5, 5, led);
-      let f = 0, info = '', kleur = KL.cyaan, hulp = '';
+      hit(x0 + 1, y0 + 1, 13, 20, () => zetVerbruiker(s, c), `${c.naam} ON/OFF (KEY ${c.toets}). NEEDS ${kw(c.vraag)} KW`);
+      const eind = txt(c.naam, x0 + 16, y0 + 3, KL.label);
+      txt(`${kw(c.vraag)}KW`, eind + 3, y0 + 3, c.aan ? KL.amber : KL.dim);
+      const led = c.krijgt >= 0.999 ? KL.groen : c.krijgt > 0 ? KL.amber : c.aan ? KL.rood : '#1d1f1e';
+      if (c.aan) G(x0 + 130, y0 + 3, 5, 5, led);
+      else R(x0 + 130, y0 + 3, 5, 5, led);
+      // voorrang: ^ zet hem een plek hoger
+      if (i > 0) {
+        verzonken(x0 + 120, y0 + 1, 8, 8, '#070707');
+        txt('^', x0 + 122, y0 + 2, KL.cyaan);
+        hit(x0 + 120, y0 + 1, 8, 8, () => omhoog(s, c), `PRIORITY: MOVE ${c.naam} UP. THE TOP GETS POWER FIRST`);
+      }
+      let f = c.aan ? c.krijgt : 0, info = '', kleur = KL.cyaan, hulp = '';
       if (c.id === 'machine') {
         f = m.energie / m.maxEnergie;
         kleur = f >= 1 ? KL.groen : KL.rood;
-        info = f >= 1 ? `KLAAR VOOR SPRONG HITTE ${Math.round(c.hitte)}` : `STROOM ${Math.round(f * 100)}% HITTE ${Math.round(c.hitte)}`;
-        hulp = 'MACHINE: MOET VOLLE STROOM HEBBEN ALS DE STREAM KOMT';
+        info = f >= 1 ? 'READY TO JUMP' : `POWER ${Math.round(f * 100)}%`;
+        hulp = 'MACHINE: NEEDS FULL POWER WHEN THE STREAM COMES';
       } else if (c.id === 'koeling') {
-        f = c.krijgt;
-        info = c.krijgt > 0 ? `-${(MUIZEN_ENERGIE.koeling * c.krijgt).toFixed(1)} HITTE/S OP ALLES` : 'STIL';
-        hulp = 'KOELING: HAALT HITTE UIT ALLES';
+        info = c.aan ? (c.krijgt > 0 ? 'SOURCES COOL FASTER' : 'NO POWER') : 'OFF';
+        hulp = 'COOLING: HOT SOURCES RECOVER FASTER';
+      } else if (c.id === 'lampen') {
+        kleur = KL.geel;
+        info = c.krijgt > 0 ? `MINING +${Math.round(MUIZEN_ENERGIE.lampenSneller * c.krijgt * 100)}%` : c.aan ? 'NO POWER' : 'OFF';
+        hulp = 'WORK LAMPS: MICE MINE FASTER';
       } else {
-        f = c.hitte / 100;
-        kleur = c.hitte > 85 ? KL.rood : KL.geel;
-        info = c.krijgt > 0 ? `GRAVEN +${Math.round(MUIZEN_ENERGIE.lampenSneller * c.krijgt * 100)}% HITTE ${Math.round(c.hitte)}` : `HITTE ${Math.round(c.hitte)}`;
-        hulp = 'WERKLAMPEN: MUIZEN GRAVEN SNELLER. WORDEN HEET';
+        const ind = industrie(s);
+        kleur = KL.groen;
+        const pct = c.aan && c.krijgt < 0.999 ? ` ${Math.round(c.krijgt * 100)}%` : '';
+        info = `${ind.fabrieken.filter((b) => !b.af).length} FAB ${ind.boren.filter((b) => !b.af).length} DRILL ${[...ind.banden.values()].filter((b) => !b.af).length} BELT${pct}`;
+        hulp = `INDUSTRY: FABRICATORS, DRILLS AND BELTS (${kw(industrieVraag(s))} KW)`;
       }
-      verzonken(x0 + 52, y0 + 5, 74, 6, '#050505');
-      const vw = Math.round(72 * Math.min(1, Math.max(0, f)));
-      for (let x = 0; x < vw; x += 2) G(x0 + 53 + x, y0 + 6, 1, 4, kleur);
-      txt(info.slice(0, 30), x0 + 16, y0 + 20, c.aan ? KL.label : KL.dim);
-      hit(x0 + 15, y0 + 1, 124, 25, null, hulp);
+      verzonken(x0 + 72, y0 + 10, 54, 5, '#050505');
+      const vw = Math.round(52 * Math.min(1, Math.max(0, f)));
+      for (let x = 0; x < vw; x += 2) G(x0 + 73 + x, y0 + 11, 1, 3, kleur);
+      txt(info.slice(0, 30), x0 + 16, y0 + 16, c.aan ? KL.label : KL.dim);
+      hit(x0 + 15, y0 + 1, 104, 20, null, hulp);
     });
 
     // LOGBOEK
@@ -386,22 +431,25 @@ export function maakPaneel(staat: () => SpelStaat): { werk(sec: number): void } 
       const r = e.log[i + logScroll];
       if (!r) continue;
       const nieuw = i === 0 && logScroll === 0;
-      txt(r.tekst.slice(0, 44), lx + 3, ly + 3 + i * 7, nieuw ? kleuren[r.kleur] : '#6b4a14', 1, nieuw);
+      // lange regels worden smaller geschoven in plaats van afgekapt (tot 58 tekens)
+      const t = r.tekst.slice(0, 58);
+      txt(t.slice(0, 44), lx + 3, ly + 3 + i * 7, nieuw ? kleuren[r.kleur] : '#6b4a14', 1, nieuw);
+      if (regels.length) Object.assign(regels[regels.length - 1], { s: t, w: 174 });
     }
     R(lx + 180, ly + 2, 1, 26, '#2a1a06');
-    const uitleg = hover >= 0 && hits[hover] ? hits[hover].hulp : logScroll ? 'OUDERE MELDINGEN. KLIK VOOR MEER' : 'WIJS IETS AAN VOOR UITLEG';
+    const uitleg = hover >= 0 && hits[hover] ? hits[hover].hulp : logScroll ? 'OLDER MESSAGES. CLICK FOR MORE' : 'POINT AT SOMETHING FOR HELP';
     // uitleg rechts in twee regels van 25 tekens
     const woorden = uitleg.split(' ');
-    const regels = [''];
+    const zinnen = [''];
     for (const w of woorden) {
-      if ((regels[regels.length - 1] + ' ' + w).trim().length > 25 && regels.length < 3) regels.push('');
-      regels[regels.length - 1] = (regels[regels.length - 1] + ' ' + w).trim();
+      if ((zinnen[zinnen.length - 1] + ' ' + w).trim().length > 25 && zinnen.length < 3) zinnen.push('');
+      zinnen[zinnen.length - 1] = (zinnen[zinnen.length - 1] + ' ' + w).trim();
     }
-    regels.slice(0, 3).forEach((r, i) => txt(r.slice(0, 25), lx + 184, ly + 3 + i * 8, KL.cyaan, 1, hover >= 0));
+    zinnen.slice(0, 3).forEach((r, i) => txt(r.slice(0, 25), lx + 184, ly + 3 + i * 8, KL.cyaan, 1, hover >= 0));
     for (let y = ly + 1; y < ly + 29; y += 2) R(lx + 1, y, 284, 1, 'rgba(0,0,0,.22)');
     hit(lx, ly, 180, 30, () => {
       logScroll = e.log.length > 3 ? (logScroll + 3) % (e.log.length - 2) : 0;
-    }, 'LOGBOEK: KLIK VOOR OUDERE MELDINGEN');
+    }, 'LOG: CLICK FOR OLDER MESSAGES');
 
     if (hover >= 0 && hits[hover]?.doe) {
       const h = hits[hover];
@@ -432,6 +480,7 @@ export function maakPaneel(staat: () => SpelStaat): { werk(sec: number): void } 
     pvc.drawImage(pw2, 0, 0, W2, H2);
     pvc.globalAlpha = 1;
     pvc.globalCompositeOperation = 'source-over';
+    tekenRegels(pvc, regels, W2 / PW, H2 / PH);
   }
 
   // ---- invoer: alleen binnen de omtrek; daarbuiten gaat alles door naar het spel ----
@@ -484,16 +533,16 @@ export function maakPaneel(staat: () => SpelStaat): { werk(sec: number): void } 
     if (b) return e.shiftKey ? draaiKnop(s, b) : zetBron(s, b);
     const c = en.verbruikers.find((x) => x.toets === t);
     if (c) return zetVerbruiker(s, c);
-    if (t === 'Z') resetZekering(s);
-    if (t === 'N') noodstop(s);
   });
 
   tekenPlaat();
   maat();
   window.addEventListener('resize', maat);
+  const bouwen = beeld ? maakBouwen(staat, beeld) : null;
   return {
     werk(sec) {
       tijd += sec;
+      bouwen?.werk(sec);
       const s = staat();
       teken(s, energie(s));
     },

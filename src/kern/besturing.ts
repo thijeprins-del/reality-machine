@@ -4,13 +4,15 @@
 import { Graphics, type Application, type Container } from 'pixi.js';
 import { naarScherm, TEGEL_B, TEGEL_H } from './iso';
 import type { SpelStaat } from './spel';
+import type { TerreinBewerker } from './terreinbewerker';
+import { hoogteOp, tegelOnder } from './terrein';
 
 export interface Besturing {
   selectie: Set<number>;
   werk(sec: number): void;
 }
 
-// Scherm (in de wereld-container) naar de tegel eronder.
+// Scherm (in de wereld-container) naar de tegel eronder, op vlakke grond. Met heuvels: tegelOnder in terrein.ts.
 export function naarTegel(x: number, y: number): { kol: number; rij: number } {
   const a = x / (TEGEL_B / 2), b = y / (TEGEL_H / 2);
   return { kol: Math.round((a + b) / 2), rij: Math.round((b - a) / 2) };
@@ -22,7 +24,9 @@ export function maakBesturing(
   staat: () => SpelStaat,
   opZoom: (z: number) => void,
   opdracht: (ids: number[], kol: number, rij: number) => void,
+  bewerker?: TerreinBewerker, // testgereedschap (F2): als het open staat, verft de linkerknop terrein
 ): Besturing {
+  const ZOOMS = [0.25, 0.5, 1, 2, 3, 4];
   const selectie = new Set<number>();
   const kader = new Graphics();
   app.stage.addChild(kader);
@@ -30,16 +34,13 @@ export function maakBesturing(
 
   let zoom = app.screen.width > 2400 ? 2 : 1;
   // camera = het wereldpunt in het midden van het scherm
-  const m = staat().kaart.machine;
-  const start = naarScherm(m.x + m.breed / 2, m.y + m.diep / 2);
-  const cam = { x: start.x + 60, y: start.y - 110 };
-  const k = staat().kaart;
-  const grens = {
-    l: naarScherm(0, k.diep).x, r: naarScherm(k.breed, 0).x, t: 0, b: naarScherm(k.breed, k.diep).y,
-  };
+  let m = staat().kaart.machine;
+  const startPunt = () => naarScherm(m.x + m.breed / 2, m.y + m.diep / 2);
+  const cam = { x: startPunt().x + 60, y: startPunt().y - 110 };
   const zet = () => {
-    cam.x = Math.max(grens.l, Math.min(grens.r, cam.x));
-    cam.y = Math.max(grens.t, Math.min(grens.b, cam.y));
+    const k = staat().kaart;
+    cam.x = Math.max(naarScherm(0, k.diep).x, Math.min(naarScherm(k.breed, 0).x, cam.x));
+    cam.y = Math.max(0, Math.min(naarScherm(k.breed, k.diep).y, cam.y));
     wereld.scale.set(zoom);
     wereld.position.set(Math.round(app.screen.width / 2 - cam.x * zoom), Math.round(app.screen.height / 2 - cam.y * zoom));
     opZoom(zoom);
@@ -52,6 +53,7 @@ export function maakBesturing(
     toetsen.add(e.key.toLowerCase());
     if (e.key === 'Escape') selectie.clear();
     if (e.key === ' ') {
+      const start = startPunt();
       cam.x = start.x;
       cam.y = start.y;
       zet();
@@ -62,22 +64,37 @@ export function maakBesturing(
 
   canvas.addEventListener('wheel', (e) => {
     e.preventDefault();
-    zoom = Math.min(4, Math.max(1, zoom + (e.deltaY < 0 ? 1 : -1)));
+    // onder 1 in halve stappen, zodat je de hele wereld kunt overzien
+    const i = ZOOMS.indexOf(zoom) + (e.deltaY < 0 ? 1 : -1);
+    zoom = ZOOMS[Math.max(0, Math.min(ZOOMS.length - 1, i))];
     zet();
   }, { passive: false });
   canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
   // werker-posities op het scherm
   const opScherm = (x: number, y: number) => {
-    const p = naarScherm(x, y);
+    const p = naarScherm(x, y, hoogteOp(staat().kaart, x, y));
     return { x: wereld.position.x + p.x * zoom, y: wereld.position.y + (p.y - 8) * zoom };
   };
 
   let sleep: { x0: number; y0: number; x1: number; y1: number; extra: boolean } | null = null;
   let kijk: { x: number; y: number } | null = null;
   let laatsteKlik = 0;
+  let verven = false;
+  let laatsteVerf = { kol: -1, rij: -1 };
+  const tegelOnderMuis = (x: number, y: number) => {
+    const p = wereld.toLocal({ x, y });
+    return tegelOnder(staat().kaart, p.x, p.y);
+  };
 
   canvas.addEventListener('pointerdown', (e) => {
+    if (e.button === 0 && !e.shiftKey && bewerker?.actief) {
+      const t = tegelOnderMuis(e.offsetX, e.offsetY);
+      bewerker.neer(t.kol, t.rij);
+      verven = true;
+      laatsteVerf = t;
+      return;
+    }
     if (e.button === 0) sleep = { x0: e.offsetX, y0: e.offsetY, x1: e.offsetX, y1: e.offsetY, extra: e.shiftKey };
     if (e.button === 1) {
       e.preventDefault();
@@ -85,13 +102,24 @@ export function maakBesturing(
     }
     if (e.button === 2 && selectie.size) {
       const p = wereld.toLocal({ x: e.offsetX, y: e.offsetY });
-      const t = naarTegel(p.x, p.y);
+      const t = tegelOnder(staat().kaart, p.x, p.y);
       opdracht([...selectie], t.kol, t.rij);
     }
   });
   window.addEventListener('pointermove', (e) => {
     const r = canvas.getBoundingClientRect();
     const x = e.clientX - r.left, y = e.clientY - r.top;
+    if (bewerker?.actief) {
+      if (e.target !== canvas && !verven) bewerker.zweef(null, null);
+      else {
+        const t = tegelOnderMuis(x, y);
+        if (!verven) bewerker.zweef(t.kol, t.rij);
+        else if (t.kol !== laatsteVerf.kol || t.rij !== laatsteVerf.rij) {
+          bewerker.sleep(t.kol, t.rij);
+          laatsteVerf = t;
+        }
+      }
+    }
     if (sleep) {
       sleep.x1 = x;
       sleep.y1 = y;
@@ -104,6 +132,7 @@ export function maakBesturing(
     }
   });
   window.addEventListener('pointerup', (e) => {
+    if (e.button === 0) verven = false;
     if (e.button === 1) kijk = null;
     if (e.button !== 0 || !sleep) return;
     const s = sleep;
@@ -141,6 +170,15 @@ export function maakBesturing(
   return {
     selectie,
     werk(sec) {
+      // nieuwe wereld: de schijf ligt nu op andere tegels, en de camera gaat mee zodat hij op dezelfde plek in beeld blijft
+      const nu = staat().kaart.machine;
+      if (nu !== m) {
+        const d = naarScherm(nu.x - m.x, nu.y - m.y);
+        cam.x += d.x;
+        cam.y += d.y;
+        m = nu;
+        zet();
+      }
       const v = (900 * sec) / zoom;
       let dx = 0, dy = 0;
       if (toetsen.has('a') || toetsen.has('arrowleft')) dx -= v;

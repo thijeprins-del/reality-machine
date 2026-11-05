@@ -14,7 +14,7 @@ export function kiesFactie(keuzes: Keuze[]): Promise<FactieId> {
   menu.id = 'menu';
   menu.innerHTML = `
     <h1>Reality Machine</h1>
-    <p>Kies je factie</p>
+    <p>Choose your faction</p>
     <div class="keuzes">${keuzes
       .map(
         (k) => `<button data-id="${k.id}" ${k.speelbaar ? '' : 'disabled'}>
@@ -38,7 +38,7 @@ export function maakBalk(): { zet(regels: string[]): void } {
   const hulp = document.createElement('div');
   hulp.id = 'hulp';
   hulp.textContent =
-    'slepen = selecteren (shift = erbij) · dubbelklik = alles in beeld · rechtsklik = opdracht · WASD/pijlen of middelste knop = kijken · scrollen = zoom · spatie = machine';
+    'drag = select (shift = add) · double click = all on screen · right click = order · WASD/arrows or middle button = look · scroll = zoom · space = machine';
   document.body.append(balk, hulp);
   let vorige = '';
   return {

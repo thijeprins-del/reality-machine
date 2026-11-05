@@ -1,11 +1,12 @@
 import { Container, Graphics } from 'pixi.js';
+import { HOOGTE_PX } from '../data/dimensies';
 
 export const TEGEL_B = 64;
 export const TEGEL_H = 32;
 
-// Rooster (kolom, rij) naar schermpositie van het midden van de tegel.
-export function naarScherm(kol: number, rij: number): { x: number; y: number } {
-  return { x: (kol - rij) * (TEGEL_B / 2), y: (kol + rij) * (TEGEL_H / 2) };
+// Rooster (kolom, rij) naar schermpositie van het midden van de tegel, op hoogte z (in niveaus).
+export function naarScherm(kol: number, rij: number, z = 0): { x: number; y: number } {
+  return { x: (kol - rij) * (TEGEL_B / 2), y: (kol + rij) * (TEGEL_H / 2) - z * HOOGTE_PX };
 }
 
 // Een eenvoudig eiland van iso-tegels: gras met een rand aarde eronder.

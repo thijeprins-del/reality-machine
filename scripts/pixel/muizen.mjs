@@ -522,6 +522,223 @@ function tekenBand() {
   bewaar('band', d, ax, ay, 1);
 }
 
+
+// LEGE LOOPBAND (1 tegel, langs kol): lomp en gedeukt, zonder lading. Lading tekent het spel er los op.
+function tekenBandLeeg() {
+  const d = new Doek(40, 30);
+  const r = ruis(52);
+  const ax = 22, ay = 13;
+  const g = isoPunt(ax, ay);
+  const b = d.blokS(...g(0, 2, 0), 8, 4, 4, T.staal, { r });
+  for (let s = 0; s < 8; s++) streep(d, g(s, 2, 4), 4, 'rij', s % 2 ? T.rubber[1] : T.rubber[4]);
+  gevaar(d, [b.P3[0], b.P3[1] - 1], 8, 2, 'kol');
+  // scheve zijrail met een deuk
+  d.blokS(...g(0, 1.5, 4), 8, 0.5, 1, T.roest, { r });
+  d.blokS(...g(3, 1.5, 3), 2, 0.5, 1, T.roest, { r });
+  d.omlijn(K.lijn);
+  d.vuil(0.08, K.olie, 0.45, r);
+  d.kabel(b.P3[0] + 4, b.P3[1] - 1, b.P3[0] + 12, b.P3[1] + 4, 3, K.k0, K.k1);
+  d.neon(b.P1[0] - 2, b.P1[1] - 3, N.gif, 1);
+  bewaar('band-leeg', d, ax, ay, 1);
+}
+
+// LADING op de band: een brok schroot, een stuk hout of een kristal. Anker = midden onderaan.
+function tekenLading(goed) {
+  const d = new Doek(18, 16);
+  const r = ruis(90 + goed.length);
+  const g = isoPunt(9, 9);
+  if (goed === 'schroot') {
+    d.blokS(...g(-2, -1.5, 0), 4, 3, 3, T.staal, { r });
+    d.blokS(...g(-1, -0.5, 3), 2, 2, 2, T.roest, { r });
+  } else if (goed === 'hout') {
+    d.blokS(...g(-2.5, -1, 0), 5, 1, 2, T.bruin, { r });
+    d.blokS(...g(-2, 0.2, 0), 5, 1, 2, T.bruin, { r });
+    d.blokS(...g(-2.2, -0.4, 2), 5, 1, 2, T.bruin, { r });
+  } else if (goed === 'plaat') {
+    // onderdeel: twee geslepen stalen platen
+    d.blokS(...g(-2.5, -2, 0), 5, 4, 1, T.staal, { r });
+    d.blokS(...g(-2, -1.6, 1.2), 5, 4, 1, T.staal, { r });
+  } else if (goed === 'balk') {
+    // onderdeel: een vierkante balk met een stalen band
+    d.blokS(...g(-3, -0.8, 0), 6, 1.6, 2, T.bruin, { r });
+    d.blokS(...g(-0.4, -1, 0), 0.8, 2, 2.4, T.staal, { r });
+  } else {
+    d.blokS(...g(-1.5, -1.5, 0), 3, 3, 1, T.staal, { r });
+    d.blokS(...g(-0.5, -0.5, 1), 1.5, 1.5, 6, T.glas, { r });
+  }
+  d.omlijn(K.lijn);
+  if (goed === 'kristal') for (const [x, y] of [[9, 1], [9, 2], [9, 3], [8, 5]]) d.licht(x, y, N.cyaan);
+  bewaar(`last-${goed}`, d, 9, 13, 0);
+}
+
+// HOOP in de opslag: een bult schroot, een stapel planken of een kluit kristal. Het spel zet er veel naast elkaar.
+function tekenHoop(goed) {
+  const d = new Doek(28, 24);
+  const r = ruis(120 + goed.length);
+  const g = isoPunt(14, 14);
+  if (goed === 'schroot') {
+    for (let i = 0; i < 16; i++) {
+      const z = i < 7 ? 0 : i < 12 ? 2 : i < 15 ? 4 : 6;
+      const sp = 3.2 - z * 0.4;
+      d.blokS(...g(-sp + r() * sp * 2 - 0.5, -sp + r() * sp * 2 - 0.5, z), 1 + Math.floor(r() * 2), 1 + Math.floor(r() * 2), 2, r() < 0.45 ? T.roest : T.staal, { r });
+    }
+  } else if (goed === 'hout') {
+    for (let z = 0; z < 4; z++)
+      for (let j = 0; j < 4 - z; j++) d.blokS(...g(-3 + z * 0.4, -2 + j * 1.2 + z * 0.6, z * 1.6), 6 - z * 0.5, 1, 1.6, T.bruin, { r });
+  } else if (goed === 'plaat') {
+    for (let z = 0; z < 6; z++) d.blokS(...g(-3 + (z % 2) * 0.3, -2.5 + (z % 3) * 0.2, z * 1.1), 6, 5, 1, T.staal, { r });
+  } else if (goed === 'balk') {
+    for (let z = 0; z < 3; z++)
+      for (let j = 0; j < 3 - z; j++) {
+        d.blokS(...g(-3.2 + z * 0.3, -2.4 + j * 1.9 + z * 0.9, z * 2), 6.4, 1.7, 2, T.bruin, { r });
+        d.blokS(...g(-0.5 + z * 0.3, -2.5 + j * 1.9 + z * 0.9, z * 2), 0.9, 1.9, 2.2, T.staal, { r });
+      }
+  } else {
+    d.blokS(...g(-2.5, -2.5, 0), 5, 5, 1, T.staal, { r });
+    for (const [k, rr, h] of [[-1.5, -1.5, 7], [0.5, -1, 5], [-1, 0.5, 6], [0.8, 0.8, 4], [-2, 0.8, 3]]) d.blokS(...g(k, rr, 1), 1, 1, h, T.glas, { r });
+  }
+  d.omlijn(K.lijn);
+  d.vuil(0.05, K.olie, 0.4, r);
+  if (goed === 'kristal') for (const [x, y] of [[13, 3], [13, 4], [15, 7], [12, 7], [14, 9]]) d.licht(x, y, N.cyaan);
+  bewaar(`hoop-${goed}`, d, 14, 19, 0);
+}
+
+// STAPELPLAATS (2x2 tegels): betonvloer met hekpaaltjes en gevarenstrepen. De hopen tekent het spel erop.
+function tekenStapel() {
+  const d = new Doek(80, 60);
+  const r = ruis(93);
+  const ax = 40, ay = 28;
+  const g = schaal(isoPunt(ax, ay));
+  const B = (k, rr, z, u, v, h, ramp, o = {}) => d.blokS(...g(k, rr, z), u * F, v * F, h * F, ramp, { r, ...o });
+  const vloer = B(0, 0, 0, 8, 8, 1, T.beton);
+  gevaar(d, [vloer.P3[0], vloer.P3[1] - 1], 32, 2, 'kol');
+  gevaar(d, [vloer.P1[0] - 1, vloer.P1[1] - 1], 32, 2, 'rij');
+  for (const [k, rr] of [[0, 0], [7.5, 0], [0, 7.5], [7.5, 7.5], [3.75, 0], [0, 3.75]]) B(k, rr, 1, 0.5, 0.5, 5, T.staal);
+  d.omlijn(K.lijn);
+  d.vuil(0.07, K.olie, 0.45, r);
+  d.neon(...g(7.75, 7.75, 6.5), N.natrium, 1);
+  d.neon(...g(0.25, 0.25, 6.5), N.rood, 1);
+  bewaar('stapel', d, ax, ay, 2);
+}
+
+
+// KLEINE STAPEL (1 tegel): hetzelfde, maar een vloertje met vier paaltjes.
+function tekenKist() {
+  const d = new Doek(48, 40);
+  const r = ruis(94);
+  const ax = 24, ay = 16;
+  const g = schaal(isoPunt(ax, ay));
+  const B = (k, rr, z, u, v, h, ramp, o = {}) => d.blokS(...g(k, rr, z), u * F, v * F, h * F, ramp, { r, ...o });
+  const vloer = B(0, 0, 0, 4, 4, 1, T.beton);
+  gevaar(d, [vloer.P3[0], vloer.P3[1] - 1], 16, 2, 'kol');
+  for (const [k, rr] of [[0, 0], [3.5, 0], [0, 3.5], [3.5, 3.5]]) B(k, rr, 1, 0.5, 0.5, 4, T.staal);
+  d.omlijn(K.lijn);
+  d.vuil(0.07, K.olie, 0.45, r);
+  d.neon(...g(3.75, 3.75, 5.5), N.natrium, 1);
+  bewaar('stapel-1', d, ax, ay, 1);
+}
+
+// HOUTBRANDER (2x2 tegels): de eerste stroombron. Lompe ijzeren oven met een vuurdeur, een schoorsteen, een stapel
+// stammen ernaast en een dynamo die door de stoom draait. Het vuur is het felste ding: oranje neon.
+function tekenHoutbrander() {
+  const d = new Doek(88, 130);
+  const r = ruis(141);
+  const ax = 44, ay = 90;
+  const g = isoPunt(ax, ay);
+  const B = (k, rr, z, u, v, h, ramp, o = {}) => d.blokS(...g(k, rr, z), u, v, h, ramp, { r, ...o });
+  const vloer = B(0, 0, 0, 16, 16, 4, T.beton);
+  gevaar(d, [vloer.P3[0], vloer.P3[1] - 2], 16, 2, 'kol');
+  const oven = B(2, 2, 4, 9, 10, 26, T.roest);
+  B(1.5, 1.5, 30, 10, 11, 3, T.staal); // rand bovenop
+  const sch = g(5, 5, 33);
+  d.cilinder(sch[0], sch[1], 4, 52, T.staal, { r });
+  d.cilinder(sch[0], sch[1] - 52, 5, 4, T.roest, { r });
+  // stoomketel met dynamo erachter
+  const ket = g(12.5, 5, 4);
+  d.cilinder(ket[0], ket[1], 6, 22, T.messing, { r });
+  B(11, 9, 4, 4, 5, 10, T.olijf);
+  // stammen
+  for (let i = 0; i < 5; i++) B(10 + (i % 2) * 0.5, 13 + (i % 3) * 0.2, 4 + Math.floor(i / 2) * 2, 5, 1, 2, T.bruin);
+  // vuurdeur aan de voorkant (rij-zijde)
+  const deur = g(5, 12, 10);
+  d.omlijn(K.lijn);
+  d.vuil(0.07, K.olie, 0.45, r);
+  for (let j = 0; j < 7; j++) for (let i = 0; i < 6; i++) d.licht(deur[0] - 2 * i + 2, deur[1] + i - j, j < 2 ? N.rood : N.natrium);
+  for (const [a, b, z, k, gl] of [
+    [g(11, 2, 30), g(12.5, 5, 26), 8, K.k0, K.k1],
+    [g(13, 9, 14), g(16, 12, 0), 10, K.kRood, K.kRoodL],
+    [g(2, 11, 28), g(-1, 16, 0), 14, K.kGeel, K.kGeelL],
+    [g(13, 13, 14), g(16, 16, 0), 6, K.k0, K.k1],
+  ]) d.kabel(a[0], a[1], b[0], b[1], z, k, gl);
+  d.neon(sch[0], sch[1] - 57, N.rood, 1);
+  d.neon(...g(12, 9, 14), N.gif, 1);
+  void oven;
+  bewaar('houtbrander', d, ax, ay, 2);
+}
+
+
+// LOOPRAD (2x2 tegels): de eerste stroombron. Een gigantisch hamsterrad van roestig staal op een betonvoet, met een
+// dynamo op de as. Muizen rennen erin; hoe harder, hoe meer stroom. Drie beelden (rad-0..2) met de spaken een stukje
+// verder gedraaid, het spel wisselt ze af op de snelheid.
+function tekenRad(stand) {
+  const d = new Doek(88, 130);
+  const r = ruis(171);
+  const ax = 44, ay = 90;
+  const g = isoPunt(ax, ay);
+  const B = (k, rr, z, u, v, h, ramp, o = {}) => d.blokS(...g(k, rr, z), u, v, h, ramp, { r, ...o });
+  const vloer = B(0, 0, 0, 16, 16, 4, T.beton);
+  gevaar(d, [vloer.P3[0], vloer.P3[1] - 2], 16, 2, 'kol');
+  gevaar(d, [vloer.P1[0] - 1, vloer.P1[1] - 2], 16, 2, 'rij');
+  const ck = 8, cz = 35, Rk = 12, Rz = 30; // midden en straal van het rad (in het kol-z-vlak)
+  const punt = (a, rr) => g(ck + Rk * Math.cos(a), rr, cz + Rz * Math.sin(a));
+  // achterste bok
+  B(7, 3, 4, 2, 2, 36, T.staal);
+  // achterste velg
+  for (let i = 0; i < 160; i++) {
+    const [x, y] = punt((i / 160) * Math.PI * 2, 4);
+    d.zet(x, y, T.staal[4]);
+    d.zet(x, y + 1, T.staal[2]);
+  }
+  // sporten tussen de velgen: daar rennen de muizen op
+  const draai = (stand * Math.PI) / 18;
+  for (let i = 0; i < 24; i++) {
+    const a = draai + (i / 24) * Math.PI * 2;
+    for (let rr = 4; rr <= 11; rr += 0.5) {
+      const [x, y] = punt(a, rr);
+      d.zet(x, y, Math.sin(a) > 0 ? T.roest[4] : T.roest[2]);
+    }
+  }
+  // spaken aan de voorkant
+  for (let i = 0; i < 6; i++) {
+    const a = draai + (i / 6) * Math.PI * 2;
+    for (let f = 0.1; f <= 1; f += 0.02) {
+      const [x, y] = g(ck + Rk * f * Math.cos(a), 11, cz + Rz * f * Math.sin(a));
+      d.zet(x, y, T.staal[5]);
+    }
+  }
+  // voorste velg, dik
+  for (let i = 0; i < 200; i++) {
+    const [x, y] = punt((i / 200) * Math.PI * 2, 11);
+    d.zet(x, y, T.staal[6]);
+    d.zet(x, y + 1, T.staal[4]);
+    d.zet(x + 1, y, T.staal[3]);
+  }
+  // voorste bok en de dynamo op de as
+  B(7, 12, 4, 2, 2, 36, T.staal);
+  const as = g(ck, 12, cz);
+  d.cilinder(as[0], as[1] + 4, 4, 8, T.messing, { r });
+  B(10, 12, 4, 5, 4, 12, T.olijf);
+  d.omlijn(K.lijn);
+  d.vuil(0.06, K.olie, 0.4, r);
+  for (const [a, b, z, k, gl] of [
+    [g(12, 14, 14), g(16, 16, 0), 8, K.kRood, K.kRoodL],
+    [g(11, 15, 12), g(14, 16, 0), 6, K.kGeel, K.kGeelL],
+  ]) d.kabel(a[0], a[1], b[0], b[1], z, k, gl);
+  d.neon(as[0], as[1], N.natrium, 1);
+  d.neon(...g(12, 13, 15), N.gif, 1);
+  d.neon(...g(0.5, 15.5, 6), N.rood, 1);
+  bewaar(`rad-${stand}`, d, ax, ay, 2);
+}
 // ---------------------------------------------------------------------------
 // KABELMAST: houten paal met dwarsarm en isolatoren. Kabels tussen masten zijn een losse sprite.
 function tekenMast() {
@@ -653,6 +870,15 @@ tekenMast();
 tekenKabels();
 tekenMachine();
 tekenOpslag();
+tekenBandLeeg();
+for (const g of ['schroot', 'hout', 'kristal', 'plaat', 'balk']) {
+  tekenLading(g);
+  tekenHoop(g);
+}
+tekenStapel();
+tekenKist();
+tekenHoutbrander();
+for (const st of [0, 1, 2]) tekenRad(st);
 
 const regels = Object.entries(ankers).map(
   ([n, a]) =>
