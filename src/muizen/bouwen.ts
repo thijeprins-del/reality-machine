@@ -73,6 +73,7 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
   const vaste = new Map<string, Stuk>(); // stapels, palen, bronnen, fabricator
   const hopen: Stuk[] = [];
   let geestStuk: Stuk | null = null;
+  let radHoek = 0;
 
   // schermpunt van een tegel, op de hoogte van de heuvels (Lieuwe, terrein.ts)
   const iso = (kol: number, rij: number) => naarScherm(kol, rij, hoogteOp(staat().kaart, kol, rij));
@@ -429,6 +430,16 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
 
     // bronnen en fabricator
     for (const b of e.bronnen) {
+      if (b.renners) {
+        // looprad: de spaken draaien sneller naarmate hij meer levert
+        radHoek += sec * b.levert * 1.5;
+        // achter de muizen getekend, zodat je ze erin ziet rennen
+        const rb = V.bronnen[b.id];
+        vastAan(`bron-${b.id}`, `rad-${Math.floor(radHoek) % 3}`, rb, 2, b.mk > 0, 0, (rb.x + rb.y) * 10 - 5);
+        const st = vaste.get(`bron-${b.id}`);
+        if (st && st.naam !== `rad-${Math.floor(radHoek) % 3}`) beeld.wissel(st, `rad-${Math.floor(radHoek) % 3}`);
+        continue;
+      }
       const naam = b.id === 'houtbrander' ? 'houtbrander' : b.id === 'dynamo' ? 'dynamo' : '';
       if (naam) vastAan(`bron-${b.id}`, naam, V.bronnen[b.id], 2, b.mk > 0);
       if (b.levert > 0 && Math.random() < sec * (b.stand === 2 ? 14 : 4)) {

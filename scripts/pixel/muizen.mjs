@@ -660,6 +660,69 @@ function tekenHoutbrander() {
   bewaar('houtbrander', d, ax, ay, 2);
 }
 
+
+// LOOPRAD (2x2 tegels): de eerste stroombron. Een gigantisch hamsterrad van roestig staal op een betonvoet, met een
+// dynamo op de as. Muizen rennen erin; hoe harder, hoe meer stroom. Drie beelden (rad-0..2) met de spaken een stukje
+// verder gedraaid, het spel wisselt ze af op de snelheid.
+function tekenRad(stand) {
+  const d = new Doek(88, 130);
+  const r = ruis(171);
+  const ax = 44, ay = 90;
+  const g = isoPunt(ax, ay);
+  const B = (k, rr, z, u, v, h, ramp, o = {}) => d.blokS(...g(k, rr, z), u, v, h, ramp, { r, ...o });
+  const vloer = B(0, 0, 0, 16, 16, 4, T.beton);
+  gevaar(d, [vloer.P3[0], vloer.P3[1] - 2], 16, 2, 'kol');
+  gevaar(d, [vloer.P1[0] - 1, vloer.P1[1] - 2], 16, 2, 'rij');
+  const ck = 8, cz = 35, Rk = 12, Rz = 30; // midden en straal van het rad (in het kol-z-vlak)
+  const punt = (a, rr) => g(ck + Rk * Math.cos(a), rr, cz + Rz * Math.sin(a));
+  // achterste bok
+  B(7, 3, 4, 2, 2, 36, T.staal);
+  // achterste velg
+  for (let i = 0; i < 160; i++) {
+    const [x, y] = punt((i / 160) * Math.PI * 2, 4);
+    d.zet(x, y, T.staal[4]);
+    d.zet(x, y + 1, T.staal[2]);
+  }
+  // sporten tussen de velgen: daar rennen de muizen op
+  const draai = (stand * Math.PI) / 18;
+  for (let i = 0; i < 24; i++) {
+    const a = draai + (i / 24) * Math.PI * 2;
+    for (let rr = 4; rr <= 11; rr += 0.5) {
+      const [x, y] = punt(a, rr);
+      d.zet(x, y, Math.sin(a) > 0 ? T.roest[4] : T.roest[2]);
+    }
+  }
+  // spaken aan de voorkant
+  for (let i = 0; i < 6; i++) {
+    const a = draai + (i / 6) * Math.PI * 2;
+    for (let f = 0.1; f <= 1; f += 0.02) {
+      const [x, y] = g(ck + Rk * f * Math.cos(a), 11, cz + Rz * f * Math.sin(a));
+      d.zet(x, y, T.staal[5]);
+    }
+  }
+  // voorste velg, dik
+  for (let i = 0; i < 200; i++) {
+    const [x, y] = punt((i / 200) * Math.PI * 2, 11);
+    d.zet(x, y, T.staal[6]);
+    d.zet(x, y + 1, T.staal[4]);
+    d.zet(x + 1, y, T.staal[3]);
+  }
+  // voorste bok en de dynamo op de as
+  B(7, 12, 4, 2, 2, 36, T.staal);
+  const as = g(ck, 12, cz);
+  d.cilinder(as[0], as[1] + 4, 4, 8, T.messing, { r });
+  B(10, 12, 4, 5, 4, 12, T.olijf);
+  d.omlijn(K.lijn);
+  d.vuil(0.06, K.olie, 0.4, r);
+  for (const [a, b, z, k, gl] of [
+    [g(12, 14, 14), g(16, 16, 0), 8, K.kRood, K.kRoodL],
+    [g(11, 15, 12), g(14, 16, 0), 6, K.kGeel, K.kGeelL],
+  ]) d.kabel(a[0], a[1], b[0], b[1], z, k, gl);
+  d.neon(as[0], as[1], N.natrium, 1);
+  d.neon(...g(12, 13, 15), N.gif, 1);
+  d.neon(...g(0.5, 15.5, 6), N.rood, 1);
+  bewaar(`rad-${stand}`, d, ax, ay, 2);
+}
 // ---------------------------------------------------------------------------
 // KABELMAST: houten paal met dwarsarm en isolatoren. Kabels tussen masten zijn een losse sprite.
 function tekenMast() {
@@ -798,6 +861,7 @@ for (const g of ['schroot', 'hout', 'kristal', 'plaat', 'balk']) {
 }
 tekenStapel();
 tekenHoutbrander();
+for (const st of [0, 1, 2]) tekenRad(st);
 
 const regels = Object.entries(ankers).map(
   ([n, a]) =>

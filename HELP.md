@@ -24,7 +24,8 @@ stream gemist.
 
 ## Stroom (muizen)
 Linksonder zit het controlepaneel van de muizen. Elke knop doet iets; wijs iets aan en het logboek legt het uit.
-- **Bronnen**: je begint met een houtbrander. De dynamo (schroot) bouw je met **+**, de reactor (kristal) vind je alleen
+- **Bronnen**: je begint met een looprad (WHEEL) waar muizen in rennen: hoe hoger de stand, hoe meer muizen erin moeten.
+  De houtbrander bouw je met **+**. De dynamo (schroot) bouw je met **+**, de reactor (kristal) vind je alleen
   als loot. Hendel = aan/uit (toetsen **1 2 3**), draaiknop = laag/normaal/overladen (**shift** + 1 2 3).
 - **Overladen** geeft veel extra stroom, maar de bron wordt heet en is daarna een tijdje zwakker. Dat mag gewoon.
 - **Verbruikers** (toetsen **4 5 6 7**) staan op voorrang: wat bovenaan staat krijgt eerst stroom. Met **^** zet je iets

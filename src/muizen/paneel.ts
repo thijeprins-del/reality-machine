@@ -210,7 +210,7 @@ export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(
     const lamp = over ? (knipper ? KL.amber : '#402000') : b.levert > 0 ? KL.groen : '#1d1f1e';
     if (b.levert > 0) G(cx + 46, cy + 3, 5, 5, lamp);
     else R(cx + 46, cy + 3, 5, 5, lamp);
-    hit(cx + 2, cy + 1, 30, 9, null, `${b.naam}: TURNS ${naamVan(b.brandstof)} FROM STOCK INTO POWER`);
+    hit(cx + 2, cy + 1, 30, 9, null, b.renners ? `${b.naam}: MICE RUN IN IT. MORE MICE, MORE POWER. NO FUEL` : `${b.naam}: TURNS ${naamVan(b.brandstof!)} FROM STOCK INTO POWER`);
     hendel(cx + 3, cy + 11, b.aan, b.kleur, false);
     hit(cx + 3, cy + 11, 14, 32, () => zetBron(s, b), `LEVER: ${b.naam} ON/OFF (KEY ${b.toets})`);
     knop(cx + 28, cy + 25, b.stand, b.stand === 2 ? KL.amber : b.kleur);
@@ -231,8 +231,16 @@ export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(
     const lev = kw(b.levert);
     txt(b.levert > 0 ? `+${lev}` : '--', cx + 6, cy + 49, b.levert > 0 ? (over ? KL.amber : KL.groen) : '#173014', lev.length > 2 ? 1 : 2, b.levert > 0);
     hit(cx + 3, cy + 46, 36, 15, null, `${b.naam} NOW GIVES ${lev} KW. ${STANDEN.map((n, i) => `${n[0]} ${kw(stroomVan(b, i as 0 | 1 | 2))}`).join(' ')}`);
-    R(cx + 3, cy + 65, 4, 4, GRONDSTOFKLEUR[b.brandstof]);
-    txt(`-${verbruikVan(b).toFixed(2).replace(/^0/, '')}/S`, cx + 9, cy + 65, b.aan ? KL.amber : KL.dim);
+    if (b.renners) {
+      // looprad: hoeveel muizen erin rennen tegen hoeveel er nodig zijn
+      const nodig = b.renners[b.stand];
+      R(cx + 3, cy + 65, 4, 4, '#d8cfc0');
+      txt(`${b.rennen}/${nodig}`, cx + 9, cy + 65, !b.aan ? KL.dim : b.rennen >= nodig ? KL.groen : KL.amber);
+      hit(cx + 2, cy + 63, 36, 8, null, `MICE IN THE WHEEL: ${b.rennen} OF ${nodig}. LOW ${b.renners[0]}, NORMAL ${b.renners[1]}, OVERCHARGE ${b.renners[2]}`);
+    } else {
+      R(cx + 3, cy + 65, 4, 4, GRONDSTOFKLEUR[b.brandstof!]);
+      txt(`-${verbruikVan(b).toFixed(2).replace(/^0/, '')}/S`, cx + 9, cy + 65, b.aan ? KL.amber : KL.dim);
+    }
     const zwak = b.hitte > 3 && b.stand !== 2;
     const status = !b.aan ? 'OFF' : over ? 'OVER!' : zwak ? `WEAK${Math.round(zwakte(b) * 100)}` : 'RUNNING';
     txt(status, cx + 3, cy + 77, !b.aan ? KL.dim : over ? KL.amber : zwak ? KL.geel : KL.groen, 1, b.aan);
@@ -254,7 +262,7 @@ export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(
       verzonken(cx + 7, cy + 44, 40, 13, '#070707');
       txt('BUILD', cx + 17, cy + 48, kan2 ? KL.geel : KL.dim, 1, kan2);
       txt(kostTekst(k), cx + 27 - kostTekst(k).length * 2, cy + 64, kan2 ? KL.amber : KL.dim);
-      hit(cx + 1, cy + 10, 52, 77, () => upgradeBron(s, b), `BUILD ${b.naam}: ${kostTekst(k, true)}. BURNS ${naamVan(b.brandstof)}`);
+      hit(cx + 1, cy + 10, 52, 77, () => upgradeBron(s, b), `BUILD ${b.naam}: ${kostTekst(k, true)}. BURNS ${naamVan(b.brandstof ?? '')}`);
     }
   }
 
@@ -267,7 +275,8 @@ export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(
     const knipper = Math.floor(tijd * 4) % 2 === 0;
 
     // BRONNEN
-    e.bronnen.forEach((b, i) => bron(s, b, 8 + i * 58, 14, knipper));
+    // hooguit drie kaarten; een bron die alleen uit loot komt en er nog niet is, staat er niet bij
+    e.bronnen.filter((b) => b.mk || !b.loot).slice(0, 3).forEach((b, i) => bron(s, b, 8 + i * 58, 14, knipper));
 
     // OPSLAG (de voorraad die de muizen aanslepen)
     (['schroot', 'hout', 'kristal'] as Grondstof[]).forEach((g, i) => {
@@ -292,7 +301,7 @@ export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(
     const tel = werk(s).telling;
     const rijen: [string, number, string, string][] = [
       ['BUILDING', tel.bouw, KL.geel, 'FINISHING BUILD SITES. COMES FIRST'],
-      ['MAKING', tel.fab, KL.cyaan, 'WORKING IN A FABRICATOR THAT HAS A RECIPE'],
+      ['WHEEL+FAB', tel.ren + tel.fab, KL.cyaan, 'RUNNING IN THE WHEEL AND WORKING IN FABRICATORS'],
       ['HAULING', tel.haal + tel.breng + tel.lever, KL.amber, 'BRINGING PARTS TO BUILD SITES, INPUT TO FABRICATORS, OUTPUT TO THE STOCK'],
       ['MINING', tel.graaf, KL.groen, 'DIGGING RESOURCES BY HAND, WHILE THERE IS ROOM'],
       ['IDLE', tel.vrij, KL.label, 'NOTHING TO DO: STOCK FULL OR NOTHING TO BUILD'],

@@ -1,4 +1,5 @@
 // Muizen werken zelf. Een muis die niets te doen heeft zoekt werk, in deze volgorde:
+//   0. rennen: in het looprad, als dat aan staat (zoveel als de stand vraagt)
 //   1. bouwen: spullen uit de opslag naar de bouwplek brengen, en dan de bouwplek afmaken
 //      (fabricator, boor, band, paal, stapel)
 //   2. fabriceren: in een fabricator werken die een recept heeft, en hem zijn grondstof brengen
@@ -13,8 +14,9 @@ import { hash01 } from '../kern/toeval';
 import {
   blok2, getallen, gevoed, GRONDSTOFFEN, heeftBand, industrie, invoerMax, leeg, midden, opslagMax, vast, type Maker,
 } from './industrie';
+import { energie } from './energie';
 
-export type Klus = 'bouw' | 'fab' | 'haal' | 'breng' | 'graaf' | 'lever';
+export type Klus = 'ren' | 'bouw' | 'fab' | 'haal' | 'breng' | 'graaf' | 'lever';
 interface Taak {
   klus: Klus;
   doel: number | string; // id van het ding, `b`+tegelsleutel van een band, `in`+id voor de invoer van een fabricator
@@ -36,7 +38,7 @@ let DRAAGT = 2;
 export function werk(s: SpelStaat): WerkStaat {
   let w = STATEN.get(s);
   if (!w) {
-    w = { taken: new Map(), klok: 0, telling: { bouw: 0, fab: 0, haal: 0, breng: 0, graaf: 0, lever: 0, vrij: 0 } };
+    w = { taken: new Map(), klok: 0, telling: { ren: 0, bouw: 0, fab: 0, haal: 0, breng: 0, graaf: 0, lever: 0, vrij: 0 } };
     STATEN.set(s, w);
   }
   return w;
@@ -87,6 +89,8 @@ function stapWerk(s: SpelStaat, sec: number): void {
   for (const p of [...i.palen, ...i.stapels, ...i.fabrieken]) if (p.af) bouwplek.set(p.id, p);
   for (const [k, t] of i.banden) if (t.af) bouwplek.set(`b${k}`, t);
   const aantal = new Map<number | string, number>();
+  const rad = energie(s).bronnen.find((b) => b.renners);
+  let rennen = 0;
   const onderweg = new Map<string, number>(); // "doel:goed" -> hoeveel er al gehaald of gebracht wordt
   const gepland = new Map<Goed, number>(); // nog op te halen uit de opslag
   // Waar muizen spullen naartoe brengen: bouwplekken (wat nog nodig is) en fabricators (hun invoer).
@@ -147,6 +151,15 @@ function stapWerk(s: SpelStaat, sec: number): void {
         t.doel = 'om';
       } else if (w.taak === 'naarBron') t.doel = '';
       if (w.taak === 'rust' && !w.lading) W.taken.delete(w.id);
+      continue;
+    }
+    if (t.klus === 'ren') {
+      if (!rad || !rad.aan || !rad.mk) {
+        W.taken.delete(w.id);
+        continue;
+      }
+      aantal.set('rad', (aantal.get('rad') ?? 0) + 1);
+      if (daar(w, t)) rennen++;
       continue;
     }
     if (t.klus === 'bouw') {
@@ -232,9 +245,10 @@ function stapWerk(s: SpelStaat, sec: number): void {
     }
   }
   for (const f of i.fabrieken) f.ploeg = ploeg.get(f.id) ?? 0;
+  if (rad) rad.rennen = rennen;
 
   // telling voor het paneel
-  const tel = { bouw: 0, fab: 0, haal: 0, breng: 0, graaf: 0, lever: 0, vrij: 0 };
+  const tel = { ren: 0, bouw: 0, fab: 0, haal: 0, breng: 0, graaf: 0, lever: 0, vrij: 0 };
   for (const w of s.werkers) {
     const t = W.taken.get(w.id);
     if (t) tel[t.klus]++;
@@ -294,6 +308,20 @@ function stapWerk(s: SpelStaat, sec: number): void {
       }
     }
   };
+
+  // 0. rennen in het looprad: zonder stroom geen fabricator en geen boor
+  if (rad?.aan && rad.mk && rad.renners) {
+    const rb = vast(s).bronnen[rad.id], c = midden(rb);
+    const teveel = (aantal.get('rad') ?? 0) - rad.renners[rad.stand];
+    // stand lager gezet: wie te veel is, stapt uit
+    if (teveel > 0) for (const [id, t] of [...W.taken].filter(([, t]) => t.klus === 'ren').slice(0, teveel)) {
+      W.taken.delete(id);
+      void t;
+    }
+    geef(rad.renners[rad.stand] - (aantal.get('rad') ?? 0), c.x, c.y, (w) => ({
+      klus: 'ren', doel: 'rad', x: rb.x + 0.5 + (hash01(w.id * 3) - 0.5) * 0.7, y: rb.y + 0.25 + hash01(w.id * 5 + 1) * 0.6,
+    }));
+  }
 
   // 1. bouwen: eerst de spullen erheen, dan bouwen
   for (const [doel, plek] of bouwplek) if (!leeg(plek.nodig)) lever(doel, 6);

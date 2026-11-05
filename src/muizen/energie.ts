@@ -14,7 +14,8 @@ export interface BronData {
   id: string;
   naam: string;
   kort: string;
-  brandstof: Grondstof;
+  brandstof?: Grondstof; // wat hij stookt; geen = looprad (muizen rennen erin)
+  renners?: [number, number, number]; // looprad: zoveel muizen nodig per stand voor volle stroom
   kleur: string;
   stroom: [number, number, number]; // kW per stand (laag, normaal, overladen)
   verbruik: [number, number, number]; // grondstof per seconde per stand
@@ -38,6 +39,7 @@ export interface Bron extends BronData {
   hitte: number; // 0..100: van overladen; maakt de bron tijdelijk zwakker
   levert: number;
   toets: string;
+  rennen: number; // looprad: muizen die er nu in rennen (zet werk.ts)
 }
 export type VerbruikerId = 'machine' | 'industrie' | 'lampen' | 'koeling';
 export interface Verbruiker {
@@ -75,7 +77,7 @@ export function energie(s: SpelStaat): EnergieStaat {
   if (!e) {
     const v = s.voorraad;
     e = {
-      bronnen: G.bronnen.map((b, i) => ({ ...b, aan: b.mk > 0, stand: 1, hitte: 0, levert: 0, toets: String(i + 1) })),
+      bronnen: G.bronnen.map((b, i) => ({ ...b, aan: b.mk > 0, stand: 1, hitte: 0, levert: 0, rennen: 0, toets: i < 3 ? String(i + 1) : '' })),
       verbruikers: [
         { id: 'machine', naam: 'MACHINE', vraag: G.vraag.machine, aan: false, krijgt: 0, toets: '4' },
         { id: 'industrie', naam: 'INDUSTRY', vraag: 0, aan: true, krijgt: 0, toets: '5' },
@@ -90,7 +92,7 @@ export function energie(s: SpelStaat): EnergieStaat {
       trend: { schroot: 0, hout: 0, kristal: 0 },
       trendT: 0,
       vorige: { schroot: v.schroot ?? 0, hout: v.hout ?? 0, kristal: v.kristal ?? 0 },
-      log: [{ tekst: 'THE WOOD BURNER IS RUNNING. CHOOSE WHAT GETS POWER', kleur: 'groen' }],
+      log: [{ tekst: 'MICE ARE RUNNING IN THE WHEEL. CHOOSE WHAT GETS POWER', kleur: 'groen' }],
       gemist: s.gemist,
     };
     STATEN.set(s, e);
@@ -122,7 +124,10 @@ export function stapEnergie(s: SpelStaat, sec: number, muis: EenheidSoort | unde
   let aanbod = 0;
   for (const b of e.bronnen) {
     b.levert = 0;
-    if (b.aan && b.mk) {
+    if (b.aan && b.mk && b.renners) {
+      // looprad: geen brandstof, wel muizen. Te weinig renners = minder stroom.
+      b.levert = rond(stroomVan(b) * Math.min(1, b.rennen / b.renners[b.stand]));
+    } else if (b.aan && b.mk && b.brandstof) {
       const kost = verbruikVan(b) * sec;
       if ((v[b.brandstof] ?? 0) >= kost) {
         v[b.brandstof] = (v[b.brandstof] ?? 0) - kost;
@@ -196,7 +201,7 @@ export function stapEnergie(s: SpelStaat, sec: number, muis: EenheidSoort | unde
 export function zetBron(s: SpelStaat, b: Bron): void {
   const e = energie(s);
   if (!b.mk) return log(e, b.loot ? `${b.naam}: ONLY FROM LOOT` : `${b.naam} IS NOT BUILT YET. CLICK +`, 'rood');
-  if (!b.aan && (s.voorraad[b.brandstof] ?? 0) < 0.5) return log(e, `NO ${naamVan(b.brandstof)} IN STOCK`, 'rood');
+  if (!b.aan && b.brandstof && (s.voorraad[b.brandstof] ?? 0) < 0.5) return log(e, `NO ${naamVan(b.brandstof)} IN STOCK`, 'rood');
   b.aan = !b.aan;
   log(e, `${b.naam} ${b.aan ? 'ON' : 'OFF'}`);
 }

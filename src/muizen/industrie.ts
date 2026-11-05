@@ -124,9 +124,10 @@ export function vast(s: SpelStaat): { erf: Blok; bronnen: Record<string, Blok> }
   return {
     erf: { x: o.x + o.breed, y: o.y, breed: 2, diep: 2 },
     bronnen: {
-      houtbrander: { x: m.x - 3, y: m.y + 1, breed: 2, diep: 2 },
+      rad: { x: m.x - 3, y: m.y + 1, breed: 2, diep: 2 },
       dynamo: { x: m.x - 3, y: m.y - 2, breed: 2, diep: 2 },
-      reactor: { x: m.x + 1, y: m.y - 3, breed: 2, diep: 2 },
+      houtbrander: { x: m.x + 1, y: m.y - 3, breed: 2, diep: 2 },
+      reactor: { x: m.x + 4, y: m.y - 3, breed: 2, diep: 2 },
     },
   };
 }

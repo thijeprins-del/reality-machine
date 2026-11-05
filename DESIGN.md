@@ -82,9 +82,11 @@ pixelart, maar de letters worden scherp getekend met een echt lettertype (`src/m
 
 **Stroomnet (trucje van de muizen, herzien 3 nov):** alleen de muizen beheren stroom; de otters krijgen iets anders.
 Energie gaat om keuzes, niet om alles overeind houden. Er is geen zekering en geen storing meer.
+- **Looprad (WHEEL, 5 nov):** de eerste bron is een gigantisch hamsterrad. Geen brandstof: muizen rennen erin (3/6/10
+  muizen voor laag/normaal/overladen, 2/4/7 kW). Te weinig renners = minder stroom. Muizen die rennen graven en bouwen niet.
 - Bronnen verbranden grondstof uit de opslag (in beeld: WOOD BURNER, DYNAMO, REACTOR): houtbrander (hout, 2/4/7 kW per stand laag/normaal/overladen), dynamo
-  (schroot, 3/5/9), reactor (kristal, 6/10/16). Je begint met een houtbrander MK1 die aan staat. De dynamo moet je eerst
-  bouwen (5 platen + 2 balken); de reactor komt alleen uit loot. Per MK meer stroom (x1, 1,7, 2,5) en meer brandstof.
+  (schroot, 3/5/9), reactor (kristal, 6/10/16). Je begint met het looprad. Houtbrander (4 platen + 4 balken) en dynamo (5 platen + 2 balken) moet je
+  eerst bouwen; de reactor komt alleen uit loot. Per MK meer stroom (x1, 1,7, 2,5) en meer brandstof.
 - **Overladen** mag altijd: veel stroom, maar de bron wordt heet. Daarna is hij tijdelijk zwakker (tot 50% bij volle
   hitte) tot hij is afgekoeld. Koeling laat sneller afkoelen.
 - Verbruikers staan op volgorde van voorrang: machine (6 kW), industrie (fabricator, boren, banden), lampen (2 kW,

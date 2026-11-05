@@ -16,8 +16,11 @@ export const MUIZEN_ENERGIE: EnergieGetallen = {
   // stroom/verbruik per stand: LAAG, NORMAAL, OVERLADEN. mk = waarmee je begint (0 = nog niet gebouwd);
   // bouw[i] = kosten om naar MK i+1 te gaan; loot = alleen uit loot te krijgen (nog niet in het spel).
   bronnen: [
-    { id: 'houtbrander', naam: 'WOOD BURNER', kort: 'WOOD', brandstof: 'hout', kleur: '#ff5a2a', stroom: [2, 4, 7], verbruik: [0.06, 0.12, 0.25],
+    // looprad: de eerste bron. Muizen rennen erin; geen brandstof, wel muizen die niet graven of bouwen.
+    { id: 'rad', naam: 'WHEEL', kort: 'WHEEL', renners: [3, 6, 10], kleur: '#ffd23f', stroom: [2, 4, 7], verbruik: [0, 0, 0],
       mk: 1, bouw: [{}, { plaat: 6, balk: 3 }, { plaat: 14, kristal: 10 }] },
+    { id: 'houtbrander', naam: 'WOOD BURNER', kort: 'WOOD', brandstof: 'hout', kleur: '#ff5a2a', stroom: [3, 5, 8], verbruik: [0.06, 0.12, 0.25],
+      mk: 0, bouw: [{ plaat: 4, balk: 4 }, { plaat: 8, balk: 4 }, { plaat: 14, kristal: 10 }] },
     { id: 'dynamo', naam: 'DYNAMO', kort: 'DYNAMO', brandstof: 'schroot', kleur: '#ff9a1f', stroom: [3, 5, 9], verbruik: [0.08, 0.15, 0.3],
       mk: 0, bouw: [{ plaat: 5, balk: 2 }, { plaat: 10, balk: 3 }, { plaat: 18, kristal: 15 }] },
     { id: 'reactor', naam: 'REACTOR', kort: 'REACTOR', brandstof: 'kristal', kleur: '#4ef2ff', stroom: [6, 10, 16], verbruik: [0.03, 0.06, 0.12],
