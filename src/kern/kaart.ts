@@ -1,5 +1,5 @@
 // De kaart van een dimensie: de machine en de opslag in het midden, velden met grondstoffen eromheen.
-import { dimensieHeuvels, KAART_BREED, KAART_DIEP, RING_STRAAL, VELDEN } from '../data/dimensies';
+import { dimensieHeuvels, dimensieKaart, KAART_BREED, KAART_DIEP, KAART_MIN, RING_STRAAL, VELDEN } from '../data/dimensies';
 import type { Doorgang } from './routes';
 import { maakHoogtes, ruimKorteKlippenOp, TEGEL_LAND, tegelSoorten, verbindLand, type Terrein } from './terrein';
 import { hash01, volgende } from './toeval';
@@ -50,9 +50,16 @@ function stroomVoor(seed: number, dimensie: number, soort: number): { toeval: nu
   return { toeval: (Math.imul(seed >>> 0, 0x9e3779b1) ^ Math.imul(dimensie, 0x85ebca6b) ^ Math.imul(soort, 0xc2b2ae35)) >>> 0 };
 }
 
+// De maat van een wereld: uit het adres (?kaart=256x64, of ?kaart=256x64,128x128 om de beurt per wereld), anders uit de data.
+function kaartMaat(dimensie: number): [number, number] {
+  const m = (typeof location === 'undefined' ? '' : new URLSearchParams(location.search).get('kaart') ?? '').split(',');
+  const paar = /^(\d+)x(\d+)$/.exec(m[(dimensie - 1) % m.length]);
+  const [b, d] = paar ? [Number(paar[1]), Number(paar[2])] : dimensieKaart(dimensie);
+  return [Math.max(KAART_MIN, b), Math.max(KAART_MIN, d)];
+}
+
 export function maakKaart(seed: number, dimensie: number): Kaart {
-  const breed = KAART_BREED;
-  const diep = KAART_DIEP;
+  const [breed, diep] = kaartMaat(dimensie);
   const mx = Math.floor(breed / 2) - 2;
   const my = Math.floor(diep / 2) - 2;
   const machine: Blok = { x: mx, y: my, breed: 4, diep: 4 };
@@ -77,15 +84,18 @@ export function maakKaart(seed: number, dimensie: number): Kaart {
   const r = () => volgende(veldStroom);
   for (const goed of Object.keys(VELDEN) as Grondstof[]) {
     const v = VELDEN[goed];
-    for (let n = 0; n < v.aantal; n++) {
+    // Een grotere wereld heeft ook meer velden, verspreid over de hele kaart; de eerste liggen altijd om de schijf heen.
+    const extra = Math.max(0, Math.round(v.aantal * ((breed * diep) / (KAART_BREED * KAART_DIEP) - 1)));
+    for (let n = 0; n < v.aantal + extra; n++) {
       // zoek een vrije plek voor het hart van het veld, op de goede afstand
       let hart: { x: number; y: number } | null = null;
       // (lukt dat niet, omdat er bijvoorbeeld een meer ligt, dan langzaam verder weg: elk veld moet er komen)
       for (let poging = 0; poging < 400 && !hart; poging++) {
         const hoek = r() * Math.PI * 2;
         const af = v.afstand[0] + r() * (v.afstand[1] - v.afstand[0]) + Math.max(0, poging - 60) * 0.05;
-        const x = Math.round(midden.x + Math.cos(hoek) * af);
-        const y = Math.round(midden.y + Math.sin(hoek) * af);
+        const ver = n >= v.aantal;
+        const x = ver ? 1 + Math.floor(r() * (breed - 2)) : Math.round(midden.x + Math.cos(hoek) * af);
+        const y = ver ? 1 + Math.floor(r() * (diep - 2)) : Math.round(midden.y + Math.sin(hoek) * af);
         if (vrij(x, y)) hart = { x, y };
       }
       if (!hart) continue;

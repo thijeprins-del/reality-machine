@@ -11,8 +11,8 @@ Pak je een taak op: zet eerst je naam erachter in je PR. Klaar: `- [x] … (#PR)
 - [ ] K6 Recepten draaien in gebouwen; eind van de keten voedt de machine
 - [ ] K7 Terrein stap 1: hoogtekaart met heuvels per dimensie; eenheden, grondstoffen en klikken volgen de hoogte (Lieuwe)
 - [ ] K8 Terrein stap 2: water en klippen, onbegaanbaar, routes zoeken, grondstoffen altijd bereikbaar (Lieuwe)
-- [ ] K9 Terrein stap 3: tekenscript voor tegelsets per dimensie, met eigen water en dimensie Aarde (Lieuwe)
-- [ ] K10 Kaartgroottes: 256x64, 128x128 enzovoort, ook niet-vierkant (Lieuwe)
+- [ ] K9 Terrein stap 3: tekenscript voor tegelsets per dimensie, met eigen water en dimensie Aarde (Lieuwe, alle zes staan erin)
+- [ ] K10 Kaartgroottes: 256x64, 128x128 enzovoort, ook niet-vierkant (Lieuwe; werkt, nog geen wereld gebruikt het)
 
 ## Muizen (Thije)
 - [x] M0 Speelbare basis: startmenu met factiekeuze, kaart met grondstoffen, opslag en machine, 300 muizen

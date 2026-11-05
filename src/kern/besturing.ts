@@ -32,16 +32,13 @@ export function maakBesturing(
 
   let zoom = app.screen.width > 2400 ? 2 : 1;
   // camera = het wereldpunt in het midden van het scherm
-  const m = staat().kaart.machine;
-  const start = naarScherm(m.x + m.breed / 2, m.y + m.diep / 2);
-  const cam = { x: start.x + 60, y: start.y - 110 };
-  const k = staat().kaart;
-  const grens = {
-    l: naarScherm(0, k.diep).x, r: naarScherm(k.breed, 0).x, t: 0, b: naarScherm(k.breed, k.diep).y,
-  };
+  let m = staat().kaart.machine;
+  const startPunt = () => naarScherm(m.x + m.breed / 2, m.y + m.diep / 2);
+  const cam = { x: startPunt().x + 60, y: startPunt().y - 110 };
   const zet = () => {
-    cam.x = Math.max(grens.l, Math.min(grens.r, cam.x));
-    cam.y = Math.max(grens.t, Math.min(grens.b, cam.y));
+    const k = staat().kaart;
+    cam.x = Math.max(naarScherm(0, k.diep).x, Math.min(naarScherm(k.breed, 0).x, cam.x));
+    cam.y = Math.max(0, Math.min(naarScherm(k.breed, k.diep).y, cam.y));
     wereld.scale.set(zoom);
     wereld.position.set(Math.round(app.screen.width / 2 - cam.x * zoom), Math.round(app.screen.height / 2 - cam.y * zoom));
     opZoom(zoom);
@@ -54,6 +51,7 @@ export function maakBesturing(
     toetsen.add(e.key.toLowerCase());
     if (e.key === 'Escape') selectie.clear();
     if (e.key === ' ') {
+      const start = startPunt();
       cam.x = start.x;
       cam.y = start.y;
       zet();
@@ -148,6 +146,15 @@ export function maakBesturing(
   return {
     selectie,
     werk(sec) {
+      // nieuwe wereld: de schijf ligt nu op andere tegels, en de camera gaat mee zodat hij op dezelfde plek in beeld blijft
+      const nu = staat().kaart.machine;
+      if (nu !== m) {
+        const d = naarScherm(nu.x - m.x, nu.y - m.y);
+        cam.x += d.x;
+        cam.y += d.y;
+        m = nu;
+        zet();
+      }
       const v = (900 * sec) / zoom;
       let dx = 0, dy = 0;
       if (toetsen.has('a') || toetsen.has('arrowleft')) dx -= v;

@@ -1,6 +1,6 @@
 // Gegenereerd door scripts/pixel/terrein.mjs. Niet met de hand aanpassen.
 // De indeling van een tegelset-plaatje (assets/wereld/tegels-<naam>.png), in sprite-pixels.
-export const TEGELSETS = ['roestduin'] as const;
+export const TEGELSETS = ['roestduin', 'kristaltoendra', 'gifwoud', 'magmaveld', 'zoutzee', 'aarde'] as const;
 export type TegelSet = (typeof TEGELSETS)[number];
 export const CEL_B = 34, CEL_H = 34, CEL_X = 17, CEL_Y = 25, KOLOMMEN = 27;
 export const VARIANTEN = 3, WATER_VARIANTEN = 3, WATER_BEELDEN = 4, SCHUIM_BEELDEN = 2;

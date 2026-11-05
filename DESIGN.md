@@ -11,7 +11,7 @@ Nog een skelet. Werk dit bij bij elke grote regelwijziging.
   Aanloop (laatste 12 s, alleen met volle stroom): bliksem van de machine naar de ring, schudden, de wereld wordt donker.
   De sprong (`SPRONG_SEC` = 3,5 s): uit de wereld gerukt, de oude grond valt weg, even in het niets (tijd en werk staan
   stil, het stroomnet loopt door), dan landen in de volgende wereld met eigen kleuren (roestduin, kristaltoendra, gifwoud,
-  magmaveld, zoutzee). Het spel begint ook in het niets. Muizen buiten de ring worden nu nog mee naar binnen getrokken.
+  magmaveld, zoutzee, aarde). Het spel begint ook in het niets. Muizen buiten de ring worden nu nog mee naar binnen getrokken.
 - **Stream gemist** (2 nov): heeft de machine op dat moment geen volle stroom, dan springt er niets (rode flits, vonken)
   en begint de dimensie opnieuw. Volgens het plan verlies je dan; voorlopig vergevingsgezind om mee te spelen.
 - Om de stream te halen heeft de reality machine genoeg energie en heelheid nodig. Haal je hem niet: verloren.
@@ -27,7 +27,9 @@ Nog een skelet. Werk dit bij bij elke grote regelwijziging.
 - Winnen: de tegenstander zo meppen dat zijn machine de volgende stream niet haalt, vooral door zijn keten te breken.
 
 ## Kaart en grondstoffen (basis, 2 nov)
-- Kaart van **64 x 64 tegels**: de schijf in het midden, ruim wereld eromheen. Getallen in `src/data/dimensies.ts`.
+- Kaart van standaard **64 x 64 tegels**: de schijf in het midden, ruim wereld eromheen. Getallen in `src/data/dimensies.ts`.
+  Elke wereld kan een eigen maat hebben (`kaart` in `DIMENSIES`, minstens 48), ook niet-vierkant; om te proberen: `?kaart=256x64`
+  of `?kaart=256x64,128x128` om de beurt. Een grotere wereld heeft meer velden, over de hele kaart verspreid.
 - In het midden de reality machine (4x4 tegels) en de opslag (2x2), binnen de gele ring (bouwgrond, geen grondstoffen).
 - Velden met ruwe grondstoffen eromheen: schroot (7 velden, 30 per tegel), hout (6, 25), kristal (3, 15, verder weg).
 - Werkers (eenheden met `werk`) graven een lading, sjouwen die naar de opslag en gaan terug, tot het veld op is;
@@ -53,8 +55,8 @@ Nog een skelet. Werk dit bij bij elke grote regelwijziging.
   (`src/kern/routes.ts`), gedeeld door de hele zwerm. Een klik op water of een klip: zo dichtbij als het kan.
 - Grondstoffen liggen alleen op land dat je kunt bereiken. Groot land achter een klip krijgt een oprit; eilanden blijven
   onbereikbaar. Begaanbaarheid hoort bij een manier van bewegen (`Doorgang`), zodat boten of veerponten later kunnen.
-- **Stap 3:** een tekenscript maakt per dimensie een tegelset uit een basistegel met ruis (ook het water: bruin op
-  Roestduin, gloeiend op Magmaveld, blauw op een nieuwe dimensie Aarde). Roestduin heeft zijn tegelset al; de andere werelden zijn nog getekende vlakken.
+- Elke dimensie heeft een eigen tegelset uit `scripts/pixel/terrein.mjs`, met eigen water: bruin op Roestduin, gloeiend op
+  Magmaveld, blauw op Aarde (de zesde dimensie).
 
 ## Samenwerking facties
 Zelfde spelregels, ander gereedschap. De kern weet niets van muizen of otters; een factie is data plus één trucje.

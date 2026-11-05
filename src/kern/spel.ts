@@ -72,7 +72,14 @@ export function stream(s: SpelStaat, f?: Factie): void {
 }
 
 function verhuis(s: SpelStaat): void {
+  const oud = s.kaart.machine;
   s.kaart = maakKaart(s.seed, s.dimensie); // zelfde machine en opslag, nieuw terrein en nieuwe velden
+  // Een wereld van een andere maat heeft zijn midden ergens anders: alles op de schijf verhuist mee.
+  const dx = s.kaart.machine.x - oud.x, dy = s.kaart.machine.y - oud.y;
+  for (const w of s.werkers) {
+    w.x += dx;
+    w.y += dy;
+  }
   const r = s.kaart.ring;
   for (const w of s.werkers) {
     // wat ze droegen gaat mee de opslag in; opdrachten in de oude wereld vervallen

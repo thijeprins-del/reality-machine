@@ -30,6 +30,46 @@ const SETS = {
     water: ['#1a120a', '#241a0f', '#2e2214', '#3f2f1c', '#5a452b'],
     schuim: '#b09a72',
   },
+  kristaltoendra: {
+    zaad: 23,
+    grond: ['#6a7f9f', '#7d93b3', '#90a6c6', '#a6bcdb', '#bbcfe8', '#cfe0f2', '#e3effa'],
+    rots: ['#1c2232', '#2b3347', '#3d475f', '#515d78', '#687592', '#8491ad', '#a5b1c9'],
+    rand: '#e6f2ff',
+    water: ['#1b6f9a', '#2484b0', '#2f99c4', '#55bbdd', '#9fe6f5'],
+    schuim: '#d8f8ff',
+  },
+  gifwoud: {
+    zaad: 37,
+    grond: ['#18300f', '#203d14', '#2a4c19', '#345c1f', '#3f6e25', '#4e842e', '#619c3a'],
+    rots: ['#0b1009', '#131a0f', '#1d2716', '#2a3620', '#39482b', '#4d5f39', '#66794c'],
+    rand: '#9fb878',
+    water: ['#2f5e0a', '#3f7a0e', '#559c14', '#78c41e', '#b4f23c'],
+    schuim: '#d6ff7a',
+  },
+  magmaveld: {
+    zaad: 41,
+    grond: ['#1c1715', '#25201d', '#2f2825', '#39312d', '#463c36', '#564a42', '#6a5b50'],
+    rots: ['#070505', '#0f0b0a', '#181210', '#231a17', '#302420', '#40302a', '#554037'],
+    rand: '#ff8a3a', // de rand van de wand gloeit mee
+    water: ['#c22f06', '#e8480c', '#ff6a12', '#ff9a2a', '#ffd860'],
+    schuim: '#fff0a8',
+  },
+  zoutzee: {
+    zaad: 53,
+    grond: ['#8f5f78', '#a8728c', '#c0849f', '#d498b2', '#e4aec4', '#f0c4d4', '#f9dbe4'],
+    rots: ['#2a1724', '#3d2233', '#533046', '#6b405b', '#865372', '#a36b8c', '#c288a8'],
+    rand: '#fff0fa',
+    water: ['#bda6b8', '#cdb8c8', '#ddcad8', '#ecdde8', '#fff4fb'],
+    schuim: '#ffffff',
+  },
+  aarde: {
+    zaad: 67,
+    grond: ['#2f4a1c', '#3a5a22', '#466c28', '#527e2f', '#619238', '#74a845', '#8cbf55'],
+    rots: ['#15140f', '#222019', '#302d24', '#413d31', '#565141', '#6f6955', '#8e8770'],
+    rand: '#b8b19a',
+    water: ['#123f73', '#18528f', '#1f66ad', '#3f88cc', '#8cc4ee'],
+    schuim: '#e8f6ff',
+  },
 };
 
 const cel = (d, i) => ({ d, x: (i % KOLOMMEN) * CEL_B, y: Math.floor(i / KOLOMMEN) * CEL_H });
