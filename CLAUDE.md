@@ -27,15 +27,22 @@ Code-namen mogen Engels of Nederlands, maar per map consequent.
 ## Git-werkwijze (twee mensen, twee AI's)
 1. `git fetch origin dev && git checkout -B <naam>/<onderwerp> origin/dev` (bv. `lieuwe/otter-dam`, `thije/stream-timer`).
 2. Kleine PR's: één onderwerp, liefst onder een dag werk. Grote dingen in stukken.
-3. Vóór de PR: `git fetch origin dev && git rebase origin/dev`, dan `npm test`.
-4. PR naar `dev` met titel in spelerstaal ("Otters kunnen dammen bouwen"). Die titel wordt de changelogregel.
+3. Vóór de PR: `git fetch origin dev && git rebase origin/dev`, `VERSIE` ophogen (zie "Versie"), dan `npm test`.
+4. PR naar `dev` met titel in spelerstaal, met de versie vooraan ("v101l: Otters kunnen dammen bouwen"). Die titel wordt de changelogregel.
 5. Groen? Zelf squash-mergen mag voor je eigen map. Raakt het `src/kern/`: de ander even laten kijken (of na 12 uur zonder
    reactie zelf mergen en het melden).
 6. Nooit naar `dev` of `main` pushen, nooit force-pushen op andermans branch.
 7. `dev` → `main` alleen op Thijes woord: PR van dev naar main, of `git push origin origin/dev:main`.
 
-Versienummer en changelog: niet met de hand ophogen (dat botst bij twee mensen). De workflow zet het buildnummer
-(`github.run_number`) en de korte commit in het spel; de changelog komt uit de PR-titels.
+## Versie (elke PR naar dev)
+- Elke PR naar `dev` krijgt een nieuwe versie: één gedeelde teller plus een letter voor wie hem levert, `t` = Thije, `l` = Lieuwe.
+  Voorbeeld: dev staat op `v100t`, de volgende PR wordt `v101l`, daarna `v102t`.
+- De versie staat in het bestand `VERSIE` in de wortel (één regel, bv. `v101l`). Ophogen = dev-nummer + 1, met je eigen letter.
+- Zet hem ook vooraan in de PR-titel en het commitbericht: `v101l: Otters kunnen dammen bouwen`.
+- Botsing (de ander mergede eerst met hetzelfde nummer): na `git rebase origin/dev` conflicteert `VERSIE`; neem dev + 1.
+- De controle op de PR faalt als `VERSIE` niet precies dev + 1 is of de letter mist. PR's van dev naar main hogen niet op.
+- Het spel toont de versie rechtsonder op het startscherm en tijdens het spel (`versieTekst()` in `src/kern/omgeving.ts`),
+  met daarachter DEV, het buildnummer van de workflow en de korte commit. De changelog komt uit de PR-titels.
 
 ## Taken
 - `TAKEN.md` heeft per persoon een lijst `- [ ]` met nummers (`M3` muizen, `O2` otters, `K5` kern). Bij afronding
