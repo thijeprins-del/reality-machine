@@ -23,6 +23,7 @@ export function maakBesturing(
   staat: () => SpelStaat,
   opZoom: (z: number) => void,
   opdracht: (ids: number[], kol: number, rij: number) => void,
+  terreinKlik?: (omhoog: boolean, kol: number, rij: number) => boolean, // debug: true = de klik is hiermee afgehandeld
 ): Besturing {
   const selectie = new Set<number>();
   const kader = new Graphics();
@@ -79,6 +80,11 @@ export function maakBesturing(
   let laatsteKlik = 0;
 
   canvas.addEventListener('pointerdown', (e) => {
+    if ((e.button === 0 || e.button === 2) && !e.shiftKey && terreinKlik) {
+      const p = wereld.toLocal({ x: e.offsetX, y: e.offsetY });
+      const t = tegelOnder(staat().kaart, p.x, p.y);
+      if (terreinKlik(e.button === 0, t.kol, t.rij)) return;
+    }
     if (e.button === 0) sleep = { x0: e.offsetX, y0: e.offsetY, x1: e.offsetX, y1: e.offsetY, extra: e.shiftKey };
     if (e.button === 1) {
       e.preventDefault();

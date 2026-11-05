@@ -38,8 +38,14 @@ Nog een skelet. Werk dit bij bij elke grote regelwijziging.
 - Elke wereld krijgt heuvels uit Perlin-ruis (`src/kern/terrein.ts`), met per dimensie eigen getallen (`heuvels` in
   `src/data/dimensies.ts`). Een wereld hangt alleen af van de seed en het dimensienummer, niet van wat je speelde.
 - Hoogtes staan op de **hoeken** van tegels, in hele niveaus van -1 tot +5. Eén niveau is 16 schermpixels.
-  Verschillen de hoeken van een tegel 1 niveau: helling. Verschillen ze 2: klip. Meer dan 2 komt niet voor; een hogere
-  wand beslaat meerdere tegels. Alle hoeken op -1: water.
+  Verschillen de hoeken van een tegel 1 niveau: helling. Verschillen ze 2: klip, getekend als vlakke grond op de laagste
+  hoogte met een loodrechte wand aan de hoge kant: 1,1,1,3,2,1 wordt `_|-\_`. Heeft de tegel één lage hoek, dan loopt de wand
+  schuin door de tegel en blijft de hoge driehoek bovenop. Meer dan 2 komt niet voor; een hogere wand
+  beslaat meerdere tegels. Alle hoeken op -1: water.
+- Hoe hoger, hoe lichter (`hoogteTint`): elk niveau is een stap helderder, zodat je hoogte in één oogopslag ziet.
+- Klippen zijn doorlopende wanden om een plateau. Plateaus kleiner dan `MIN_PLATEAU` en klippen korter dan `MIN_KLIP`
+  tegels verdwijnen: losse snippers wand lezen als een foutje.
+- Hoogtelijnen (F2 zet ze uit): een lijn waar de grond een heel niveau passeert, zoals op een wandelkaart.
 - De schijf ligt op hoogte 0. Tot 3,5 tegels buiten de ring blijft de wereld vlak, want muizen moeten eraf kunnen.
 - Eenheden en grondstoffen staan op de grond; **eenheden worden altijd boven het terrein getekend**, zodat een muis
   achter een heuvel zichtbaar blijft. Klikken raakt de voorste grond op die plek.

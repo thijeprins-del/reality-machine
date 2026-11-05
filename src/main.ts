@@ -70,6 +70,7 @@ async function start(): Promise<void> {
   app.stage.addChild(beeld.wereld);
   const besturing = maakBesturing(app, beeld.wereld, () => staat, (z) => beeld.zoom(z), (ids, kol, rij) =>
     stuur(staat, ids, kol, rij),
+  (omhoog, kol, rij) => beeld.terreinKlik(omhoog, kol, rij),
   );
   const balk = maakBalk();
   const paneel = factie.paneel ? (await factie.paneel())(() => staat) : null;

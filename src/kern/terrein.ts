@@ -1,7 +1,7 @@
 // Terrein: de hoogtekaart van een dimensie. Hoogtes staan op de HOEKEN van tegels, in hele niveaus, dus er zijn
 // (breed + 1) x (diep + 1) getallen. Tegel (x, y) loopt van x - 0,5 tot x + 0,5, dus hoek (i, j) ligt op (i - 0,5, j - 0,5).
 // Een schuine tegel is twee platte driehoeken; hoogteOp en het tekenen knikken langs dezelfde lijn.
-import { HOOGTE_MAX, HOOGTE_MIN, HOOGTE_PX, KLIP_HOOGTE, MAX_OPRITTEN, MIN_STUK, TERREIN_VLAK, TERREIN_VOL, type Heuvels } from '../data/dimensies';
+import { HOOGTE_MAX, HOOGTE_MIN, HOOGTE_PX, KLIP_HOOGTE, MAX_OPRITTEN, MIN_KLIP, MIN_PLATEAU, MIN_STUK, TERREIN_VLAK, TERREIN_VOL, type Heuvels } from '../data/dimensies';
 import { TEGEL_B, TEGEL_H } from './iso';
 import { volgende } from './toeval';
 
@@ -87,6 +87,28 @@ export function maakHoogtes(breed: number, diep: number, ring: { x: number; y: n
       verhoogd[j * s + i] = plateau;
       h[j * s + i] = Math.max(HOOGTE_MIN, Math.min(HOOGTE_MAX, Math.round(waarde) + plateau));
     }
+  // Kleine plateaus eruit: daar komt alleen een snipper wand van.
+  const buren = [-1, 1, -s, s, -s - 1, -s + 1, s - 1, s + 1];
+  const naast = (o: number, a: number) => a >= 0 && a < n && Math.abs((a % s) - (o % s)) <= 1;
+  const gezien = new Uint8Array(n);
+  for (let o = 0; o < n; o++) {
+    if (verhoogd[o] < KLIP_HOOGTE || gezien[o]) continue;
+    const blob = [o];
+    gezien[o] = 1;
+    for (let i = 0; i < blob.length; i++)
+      for (const b of buren) {
+        const a = blob[i] + b;
+        if (naast(blob[i], a) && !gezien[a] && verhoogd[a] >= KLIP_HOOGTE) {
+          gezien[a] = 1;
+          blob.push(a);
+        }
+      }
+    if (blob.length >= MIN_PLATEAU) continue;
+    for (const c of blob) {
+      h[c] = Math.max(HOOGTE_MIN, h[c] - verhoogd[c]);
+      verhoogd[c] = 0;
+    }
+  }
   // Eén losse hoek die boven of onder al zijn buren uitsteekt is geen heuvel maar een puistje: gelijk trekken.
   for (let j = 1; j < diep; j++)
     for (let i = 1; i < breed; i++) {
@@ -99,15 +121,25 @@ export function maakHoogtes(breed: number, diep: number, ring: { x: number; y: n
       if (h[o] > hoog) h[o] = hoog;
       else if (h[o] < laag) h[o] = laag;
     }
+  // De rand van een plateau moet ook echt een wand zijn. Loopt de grond ernaast iets omhoog, dan zou het daar een helling
+  // worden en houd je losse stukjes wand over; dus die grond zakt tot hij de volle wand onder zich heeft. Grond die hoger ligt
+  // dan het plateau laten we met rust, en we graven hier geen water: de wand onderbreekt daar.
+  for (let o = 0; o < n; o++) {
+    if (verhoogd[o] < KLIP_HOOGTE) continue;
+    for (const b of buren) {
+      const a = o + b;
+      if (!naast(o, a) || verhoogd[a] > 0 || h[a] > h[o]) continue;
+      if (h[o] - h[a] < KLIP_HOOGTE) h[a] = Math.max(Math.min(0, h[a]), h[o] - KLIP_HOOGTE);
+    }
+  }
   // Buren schelen hooguit één niveau, behalve over de rand van een plateau: daar twee, en dat wordt een klip. Zo verschillen
   // de hoeken van een tegel nooit meer dan KLIP_HOOGTE, en is er een eindig aantal tegelvormen om te tekenen.
   // Dit verlaagt alleen, dus de vlakte rond de schijf blijft vlak.
-  const buren = [-1, 1, -s, s, -s - 1, -s + 1, s - 1, s + 1];
   const beperk = (o: number): boolean => {
     let anders = false;
     for (const b of buren) {
       const a = o + b;
-      if (a < 0 || a >= n || Math.abs((a % s) - (o % s)) > 1) continue;
+      if (!naast(o, a)) continue;
       const mag = Math.abs(verhoogd[o] - verhoogd[a]) >= KLIP_HOOGTE ? KLIP_HOOGTE : 1;
       if (h[o] > h[a] + mag) {
         h[o] = h[a] + mag;
@@ -122,6 +154,94 @@ export function maakHoogtes(breed: number, diep: number, ring: { x: number; y: n
     for (let o = n - 1; o >= 0; o--) if (beperk(o)) anders = true;
   }
   return h;
+}
+
+// Klippen korter dan MIN_KLIP tegels worden hellingen. Hun hoge hoeken zakken, en de grond eromheen zakt mee tot het weer
+// een helling is. De hoeken van de lange klippen blijven staan, zodat die heel blijven.
+export function ruimKorteKlippenOp(t: Terrein): void {
+  const { breed, diep, hoogte: h } = t;
+  const s = breed + 1, n = h.length;
+  const buren = [-1, 1, -s, s, -s - 1, -s + 1, s - 1, s + 1];
+  for (let ronde = 0; ronde < 8; ronde++) {
+    const soort = tegelSoorten(t);
+    const gezien = new Uint8Array(soort.length);
+    const kort: number[][] = [];
+    const vast = new Uint8Array(n);
+    for (let o = 0; o < soort.length; o++) {
+      if (soort[o] !== TEGEL_KLIP || gezien[o]) continue;
+      const stuk = [o];
+      gezien[o] = 1;
+      for (let i = 0; i < stuk.length; i++) {
+        const x = stuk[i] % breed, y = (stuk[i] - x) / breed;
+        for (let dy = -1; dy <= 1; dy++)
+          for (let dx = -1; dx <= 1; dx++) {
+            const nx = x + dx, ny = y + dy;
+            if (nx < 0 || ny < 0 || nx >= breed || ny >= diep) continue;
+            const a = ny * breed + nx;
+            if (soort[a] === TEGEL_KLIP && !gezien[a]) {
+              gezien[a] = 1;
+              stuk.push(a);
+            }
+          }
+      }
+      if (stuk.length < MIN_KLIP) kort.push(stuk);
+      else
+        for (const c of stuk) {
+          const x = c % breed, y = (c - x) / breed;
+          for (const q of [y * s + x, y * s + x + 1, (y + 1) * s + x, (y + 1) * s + x + 1]) vast[q] = 1;
+        }
+    }
+    if (!kort.length) return;
+    const rij: number[] = [];
+    for (const stuk of kort)
+      for (const c of stuk) {
+        const x = c % breed, y = (c - x) / breed;
+        const { a, r, v, l } = hoeken(t, x, y), hoog = Math.max(a, r, v, l);
+        for (const [q, w] of [[y * s + x, a], [y * s + x + 1, r], [(y + 1) * s + x + 1, v], [(y + 1) * s + x, l]] as [number, number][])
+          if (w === hoog && !vast[q]) {
+            h[q] = w - 1;
+            rij.push(q);
+          }
+      }
+    for (let i = 0; i < rij.length; i++) {
+      const o = rij[i];
+      for (const b of buren) {
+        const a = o + b;
+        if (a < 0 || a >= n || Math.abs((a % s) - (o % s)) > 1 || vast[a] || h[a] <= h[o] + 1) continue;
+        h[a] = h[o] + 1;
+        rij.push(a);
+      }
+    }
+    houdKlippenBinnenPerk(t); // naast een vaste hoek kan het nu te steil zijn geworden
+  }
+}
+
+// Debug (F1): een hele tegel een niveau omhoog of omlaag. Zijn buren gaan mee waar het verschil anders groter wordt dan
+// KLIP_HOOGTE, want daar is geen tegelvorm voor. Raakt dat een hoek die vast moet blijven (je schijf), dan gebeurt er niets.
+export function verschuifTegel(t: Terrein, x: number, y: number, d: 1 | -1, vast: (i: number, j: number) => boolean): boolean {
+  const s = t.breed + 1, n = t.hoogte.length, h = t.hoogte.slice();
+  const rij: number[] = [];
+  for (const q of [y * s + x, y * s + x + 1, (y + 1) * s + x, (y + 1) * s + x + 1]) {
+    const nieuw = Math.max(HOOGTE_MIN, Math.min(HOOGTE_MAX, h[q] + d));
+    if (nieuw === h[q]) continue;
+    h[q] = nieuw;
+    rij.push(q);
+  }
+  if (!rij.length) return false;
+  for (let i = 0; i < rij.length; i++) {
+    const o = rij[i];
+    if (vast(o % s, Math.floor(o / s))) return false;
+    for (const b of [-1, 1, -s, s, -s - 1, -s + 1, s - 1, s + 1]) {
+      const a = o + b;
+      if (a < 0 || a >= n || Math.abs((a % s) - (o % s)) > 1) continue;
+      const verschil = d > 0 ? h[o] - h[a] : h[a] - h[o];
+      if (verschil <= KLIP_HOOGTE) continue;
+      h[a] = h[o] - d * KLIP_HOOGTE;
+      rij.push(a);
+    }
+  }
+  t.hoogte.set(h);
+  return true;
 }
 
 // Wat voor tegel is dit? Hoeken die 2 of meer verschillen: klip. Alle hoeken op -1: water.

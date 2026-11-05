@@ -1,7 +1,7 @@
 // De kaart van een dimensie: de machine en de opslag in het midden, velden met grondstoffen eromheen.
 import { dimensieHeuvels, KAART_BREED, KAART_DIEP, RING_STRAAL, VELDEN } from '../data/dimensies';
 import type { Doorgang } from './routes';
-import { maakHoogtes, TEGEL_LAND, tegelSoorten, verbindLand, type Terrein } from './terrein';
+import { maakHoogtes, ruimKorteKlippenOp, TEGEL_LAND, tegelSoorten, verbindLand, type Terrein } from './terrein';
 import { hash01, volgende } from './toeval';
 import type { Grondstof } from './types';
 
@@ -61,7 +61,9 @@ export function maakKaart(seed: number, dimensie: number): Kaart {
   const ring = { x: mx + 1.5, y: my + 1.5, r: RING_STRAAL };
   const stroom = stroomVoor(seed, dimensie, 1);
   const terrein: Terrein = { breed, diep, hoogte: maakHoogtes(breed, diep, ring, dimensieHeuvels(dimensie), stroom) };
+  ruimKorteKlippenOp(terrein);
   verbindLand(terrein, { x: midden.x, y: midden.y }, stroom);
+  ruimKorteKlippenOp(terrein); // een oprit kan een klip in twee korte stukken knippen
   const soort = tegelSoorten(terrein);
   const lopen = maakLopen(terrein, soort, midden, machine);
 
@@ -104,6 +106,12 @@ export function maakKaart(seed: number, dimensie: number): Kaart {
     }
   }
   return { ...terrein, soort, lopen, afzettingen, machine, opslag, ring };
+}
+
+// Het terrein is veranderd (debug, F1): tegelsoorten en routes opnieuw.
+export function herberekenTerrein(k: Kaart): void {
+  k.soort = tegelSoorten(k);
+  k.lopen = maakLopen(k, k.soort, { x: k.machine.x + 2, y: k.machine.y + 2 }, k.machine);
 }
 
 // Waar lopende eenheden kunnen staan: land dat je vanaf de machine kunt bereiken, niet op of vlak tegen de machine.

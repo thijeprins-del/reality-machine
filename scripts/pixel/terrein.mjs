@@ -24,8 +24,8 @@ const CELLEN = CEL_SCHUIM + 4 * SCHUIM_BEELDEN;
 const SETS = {
   roestduin: {
     zaad: 11,
-    grond: ['#2a1208', '#3a1a0a', '#4a220e', '#5a2a12', '#6b3316', '#7f401d', '#975127'],
-    rots: ['#0e0907', '#18100b', '#241810', '#322318', '#443122', '#5a4330', '#745a42'],
+    grond: ['#3a1a0c', '#4e2410', '#622d13', '#773718', '#8c431c', '#a55326', '#c16933'],
+    rots: ['#120c09', '#1e150f', '#2d2015', '#3f2d1f', '#55402d', '#70563f', '#8f7355'],
     rand: '#a68c68', // de lichte bovenrand van een klip
     water: ['#1a120a', '#241a0f', '#2e2214', '#3f2f1c', '#5a452b'],
     schuim: '#b09a72',
@@ -44,15 +44,17 @@ function driehoeken(a, r, v, l) {
   return { A, R, V, L, tri: [[A, R, V, r - a, v - r], [A, V, L, v - l, l - a]] };
 }
 
-// Elke pixel van een driehoek. Iets ruimer dan precies, zodat er geen naden tussen de tegels vallen.
+// Hoe groot een driehoek op het scherm is. Negatief of nul: hij kijkt van je af, dus je ziet hem niet.
+const zichtbaar = ([p, q, s]) => (q.x - p.x) * (s.y - p.y) - (q.y - p.y) * (s.x - p.x);
+
+// Elke pixel van een driehoek die naar je toe kijkt. Iets ruimer dan precies, zodat er geen naden tussen de tegels vallen.
 function perPixel(t, doe) {
   const [p, q, s] = t;
-  const opp = (q.x - p.x) * (s.y - p.y) - (q.y - p.y) * (s.x - p.x);
-  if (Math.abs(opp) < 1) return;
-  const teken = opp > 0 ? 1 : -1;
+  const opp = zichtbaar(t);
+  if (opp < 1) return;
   const x0 = Math.floor(Math.min(p.x, q.x, s.x)) - 1, x1 = Math.ceil(Math.max(p.x, q.x, s.x)) + 1;
   const y0 = Math.floor(Math.min(p.y, q.y, s.y)) - 1, y1 = Math.ceil(Math.max(p.y, q.y, s.y)) + 1;
-  const rand = (a, b, x, y) => (teken * ((b.x - a.x) * (y - a.y) - (b.y - a.y) * (x - a.x))) / (Math.hypot(b.x - a.x, b.y - a.y) || 1);
+  const rand = (a, b, x, y) => ((b.x - a.x) * (y - a.y) - (b.y - a.y) * (x - a.x)) / (Math.hypot(b.x - a.x, b.y - a.y) || 1);
   for (let y = y0; y <= y1; y++)
     for (let x = x0; x <= x1; x++) {
       const mx = x + 0.5, my = y + 0.5;
@@ -89,41 +91,70 @@ function landDriehoek(c, set, t, n) {
   }
 }
 
-// Een klip: lagen rots die om de paar pixels verspringen, scheuren omlaag, een lichte bovenrand en een donkere voet.
-// Alleen het steile deel is rots. Bij een hoek van een plateau is de rest van de tegel gewoon grond; anders wordt dat een
-// zwarte driehoek. Is geen enkel deel steil (een scherpe rug), dan is de hele tegel rots: je kunt er ook niet over.
+// Een klip is een echte wand: de tegel is vlakke grond op zijn laagste hoogte (die legt het spel eronder), en waar hij
+// tegen hogere hoeken aan ligt staat de wand loodrecht omhoog. 1,1,1,3,2,1 wordt dus _|-\_ en geen steile helling.
+// Zo'n cel bevat alleen de wanden. Alleen de achterste twee randen staan in beeld; een wand aan de voorkant kijkt van je af.
 function tekenKlip(c, set, a, r, v, l, zaad) {
   const n = ruis(zaad);
-  const scheur = Array.from({ length: 34 }, () => n() < 0.14);
-  const laagst = Math.min(a, r, v, l), hoogst = Math.max(a, r, v, l);
-  const d3 = driehoeken(a, r, v, l);
-  const steil = (t) => Math.max(t[0].z, t[1].z, t[2].z) - Math.min(t[0].z, t[1].z, t[2].z) >= 2;
-  const ergensSteil = d3.tri.some(steil);
-  for (const t of d3.tri) {
-    if (ergensSteil && !steil(t)) {
-      landDriehoek(c, set, t, n);
-      continue;
+  const { A, R, V, L } = driehoeken(a, r, v, l);
+  const hoogst = Math.max(a, r, v, l);
+  const vloerY = (x, p, q) => { // waar de voet van de wand zit: de rand op hoogte 0
+    const t2 = (x + 0.5 - p.x) / (q.x - p.x);
+    return p.y + p.z * NIVEAU + ((q.y + q.z * NIVEAU) - (p.y + p.z * NIVEAU)) * t2;
+  };
+  const topY = (x, p, q) => p.y + (q.y - p.y) * ((x + 0.5 - p.x) / (q.x - p.x));
+  // Eén lage hoek: de klip loopt schuin door de tegel. De drie hoge hoeken houden hun driehoek bovenop, alleen de lage hoek
+  // zakt. Anders is de hele tegel laag, en wordt een schuine rand een zigzag van losse ruiten.
+  const lage = [A, R, V, L].filter((p) => p.z === 0);
+  if (lage.length === 1) {
+    const laag = lage[0];
+    const boven = laag === V ? [A, R, L, r - a, l - a] : laag === A ? [V, L, R, v - l, v - r] : laag === R ? [A, V, L, v - l, l - a] : [A, R, V, r - a, v - r];
+    landDriehoek(c, set, boven, n);
+    if (laag === V) wand(L, R, 3);
+    else if (laag === A) richel(L, R);
+    else {
+      // de wand staat precies op zijn kant: je ziet alleen een naad tussen hoog en laag
+      const x = laag === R ? CX : CX - 1;
+      const y0 = Math.round(A.y), y1 = Math.round(V.y + V.z * NIVEAU);
+      for (let y = y0; y <= y1; y++) c.d.zet(c.x + x, c.y + y, y === y0 ? set.rand : trede(set.rots, 1 + n()));
     }
-    const licht = (t[3] - t[4]) * 0.55 - (t[3] + t[4]) * 0.15;
-    perPixel(t, (x, y, p) => {
-      if (x < 0 || y < 0 || x >= CEL_B || y >= CEL_H) return;
-      const hoogte = p.z * NIVEAU;
-      const laag = Math.floor(hoogte / 3 + Math.sin(x * 0.7 + zaad) * 0.4);
-      let i = 3 + (laag % 2 ? 0.8 : -0.4) + licht + (n() - 0.5) * 0.7;
-      if (scheur[x]) i -= 1.6;
-      if (p.z < laagst + 0.14) i = 0.4;
-      c.d.zet(c.x + x, c.y + y, trede(set.rots, i));
-    });
+    return;
   }
-  // de bovenrand: ook bij een klip die van je af kijkt, waar je verder niets van de wand ziet
-  for (const [p, q] of [[d3.A, d3.R], [d3.R, d3.V], [d3.V, d3.L], [d3.L, d3.A]]) {
-    if (p.z !== hoogst || q.z !== hoogst) continue;
+  // [van links naar rechts, helderheid]: de wand die naar linksonder kijkt vangt het licht, die naar rechtsonder niet
+  for (const [p, q, basis] of [[L, A, 2.2], [A, R, 3.4]]) {
+    if (Math.min(p.z, q.z) === 0) continue; // loopt tot de grond: dat is een buitenhoek, de wanden ernaast maken hem af
+    wand(p, q, basis);
+  }
+  // Aan de voorkant kijkt de wand van je af en is hij verborgen: een richel van rots, zodat je ziet dat de grond daar ophoudt.
+  for (const [p, q] of [[R, V], [V, L]]) if (p.z === hoogst && q.z === hoogst) richel(p, q);
+
+  function wand(p, q, basis) {
+    const scheuren = Array.from({ length: 33 }, () => n() < 0.2);
+    for (let x = Math.min(p.x, q.x); x < Math.max(p.x, q.x); x++) {
+      const y0 = Math.round(topY(x, p, q)), y1 = Math.round(vloerY(x, p, q));
+      const scheur = scheuren[x - Math.min(p.x, q.x)];
+      for (let y = y0; y <= y1; y++) {
+        const boven = y1 - y;
+        const laag = Math.floor((boven + Math.sin(x * 0.7 + zaad) * 0.8) / 3);
+        let i = basis + (laag % 2 ? 0.7 : -0.5) + (n() - 0.5) * 0.7;
+        if (scheur) i -= 1.4;
+        if (boven < 2) i -= 1.6; // de voet
+        c.d.zet(c.x + x, c.y + y, trede(set.rots, i));
+      }
+      c.d.zet(c.x + x, c.y + y0, n() < 0.8 ? set.rand : set.rots[5]); // lichte bovenrand
+      // een randje schaduw en wat puin op de grond voor de wand
+      for (let d = 1; d <= 3; d++) if (n() < 0.75 - d * 0.18) c.d.zet(c.x + x, c.y + y1 + d, [0, 0, 0, 90]);
+      if (n() < 0.3) c.d.zet(c.x + x, c.y + y1 + 1 + Math.floor(n() * 4), trede(set.rots, 3 + n() * 2));
+    }
+  }
+
+  function richel(p, q) {
     const stappen = Math.max(Math.abs(q.x - p.x), Math.abs(q.y - p.y));
     for (let s = 0; s <= stappen; s++) {
       const x = Math.min(CEL_B - 1, Math.floor(p.x + ((q.x - p.x) * s) / stappen));
       const y = Math.min(CEL_H - 1, Math.floor(p.y + ((q.y - p.y) * s) / stappen));
-      c.d.zet(c.x + x, c.y + y, n() < 0.8 ? set.rand : set.rots[5]);
-      c.d.zet(c.x + x, c.y + y + 1, set.rots[1]);
+      c.d.zet(c.x + x, c.y + y - 1, n() < 0.75 ? set.rots[4] : set.rots[3]);
+      c.d.zet(c.x + x, c.y + y, set.rots[1]);
     }
   }
 }

@@ -27,9 +27,18 @@ export const KLIP_HOOGTE = 2;
 // Land achter een klip van minstens MIN_STUK tegels krijgt een oprit; hooguit MAX_OPRITTEN keer rondkijken per wereld.
 export const MIN_STUK = 30;
 export const MAX_OPRITTEN = 12;
+// Een plateau kleiner dan zoveel hoeken wordt geen plateau, en een klip korter dan zoveel tegels wordt een helling:
+// losse snippers wand lezen niet als klip maar als een foutje in de kaart.
+export const MIN_PLATEAU = 40;
+export const MIN_KLIP = 12;
 // Tot zo ver buiten de ring blijft de wereld vlak (de schijf en haar schaduw); hier zijn de heuvels op volle hoogte.
 export const TERREIN_VLAK = 3.5;
 export const TERREIN_VOL = 10;
+
+// Hoe hoger, hoe lichter: elk niveau is een stap helderder, zodat je hoogte in één oogopslag ziet. Laag land op 0 krijgt
+// HOOGTE_TINT_LAAG, de top op HOOGTE_MAX blijft de volle kleur van de tegelset. Water doet niet mee.
+export const HOOGTE_TINT_LAAG = 0.58;
+export const hoogteTint = (z: number): number => HOOGTE_TINT_LAAG + ((1 - HOOGTE_TINT_LAAG) * Math.max(0, Math.min(HOOGTE_MAX, z))) / HOOGTE_MAX;
 
 // Velden met grondstoffen: hoeveel velden, hoeveel tegels per veld, hoeveel per tegel, hoe ver van de machine.
 export const VELDEN: Record<Grondstof, { aantal: number; tegels: [number, number]; perTegel: number; afstand: [number, number] }> = {
