@@ -554,6 +554,14 @@ function tekenLading(goed) {
     d.blokS(...g(-2.5, -1, 0), 5, 1, 2, T.bruin, { r });
     d.blokS(...g(-2, 0.2, 0), 5, 1, 2, T.bruin, { r });
     d.blokS(...g(-2.2, -0.4, 2), 5, 1, 2, T.bruin, { r });
+  } else if (goed === 'plaat') {
+    // onderdeel: twee geslepen stalen platen
+    d.blokS(...g(-2.5, -2, 0), 5, 4, 1, T.staal, { r });
+    d.blokS(...g(-2, -1.6, 1.2), 5, 4, 1, T.staal, { r });
+  } else if (goed === 'balk') {
+    // onderdeel: een vierkante balk met een stalen band
+    d.blokS(...g(-3, -0.8, 0), 6, 1.6, 2, T.bruin, { r });
+    d.blokS(...g(-0.4, -1, 0), 0.8, 2, 2.4, T.staal, { r });
   } else {
     d.blokS(...g(-1.5, -1.5, 0), 3, 3, 1, T.staal, { r });
     d.blokS(...g(-0.5, -0.5, 1), 1.5, 1.5, 6, T.glas, { r });
@@ -577,6 +585,14 @@ function tekenHoop(goed) {
   } else if (goed === 'hout') {
     for (let z = 0; z < 4; z++)
       for (let j = 0; j < 4 - z; j++) d.blokS(...g(-3 + z * 0.4, -2 + j * 1.2 + z * 0.6, z * 1.6), 6 - z * 0.5, 1, 1.6, T.bruin, { r });
+  } else if (goed === 'plaat') {
+    for (let z = 0; z < 6; z++) d.blokS(...g(-3 + (z % 2) * 0.3, -2.5 + (z % 3) * 0.2, z * 1.1), 6, 5, 1, T.staal, { r });
+  } else if (goed === 'balk') {
+    for (let z = 0; z < 3; z++)
+      for (let j = 0; j < 3 - z; j++) {
+        d.blokS(...g(-3.2 + z * 0.3, -2.4 + j * 1.9 + z * 0.9, z * 2), 6.4, 1.7, 2, T.bruin, { r });
+        d.blokS(...g(-0.5 + z * 0.3, -2.5 + j * 1.9 + z * 0.9, z * 2), 0.9, 1.9, 2.2, T.staal, { r });
+      }
   } else {
     d.blokS(...g(-2.5, -2.5, 0), 5, 5, 1, T.staal, { r });
     for (const [k, rr, h] of [[-1.5, -1.5, 7], [0.5, -1, 5], [-1, 0.5, 6], [0.8, 0.8, 4], [-2, 0.8, 3]]) d.blokS(...g(k, rr, 1), 1, 1, h, T.glas, { r });
@@ -776,7 +792,7 @@ tekenKabels();
 tekenMachine();
 tekenOpslag();
 tekenBandLeeg();
-for (const g of ['schroot', 'hout', 'kristal']) {
+for (const g of ['schroot', 'hout', 'kristal', 'plaat', 'balk']) {
   tekenLading(g);
   tekenHoop(g);
 }

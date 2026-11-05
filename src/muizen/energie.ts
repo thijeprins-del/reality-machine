@@ -8,7 +8,7 @@
 import type { EenheidSoort, Grondstof, Trucje, Voorraad } from '../kern/types';
 import type { SpelStaat } from '../kern/spel';
 import { industrieVraag } from './industrie';
-import { betaal, kostTekst } from './kosten';
+import { betaal, kostTekst, naamVan } from './kosten';
 
 export interface BronData {
   id: string;
@@ -30,7 +30,7 @@ export interface EnergieGetallen {
   lampenSneller: number;
 }
 
-export const STANDEN = ['LAAG', 'NORMAAL', 'OVERLADEN'] as const;
+export const STANDEN = ['LOW', 'NORMAL', 'OVERCHARGE'] as const;
 
 export interface Bron extends BronData {
   aan: boolean;
@@ -78,9 +78,9 @@ export function energie(s: SpelStaat): EnergieStaat {
       bronnen: G.bronnen.map((b, i) => ({ ...b, aan: b.mk > 0, stand: 1, hitte: 0, levert: 0, toets: String(i + 1) })),
       verbruikers: [
         { id: 'machine', naam: 'MACHINE', vraag: G.vraag.machine, aan: false, krijgt: 0, toets: '4' },
-        { id: 'industrie', naam: 'INDUSTRIE', vraag: 0, aan: true, krijgt: 0, toets: '5' },
-        { id: 'lampen', naam: 'LAMPEN', vraag: G.vraag.lampen, aan: false, krijgt: 0, toets: '6' },
-        { id: 'koeling', naam: 'KOELING', vraag: G.vraag.koeling, aan: false, krijgt: 0, toets: '7' },
+        { id: 'industrie', naam: 'INDUSTRY', vraag: 0, aan: true, krijgt: 0, toets: '5' },
+        { id: 'lampen', naam: 'LAMPS', vraag: G.vraag.lampen, aan: false, krijgt: 0, toets: '6' },
+        { id: 'koeling', naam: 'COOLING', vraag: G.vraag.koeling, aan: false, krijgt: 0, toets: '7' },
       ],
       aanbod: 0,
       vraag: 0,
@@ -90,7 +90,7 @@ export function energie(s: SpelStaat): EnergieStaat {
       trend: { schroot: 0, hout: 0, kristal: 0 },
       trendT: 0,
       vorige: { schroot: v.schroot ?? 0, hout: v.hout ?? 0, kristal: v.kristal ?? 0 },
-      log: [{ tekst: 'DE HOUTBRANDER DRAAIT. KIES WAT STROOM KRIJGT', kleur: 'groen' }],
+      log: [{ tekst: 'THE WOOD BURNER IS RUNNING. CHOOSE WHAT GETS POWER', kleur: 'groen' }],
       gemist: s.gemist,
     };
     STATEN.set(s, e);
@@ -129,7 +129,7 @@ export function stapEnergie(s: SpelStaat, sec: number, muis: EenheidSoort | unde
         b.levert = stroomVan(b);
       } else {
         b.aan = false;
-        log(e, `${b.brandstof.toUpperCase()} OP: ${b.naam} VALT STIL`, 'rood');
+        log(e, `OUT OF ${naamVan(b.brandstof)}: ${b.naam} STOPS`, 'rood');
       }
     }
     // hitte: alleen van overladen. Daarna koelt hij af, sneller met koeling.
@@ -137,7 +137,7 @@ export function stapEnergie(s: SpelStaat, sec: number, muis: EenheidSoort | unde
       b.hitte = Math.min(100, b.hitte + G.overladen.hitte * sec);
       if (b.hitte >= 100) {
         b.stand = 1;
-        log(e, `${b.naam} TE HEET: TERUG NAAR NORMAAL, EVEN ZWAKKER`, 'amber');
+        log(e, `${b.naam} TOO HOT: BACK TO NORMAL, WEAKER FOR A WHILE`, 'amber');
       }
     } else b.hitte = Math.max(0, b.hitte - (koeling.krijgt > 0 ? G.overladen.afKoeling * koeling.krijgt + G.overladen.af : G.overladen.af) * sec);
     aanbod += b.levert;
@@ -167,11 +167,11 @@ export function stapEnergie(s: SpelStaat, sec: number, muis: EenheidSoort | unde
   const m = s.machine;
   const was = m.energie >= m.maxEnergie;
   m.energie = Math.floor(verbruiker(s, 'machine').krijgt * m.maxEnergie);
-  if (!was && m.energie >= m.maxEnergie) log(e, 'MACHINE OP VOLLE STROOM. KLAAR VOOR DE STREAM', 'groen');
-  if (was && m.energie < m.maxEnergie) log(e, 'MACHINE KRIJGT TE WEINIG STROOM', 'rood');
+  if (!was && m.energie >= m.maxEnergie) log(e, 'MACHINE AT FULL POWER. READY FOR THE STREAM', 'groen');
+  if (was && m.energie < m.maxEnergie) log(e, 'MACHINE IS NOT GETTING ENOUGH POWER', 'rood');
   if (s.gemist !== e.gemist) {
     e.gemist = s.gemist;
-    log(e, 'STREAM GEMIST! MACHINE HAD GEEN VOLLE STROOM', 'rood');
+    log(e, 'STREAM MISSED! THE MACHINE WAS NOT AT FULL POWER', 'rood');
   }
   if (muis?.werk) muis.werk.mijnSec = graafSec / (1 + G.lampenSneller * verbruiker(s, 'lampen').krijgt);
 
@@ -195,13 +195,13 @@ export function stapEnergie(s: SpelStaat, sec: number, muis: EenheidSoort | unde
 // ---- bediening (vanuit het paneel of toetsen) ----
 export function zetBron(s: SpelStaat, b: Bron): void {
   const e = energie(s);
-  if (!b.mk) return log(e, b.loot ? `${b.naam}: ALLEEN UIT LOOT` : `${b.naam} IS NOG NIET GEBOUWD. KLIK +`, 'rood');
-  if (!b.aan && (s.voorraad[b.brandstof] ?? 0) < 0.5) return log(e, `GEEN ${b.brandstof.toUpperCase()} IN DE OPSLAG`, 'rood');
+  if (!b.mk) return log(e, b.loot ? `${b.naam}: ONLY FROM LOOT` : `${b.naam} IS NOT BUILT YET. CLICK +`, 'rood');
+  if (!b.aan && (s.voorraad[b.brandstof] ?? 0) < 0.5) return log(e, `NO ${naamVan(b.brandstof)} IN STOCK`, 'rood');
   b.aan = !b.aan;
-  log(e, `${b.naam} ${b.aan ? 'AAN' : 'UIT'}`);
+  log(e, `${b.naam} ${b.aan ? 'ON' : 'OFF'}`);
 }
 export function draaiKnop(s: SpelStaat, b: Bron): void {
-  if (!b.mk) return log(energie(s), `${b.naam} IS NOG NIET GEBOUWD`, 'rood');
+  if (!b.mk) return log(energie(s), `${b.naam} IS NOT BUILT YET`, 'rood');
   b.stand = ((b.stand + 1) % 3) as 0 | 1 | 2;
   log(energie(s), `${b.naam} ${STANDEN[b.stand]}: ${stroomVan(b)} KW`, b.stand === 2 ? 'amber' : 'groen');
 }
@@ -209,16 +209,16 @@ export function draaiKnop(s: SpelStaat, b: Bron): void {
 export const upgradeKosten = (b: Bron): Voorraad | null => (b.mk < MAX_MK && !b.loot ? b.bouw[b.mk] : null);
 export function upgradeBron(s: SpelStaat, b: Bron): void {
   const e = energie(s);
-  if (b.loot && !b.mk) return log(e, `${b.naam}: ALLEEN UIT LOOT`, 'rood');
+  if (b.loot && !b.mk) return log(e, `${b.naam}: ONLY FROM LOOT`, 'rood');
   const k = upgradeKosten(b);
-  if (!k) return log(e, `${b.naam} IS AL MK${MAX_MK}`);
-  if (!betaal(s.voorraad, k)) return log(e, `${b.naam} MK${b.mk + 1} KOST ${kostTekst(k)}`, 'rood');
+  if (!k) return log(e, `${b.naam} IS ALREADY MK${MAX_MK}`);
+  if (!betaal(s.voorraad, k)) return log(e, `${b.naam} MK${b.mk + 1} NEEDS ${kostTekst(k, true)}`, 'rood');
   b.mk++;
-  log(e, b.mk === 1 ? `${b.naam} GEBOUWD! HENDEL OM AAN TE ZETTEN` : `${b.naam} NU MK${b.mk}: ${stroomVan(b, 1)} KW NORMAAL`, 'groen');
+  log(e, b.mk === 1 ? `${b.naam} BUILT! PULL THE LEVER TO SWITCH IT ON` : `${b.naam} NOW MK${b.mk}: ${stroomVan(b, 1)} KW NORMAL`, 'groen');
 }
 export function zetVerbruiker(s: SpelStaat, c: Verbruiker): void {
   c.aan = !c.aan;
-  log(energie(s), `${c.naam} ${c.aan ? 'AAN' : 'UIT'}`);
+  log(energie(s), `${c.naam} ${c.aan ? 'ON' : 'OFF'}`);
 }
 // Een verbruiker een plek omhoog in de voorrang.
 export function omhoog(s: SpelStaat, c: Verbruiker): void {
@@ -226,7 +226,7 @@ export function omhoog(s: SpelStaat, c: Verbruiker): void {
   const i = e.verbruikers.indexOf(c);
   if (i <= 0) return;
   [e.verbruikers[i - 1], e.verbruikers[i]] = [e.verbruikers[i], e.verbruikers[i - 1]];
-  log(e, `VOORRANG: ${c.naam} VOOR ${e.verbruikers[i].naam}`, 'cyaan');
+  log(e, `PRIORITY: ${c.naam} BEFORE ${e.verbruikers[i].naam}`, 'cyaan');
 }
 
 // Het trucje van de muizen: elke tik het stroomnet bijwerken.

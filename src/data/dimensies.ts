@@ -50,18 +50,18 @@ export interface Heuvels {
   basis: number;
 }
 export const THUIS: DimensieKleur = {
-  naam: 'THUIS',
+  naam: 'HOME',
   grond: [0x1d1e1c, 0x21221f, 0x1a1b19, 0x242521, 0x1f1d1a],
   vlek: 0x121210,
   vlekKans: 0.15,
   rand: [0x1f1813, 0x16110d],
 };
 export const DIMENSIES: (DimensieKleur & { heuvels: Heuvels })[] = [
-  { naam: 'ROESTDUIN', grond: [0x5a2a12, 0x6b3316, 0x4f240f, 0x733a1a, 0x62301a], vlek: 0x2a1208, vlekKans: 0.15, rand: [0x3a1a0a, 0x2a1207], heuvels: { schaal: 16, hoog: 4, basis: 1.5 } },
-  { naam: 'KRISTALTOENDRA', grond: [0x8fa6c8, 0x9db3d3, 0x8299bd, 0xa8bddb, 0x7f95b8], vlek: 0x4ef2ff, vlekGloeit: true, vlekKans: 0.04, rand: [0x4c5c80, 0x3b4868], heuvels: { schaal: 9, hoog: 5, basis: 1 } },
-  { naam: 'GIFWOUD', grond: [0x1f3a14, 0x24431a, 0x1a3311, 0x2a4b1d, 0x203d16], vlek: 0x9dff2e, vlekGloeit: true, vlekKans: 0.06, rand: [0x142410, 0x0e1a0b], heuvels: { schaal: 12, hoog: 4, basis: 2 } },
-  { naam: 'MAGMAVELD', grond: [0x1a1514, 0x201917, 0x161211, 0x241c19, 0x1c1614], vlek: 0xff6a1a, vlekGloeit: true, vlekKans: 0.12, rand: [0x2a0d06, 0x1e0904], heuvels: { schaal: 8, hoog: 7, basis: 2 } },
-  { naam: 'ZOUTZEE', grond: [0xc98aa5, 0xd496b0, 0xbf7f9b, 0xdca2bb, 0xc48aa3], vlek: 0xfff0fa, vlekKans: 0.1, rand: [0x7a4060, 0x5c2f48], heuvels: { schaal: 22, hoog: 3, basis: 0.5 } },
+  { naam: 'RUST DUNES', grond: [0x5a2a12, 0x6b3316, 0x4f240f, 0x733a1a, 0x62301a], vlek: 0x2a1208, vlekKans: 0.15, rand: [0x3a1a0a, 0x2a1207], heuvels: { schaal: 16, hoog: 4, basis: 1.5 } },
+  { naam: 'CRYSTAL TUNDRA', grond: [0x8fa6c8, 0x9db3d3, 0x8299bd, 0xa8bddb, 0x7f95b8], vlek: 0x4ef2ff, vlekGloeit: true, vlekKans: 0.04, rand: [0x4c5c80, 0x3b4868], heuvels: { schaal: 9, hoog: 5, basis: 1 } },
+  { naam: 'POISON WOODS', grond: [0x1f3a14, 0x24431a, 0x1a3311, 0x2a4b1d, 0x203d16], vlek: 0x9dff2e, vlekGloeit: true, vlekKans: 0.06, rand: [0x142410, 0x0e1a0b], heuvels: { schaal: 12, hoog: 4, basis: 2 } },
+  { naam: 'MAGMA FIELD', grond: [0x1a1514, 0x201917, 0x161211, 0x241c19, 0x1c1614], vlek: 0xff6a1a, vlekGloeit: true, vlekKans: 0.12, rand: [0x2a0d06, 0x1e0904], heuvels: { schaal: 8, hoog: 7, basis: 2 } },
+  { naam: 'SALT SEA', grond: [0xc98aa5, 0xd496b0, 0xbf7f9b, 0xdca2bb, 0xc48aa3], vlek: 0xfff0fa, vlekKans: 0.1, rand: [0x7a4060, 0x5c2f48], heuvels: { schaal: 22, hoog: 3, basis: 0.5 } },
 ];
 export const dimensieKleur = (dimensie: number): DimensieKleur => DIMENSIES[(dimensie - 1) % DIMENSIES.length];
 export const dimensieHeuvels = (dimensie: number): Heuvels => DIMENSIES[(dimensie - 1) % DIMENSIES.length].heuvels;

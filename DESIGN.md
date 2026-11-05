@@ -77,11 +77,14 @@ Schaal is belangrijk: geen of weinig gebouwen, vooral machines, ruim groter dan 
 mech 3x3 en ruim tien keer zo hoog als een muis). Mechs menselijk van bouw, wapens over de top. Sprites komen uit
 `scripts/pixel/muizen.mjs`; bekijk ze samen met `?proto=muizen`.
 
+**Taal (5 nov):** alle tekst in het spel is Engels; code, docs en commits blijven Nederlands. Paneel en bouwmenu zijn
+pixelart, maar de letters worden scherp getekend met een echt lettertype (`src/muizen/letters.ts`).
+
 **Stroomnet (trucje van de muizen, herzien 3 nov):** alleen de muizen beheren stroom; de otters krijgen iets anders.
 Energie gaat om keuzes, niet om alles overeind houden. Er is geen zekering en geen storing meer.
-- Bronnen verbranden grondstof uit de opslag: houtbrander (hout, 2/4/7 kW per stand laag/normaal/overladen), dynamo
+- Bronnen verbranden grondstof uit de opslag (in beeld: WOOD BURNER, DYNAMO, REACTOR): houtbrander (hout, 2/4/7 kW per stand laag/normaal/overladen), dynamo
   (schroot, 3/5/9), reactor (kristal, 6/10/16). Je begint met een houtbrander MK1 die aan staat. De dynamo moet je eerst
-  bouwen (35 schroot + 15 hout); de reactor komt alleen uit loot. Per MK meer stroom (x1, 1,7, 2,5) en meer brandstof.
+  bouwen (5 platen + 2 balken); de reactor komt alleen uit loot. Per MK meer stroom (x1, 1,7, 2,5) en meer brandstof.
 - **Overladen** mag altijd: veel stroom, maar de bron wordt heet. Daarna is hij tijdelijk zwakker (tot 50% bij volle
   hitte) tot hij is afgekoeld. Koeling laat sneller afkoelen.
 - Verbruikers staan op volgorde van voorrang: machine (6 kW), industrie (fabricator, boren, banden), lampen (2 kW,
@@ -91,9 +94,12 @@ Energie gaat om keuzes, niet om alles overeind houden. Er is geen zekering en ge
   getallen in `MUIZEN_ENERGIE` (`src/data/muizen.ts`).
 
 **Industrie (economische lus, 3 nov):** de muizen werken zelf, de speler zet neer en kiest.
-- **Fabricator** (vast naast de machine, 2 kW, 3 muizen nodig): maakt de onderdelen. Alles wat je neerzet moet eerst
-  gemaakt worden: band (2 schroot, 4 per keer), paal (3 hout), boor (15 schroot + 5 hout), stapel (8 hout).
-  Hooguit 8 in de rij. Je begint met 1 boor en 1 paal klaar.
+- **Onderdelen en fabricators (5 nov):** bouwen kost onderdelen uit de opslag: platen (2 schroot geeft 2) en balken
+  (2 hout geeft 1). Die maak je in een **fabricator**, die je zelf bouwt (15 schroot + 10 hout, binnen de ring, 2 kW,
+  2 muizen voor volle snelheid). Klik erop en kies rechts in het bouwmenu een recept; hij blijft dat maken tot de opslag
+  vol is. Wat eruit komt gaat op een band tegen zijn voet of muizen brengen het naar de opslag. Kosten: boor 3 platen +
+  1 balk, band 1 plaat per tegel, paal 1 balk, stapel 4 balken, dynamo 5 platen + 2 balken. Je begint met 4 platen en
+  2 balken. Het bouwmenu rechts laat per ding zien wat het kost (groen = genoeg, rood = te weinig).
 - **Muizen werken zelf**, in deze volgorde: bouwplaatsen afbouwen, de fabricator bemannen, boren zonder band
   leeghalen, en anders zelf graven (de grondstof die het leegst is eerst, alleen als er nog plek is). Je kunt muizen
   zelf ergens heen sturen; dan laten ze hun klus los.
@@ -104,10 +110,10 @@ Energie gaat om keuzes, niet om alles overeind houden. Er is geen zekering en ge
   houdt er hooguit 12 vast. Met een band erop gaan de brokken vanzelf; zonder band halen muizen ze op.
 - **Band** (0,05 kW per tegel, 2 tegels/s): slepen legt een pad met één bocht. Een band die doodloopt naast een nieuw
   stuk draait er vanzelf naartoe. Lompe muizenband: één brok per tegel.
-- **Opslag**: hooguit 50 per grondstof. **Stapel** (2x2, binnen de ring) hoort bij één grondstof en geeft +150 daarvan.
+- **Opslag**: hooguit 50 per goed (ook platen en balken). **Stapel** (2x2, binnen de ring) hoort bij één grondstof en geeft +150 daarvan.
   Muizen en banden brengen een grondstof naar zijn eigen stapel. Je ziet de voorraad als bergen (1 hoop = 15).
-- **Stream**: alles buiten de ring blijft achter; je krijgt het onderdeel terug. Binnen de ring blijft alles staan.
-- Slopen geeft het onderdeel terug. Regels in `src/muizen/industrie.ts` en `src/muizen/werk.ts`, beeld en bouwbalk in
+- **Stream**: alles buiten de ring blijft achter; je krijgt de bouwkosten terug. Binnen de ring blijft alles staan.
+- Slopen geeft de bouwkosten terug. Regels in `src/muizen/industrie.ts` en `src/muizen/werk.ts`, beeld en bouwbalk in
   `src/muizen/bouwen.ts`, getallen in `MUIZEN_INDUSTRIE`. De band zit nu in de muizenmap; naar de kern (K5) zodra de
   otters ook banden willen.
 

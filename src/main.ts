@@ -48,8 +48,8 @@ async function start(): Promise<void> {
   let id = adres.get('factie') as FactieId | null;
   if (!id || !FACTIES[id])
     id = await kiesFactie([
-      { id: 'muizen', naam: 'Muizen', regel: 'Honderden muizen, gigantische machines.', speelbaar: !!FACTIES.muizen },
-      { id: 'otters', naam: 'Otters', regel: FACTIES.otters ? 'Lieuwe' : 'Nog in de maak (Lieuwe).', speelbaar: !!FACTIES.otters },
+      { id: 'muizen', naam: 'Mice', regel: 'Hundreds of mice, gigantic machines.', speelbaar: !!FACTIES.muizen },
+      { id: 'otters', naam: 'Otters', regel: FACTIES.otters ? 'Lieuwe' : 'Still being made (Lieuwe).', speelbaar: !!FACTIES.otters },
     ]);
   const factie = FACTIES[id]!;
 
@@ -86,11 +86,11 @@ async function start(): Promise<void> {
     const bezig = staat.werkers.filter((w) => w.taak !== 'rust').length;
     balk.zet([
       staat.onderweg > 0
-        ? `In het niets · op weg naar ${dimensieKleur(staat.dimensie).naam}`
-        : `Dimensie ${staat.dimensie} · ${dimensieKleur(staat.dimensie).naam} · stream over ${Math.floor(rest / 60)}:${String(rest % 60).padStart(2, '0')}`,
-      `Machine: stroom ${Math.floor((100 * staat.machine.energie) / staat.machine.maxEnergie)}% (100% nodig bij de stream)${staat.gemist ? ` · stream ${staat.gemist}× gemist` : ''}`,
-      `Opslag: schroot ${Math.floor(v.schroot ?? 0)} · hout ${Math.floor(v.hout ?? 0)} · kristal ${Math.floor(v.kristal ?? 0)}`,
-      `${factie.data.naam}: ${staat.werkers.length} (${bezig} aan het werk) · geselecteerd ${besturing.selectie.size}`,
+        ? `In the void · on the way to ${dimensieKleur(staat.dimensie).naam}`
+        : `Dimension ${staat.dimensie} · ${dimensieKleur(staat.dimensie).naam} · stream in ${Math.floor(rest / 60)}:${String(rest % 60).padStart(2, '0')}`,
+      `Machine: power ${Math.floor((100 * staat.machine.energie) / staat.machine.maxEnergie)}% (needs 100% at the stream)${staat.gemist ? ` · stream missed ${staat.gemist}×` : ''}`,
+      `Stock: scrap ${Math.floor(v.schroot ?? 0)} · wood ${Math.floor(v.hout ?? 0)} · crystal ${Math.floor(v.kristal ?? 0)}`,
+      `${factie.data.naam}: ${staat.werkers.length} (${bezig} working) · selected ${besturing.selectie.size}`,
     ]);
   });
 }

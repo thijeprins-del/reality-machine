@@ -1,31 +1,34 @@
-// Industrie van de muizen: een fabricator die onderdelen maakt, en wat je daarmee neerzet: boren (die de machine
-// naast grondstoffen gooit), lompe lopende banden, palen met kabels en een stapel per grondstof.
+// Industrie van de muizen: fabricators die onderdelen maken (platen, balken), en wat je daarmee neerzet: boren (die de
+// machine naast grondstoffen gooit), lompe lopende banden, palen met kabels en een stapel per grondstof.
 // Puur regels, geen tekenen en geen Math.random. Getallen in src/data/muizen.ts (MUIZEN_INDUSTRIE).
 //
-// - Alles moet eerst gemaakt worden in de fabricator (kost grondstof, stroom en muizen die er werken).
+// - Bouwen kost onderdelen uit de opslag. Die maak je in een fabricator (zelf ook te bouwen): klik erop en kies een
+//   recept. Hij vraagt grondstof, stroom en muizen; wat eruit komt gaat op een band of muizen brengen het naar de opslag.
 // - Neerzetten maakt een bouwplek; muizen bouwen het af (werk.ts). Pas dan doet het iets.
 // - Boren en de fabricator draaien alleen op stroom: binnen bereik van de machine of van een aangesloten paal.
 // - Een boor graaft uit de tegels rond zijn voet. Zijn brokken gaan op een band die tegen zijn voet ligt,
 //   of muizen halen ze op en sjouwen ze weg.
 // - De opslag houdt per grondstof een klein beetje; een stapel voor die grondstof houdt veel meer.
-// - Bij de stream wordt alles buiten de ring ingepakt: de onderdelen komen terug, je zet ze in de nieuwe wereld opnieuw neer.
+// - Bij de stream wordt alles buiten de ring ingepakt: de bouwkosten komen terug.
 import { binnenBlok, binnenRing, type Blok } from '../kern/kaart';
 import type { SpelStaat } from '../kern/spel';
 import type { Band, Goed, Grondstof, Richting, Trucje, Voorraad } from '../kern/types';
 import { energie, log, verbruiker } from './energie';
-import { betaal, kanBetalen, kostTekst } from './kosten';
+import { betaal, kanBetalen, kostTekst, naamVan, terug } from './kosten';
 
-export type Onderdeel = 'boor' | 'band' | 'paal' | 'stapel';
-export const ONDERDELEN: Onderdeel[] = ['boor', 'band', 'paal', 'stapel'];
+export type Bouwsel = 'fabricator' | 'boor' | 'band' | 'paal' | 'stapel';
+export const BOUWSELS: Bouwsel[] = ['fabricator', 'boor', 'band', 'paal', 'stapel'];
+export type Deel = 'plaat' | 'balk';
+export const DELEN: Deel[] = ['plaat', 'balk'];
 
 export interface IndustrieGetallen {
   boor: { kW: number; sec: number; buffer: number; bereik: number; vliegSec: number; werk: number };
   band: { kW: number; tegelsPerSec: number; werk: number };
   paal: { link: number; bereik: number; werk: number };
   stapel: { extra: number; werk: number };
-  fabricator: { kW: number; ploeg: number };
-  maak: Record<Onderdeel, { kosten: Voorraad; sec: number; aantal: number }>;
-  start: Record<Onderdeel, number>;
+  fabricator: { kW: number; ploeg: number; buffer: number; werk: number };
+  bouw: Record<Bouwsel, Voorraad>;
+  recepten: Record<Deel, { in: Voorraad; uit: number; sec: number }>;
   opslagMax: number;
   hoop: number;
   ploegBouw: number;
@@ -37,12 +40,22 @@ interface Ding {
   y: number;
   af: number; // werk dat nog moet (muis-seconden); 0 = klaar
 }
-export interface Boor extends Ding {
+// Iets met een uitgang: boor en fabricator. Wat erin ligt gaat op een band tegen de voet, of muizen halen het.
+export interface Maker extends Ding {
+  buffer: Goed[];
+  uitvoer: number;
+}
+export interface Boor extends Maker {
   vlieg: number; // seconden nog in de lucht (gegooid door de machine); 0 = staat
   klok: number;
-  buffer: Grondstof[];
   graaft: boolean;
-  uitvoer: number;
+}
+export interface Fabriek extends Maker {
+  recept: Deel | null;
+  klok: number; // 0..1 van het huidige stuk
+  betaald: boolean;
+  ploeg: number; // muizen die er nu werken (zet werk.ts)
+  geblokt: string; // waarom hij stilstaat ('' = draait)
 }
 export type Paal = Ding;
 export interface Stapel extends Ding {
@@ -51,27 +64,20 @@ export interface Stapel extends Ding {
 export interface MBand extends Band {
   af: number;
 }
-export interface Fabricator {
-  rij: Onderdeel[]; // wat er gemaakt moet worden, eerste is bezig
-  klok: number; // 0..1 van het huidige
-  betaald: boolean;
-  ploeg: number; // muizen die er nu werken (zet werk.ts)
-  geblokt: string; // waarom hij stilstaat ('' = draait)
-}
 export interface IndustrieStaat {
   boren: Boor[];
+  fabrieken: Fabriek[];
   palen: Paal[];
   stapels: Stapel[];
   banden: Map<number, MBand>; // sleutel = tegel(x, y)
-  fabricator: Fabricator;
-  delen: Record<Onderdeel, number>; // gemaakte onderdelen die klaarliggen
-  volGemeld: Partial<Record<Grondstof, boolean>>;
+  volGemeld: Partial<Record<Goed, boolean>>;
   volgendeId: number;
   net: { tik: number; palen: Set<number> };
 }
 
 export const RICHTINGEN: Record<Richting, [number, number]> = { O: [1, 0], W: [-1, 0], Z: [0, 1], N: [0, -1] };
 export const GRONDSTOFFEN: Grondstof[] = ['schroot', 'hout', 'kristal'];
+export const GOEDEREN: Goed[] = [...GRONDSTOFFEN, ...DELEN];
 export const tegel = (x: number, y: number) => y * 1000 + x;
 
 let G: IndustrieGetallen;
@@ -85,11 +91,10 @@ export function industrie(s: SpelStaat): IndustrieStaat {
     const m = s.kaart.machine;
     i = {
       boren: [],
+      fabrieken: [],
       palen: [{ id: 1, x: m.x - 1, y: m.y + m.diep + 1, af: 0 }], // de mini-paal waarmee je begint
       stapels: [],
       banden: new Map(),
-      fabricator: { rij: [], klok: 0, betaald: false, ploeg: 0, geblokt: '' },
-      delen: { ...G.start },
       volGemeld: {},
       volgendeId: 2,
       net: { tik: -1, palen: new Set() },
@@ -100,11 +105,10 @@ export function industrie(s: SpelStaat): IndustrieStaat {
 }
 
 // ---- vaste plekken rond de machine ----
-export function vast(s: SpelStaat): { erf: Blok; fabricator: Blok; bronnen: Record<string, Blok> } {
+export function vast(s: SpelStaat): { erf: Blok; bronnen: Record<string, Blok> } {
   const m = s.kaart.machine, o = s.kaart.opslag;
   return {
     erf: { x: o.x + o.breed, y: o.y, breed: 2, diep: 2 },
-    fabricator: { x: m.x + 1, y: m.y + m.diep + 1, breed: 2, diep: 2 },
     bronnen: {
       houtbrander: { x: m.x - 3, y: m.y + 1, breed: 2, diep: 2 },
       dynamo: { x: m.x - 3, y: m.y - 2, breed: 2, diep: 2 },
@@ -117,7 +121,7 @@ export const boorBlok = blok2;
 export const stapelBlok = blok2;
 const midden = (b: Blok) => ({ x: b.x + b.breed / 2 - 0.5, y: b.y + b.diep / 2 - 0.5 });
 
-export function opslagMax(s: SpelStaat, g: Grondstof): number {
+export function opslagMax(s: SpelStaat, g: Goed): number {
   return G.opslagMax + industrie(s).stapels.filter((p) => p.goed === g && !p.af).length * G.stapel.extra;
 }
 
@@ -156,7 +160,7 @@ export function industrieVraag(s: SpelStaat): number {
   const i = industrie(s);
   let kw = [...i.banden.values()].filter((b) => !b.af).length * G.band.kW;
   kw += i.boren.filter((b) => !b.af && !b.vlieg && gevoed(s, blok2(b))).length * G.boor.kW;
-  if (i.fabricator.rij.length && gevoed(s, vast(s).fabricator)) kw += G.fabricator.kW;
+  kw += i.fabrieken.filter((f) => !f.af && f.recept && gevoed(s, blok2(f))).length * G.fabricator.kW;
   return Math.round(kw * 10) / 10;
 }
 const kracht = (s: SpelStaat) => verbruiker(s, 'industrie').krijgt;
@@ -169,12 +173,13 @@ export function inOpslag(s: SpelStaat, x: number, y: number, goed?: Goed): boole
 export const boorOp = (s: SpelStaat, x: number, y: number) => industrie(s).boren.find((b) => binnenBlok(blok2(b), x, y));
 const paalOp = (s: SpelStaat, x: number, y: number) => industrie(s).palen.find((p) => p.x === x && p.y === y);
 const stapelOp = (s: SpelStaat, x: number, y: number) => industrie(s).stapels.find((p) => binnenBlok(blok2(p), x, y));
+export const fabriekOp = (s: SpelStaat, x: number, y: number) => industrie(s).fabrieken.find((f) => binnenBlok(blok2(f), x, y));
 
 function bezet(s: SpelStaat, x: number, y: number): boolean {
   const k = s.kaart;
   if (x < 1 || y < 1 || x >= k.breed - 1 || y >= k.diep - 1) return true;
   const v = vast(s);
-  return binnenBlok(k.machine, x, y) || binnenBlok(k.opslag, x, y) || binnenBlok(v.erf, x, y) || binnenBlok(v.fabricator, x, y) ||
+  return binnenBlok(k.machine, x, y) || binnenBlok(k.opslag, x, y) || binnenBlok(v.erf, x, y) || !!fabriekOp(s, x, y) ||
     Object.values(v.bronnen).some((b) => binnenBlok(b, x, y)) || !!boorOp(s, x, y) || !!paalOp(s, x, y) || !!stapelOp(s, x, y);
 }
 const grondstofOp = (s: SpelStaat, x: number, y: number) => s.kaart.afzettingen.some((a) => a.x === x && a.y === y && a.rest > 0);
@@ -194,35 +199,34 @@ export interface Oordeel {
   ok: boolean;
   reden: string;
 }
-const geenDeel = (d: Onderdeel): Oordeel => ({ ok: false, reden: `GEEN ${d.toUpperCase()} KLAAR. MAAK ER EEN IN DE FABRICATOR` });
+const kostOk = (s: SpelStaat, d: Bouwsel): Oordeel | null =>
+  kanBetalen(s.voorraad, G.bouw[d]) ? null : { ok: false, reden: `NEED ${kostTekst(G.bouw[d], true)}` };
 
-export function kanZetten(s: SpelStaat, d: Onderdeel, x: number, y: number, goed?: Grondstof): Oordeel {
+export function kanZetten(s: SpelStaat, d: Bouwsel, x: number, y: number, goed?: Grondstof): Oordeel {
   const i = industrie(s);
-  if (s.onderweg > 0) return { ok: false, reden: 'WACHT TOT DE LANDING' };
+  if (s.onderweg > 0) return { ok: false, reden: 'WAIT FOR THE LANDING' };
   if (d === 'boor') {
-    if (!vrijVoorBlok(s, x, y, 2)) return { ok: false, reden: 'HIER KAN HIJ NIET: NAAST HET VELD, NIET EROP' };
-    if (!bereikVan(s, x, y).length) return { ok: false, reden: 'GEEN GRONDSTOF BINNEN BEREIK' };
-    if (!i.delen.boor) return geenDeel('boor');
-    return { ok: true, reden: gevoed(s, blok2({ id: 0, x, y, af: 0 })) ? `BOOR HIER. ${G.boor.kW} KW` : 'BOOR HIER. LET OP: GEEN STROOM, ZET EEN PAAL' };
+    if (!vrijVoorBlok(s, x, y, 2)) return { ok: false, reden: 'NOT HERE: NEXT TO THE FIELD, NOT ON IT' };
+    if (!bereikVan(s, x, y).length) return { ok: false, reden: 'NO RESOURCES IN RANGE' };
+    return kostOk(s, d) ?? { ok: true, reden: gevoed(s, blok2({ id: 0, x, y, af: 0 })) ? `DRILL HERE. ${G.boor.kW} KW` : 'DRILL HERE. NO POWER YET: PLACE A POLE' };
   }
-  if (d === 'stapel') {
-    if (!vrijVoorBlok(s, x, y, 2)) return { ok: false, reden: 'HIER STAAT AL IETS' };
-    for (const [dx, dy] of [[0, 0], [1, 0], [0, 1], [1, 1]]) if (!binnenRing(s.kaart, x + dx, y + dy)) return { ok: false, reden: 'ALLEEN BINNEN DE RING' };
-    if (!i.delen.stapel) return geenDeel('stapel');
-    return { ok: true, reden: `STAPEL VOOR ${goed?.toUpperCase()}: +${G.stapel.extra}. R = ANDERE GRONDSTOF` };
+  if (d === 'stapel' || d === 'fabricator') {
+    if (!vrijVoorBlok(s, x, y, 2)) return { ok: false, reden: 'SOMETHING IS IN THE WAY' };
+    for (const [dx, dy] of [[0, 0], [1, 0], [0, 1], [1, 1]]) if (!binnenRing(s.kaart, x + dx, y + dy)) return { ok: false, reden: 'ONLY INSIDE THE RING' };
+    if (d === 'stapel') return kostOk(s, d) ?? { ok: true, reden: `STOCKPILE FOR ${naamVan(goed ?? 'schroot')}: +${G.stapel.extra}. R = OTHER RESOURCE` };
+    return kostOk(s, d) ?? { ok: true, reden: gevoed(s, blok2({ id: 0, x, y, af: 0 })) ? `FABRICATOR HERE. ${G.fabricator.kW} KW` : 'FABRICATOR HERE. NO POWER YET: PLACE A POLE' };
   }
   if (d === 'paal') {
-    if (!vrijVoorBlok(s, x, y, 1)) return { ok: false, reden: 'HIER STAAT AL IETS' };
-    if (!i.delen.paal) return geenDeel('paal');
+    if (!vrijVoorBlok(s, x, y, 1)) return { ok: false, reden: 'SOMETHING IS IN THE WAY' };
     const m = midden(s.kaart.machine);
     const net = aangesloten(s);
     const hangt = Math.hypot(x - m.x, y - m.y) <= G.paal.link || i.palen.some((p) => net.has(p.id) && Math.hypot(p.x - x, p.y - y) <= G.paal.link);
-    return { ok: true, reden: hangt ? 'PAAL HIER: HANGT AAN HET NET' : `PAAL HIER, MAAR TE VER: HOOGUIT ${G.paal.link} TEGELS TUSSEN PALEN` };
+    return kostOk(s, d) ?? { ok: true, reden: hangt ? 'POLE HERE: CONNECTED TO THE GRID' : `POLE HERE, BUT TOO FAR: AT MOST ${G.paal.link} TILES BETWEEN POLES` };
   }
   return { ok: kanBandOp(s, x, y), reden: '' };
 }
 
-export function zet(s: SpelStaat, d: Onderdeel, x: number, y: number, goed: Grondstof = 'schroot'): boolean {
+export function zet(s: SpelStaat, d: Bouwsel, x: number, y: number, goed: Grondstof = 'schroot'): boolean {
   const o = kanZetten(s, d, x, y, goed);
   const e = energie(s);
   if (!o.ok) {
@@ -230,17 +234,20 @@ export function zet(s: SpelStaat, d: Onderdeel, x: number, y: number, goed: Gron
     return false;
   }
   const i = industrie(s);
-  i.delen[d]--;
+  betaal(s.voorraad, G.bouw[d]);
   const id = i.volgendeId++;
   if (d === 'boor') {
     i.boren.push({ id, x, y, af: G.boor.werk, vlieg: G.boor.vliegSec, klok: 0, buffer: [], graaft: false, uitvoer: 0 });
-    log(e, 'BOOR GEGOOID! MUIZEN BOUWEN HEM OP', 'groen');
+    log(e, 'DRILL THROWN! MICE ARE BUILDING IT', 'groen');
+  } else if (d === 'fabricator') {
+    i.fabrieken.push({ id, x, y, af: G.fabricator.werk, buffer: [], uitvoer: 0, recept: null, klok: 0, betaald: false, ploeg: 0, geblokt: '' });
+    log(e, 'FABRICATOR SITE PLACED. CLICK IT TO PICK A RECIPE', 'groen');
   } else if (d === 'stapel') {
     i.stapels.push({ id, x, y, af: G.stapel.werk, goed });
-    log(e, `STAPEL VOOR ${goed.toUpperCase()} UITGEZET`, 'groen');
+    log(e, `STOCKPILE FOR ${naamVan(goed)} PLACED`, 'groen');
   } else if (d === 'paal') {
     i.palen.push({ id, x, y, af: G.paal.werk });
-    log(e, 'PAAL UITGEZET', 'groen');
+    log(e, 'POLE PLACED', 'groen');
   }
   return true;
 }
@@ -260,11 +267,10 @@ export function legBand(s: SpelStaat, pad: { x: number; y: number; naar: Richtin
       oud.naar = p.naar;
       continue;
     }
-    if (i.delen.band <= 0) {
-      log(e, 'BANDEN OP: MAAK ER MEER IN DE FABRICATOR', 'rood');
+    if (!betaal(s.voorraad, G.bouw.band)) {
+      log(e, `OUT OF ${kostTekst(G.bouw.band, true).replace(/^1 /, '')}: MAKE MORE IN A FABRICATOR`, 'rood');
       break;
     }
-    i.delen.band--;
     i.banden.set(tegel(p.x, p.y), { x: p.x, y: p.y, naar: p.naar, voortgang: 0, af: G.band.werk });
     nieuw++;
   }
@@ -277,80 +283,91 @@ export function legBand(s: SpelStaat, pad: { x: number; y: number; naar: Richtin
       const [vx, vy] = RICHTINGEN[buur.naar];
       if (!i.banden.has(tegel(buur.x + vx, buur.y + vy)) && !inOpslag(s, buur.x + vx, buur.y + vy)) buur.naar = r;
     }
-  if (nieuw) log(e, `${nieuw} TEGELS BAND UITGEZET. MUIZEN LEGGEN ZE`, 'groen');
+  if (nieuw) log(e, `${nieuw} BELT TILES PLACED. MICE ARE LAYING THEM`, 'groen');
   return nieuw;
 }
 
-// Slopen: het onderdeel komt terug (wat erin zat gaat naar de opslag).
+// Slopen: je krijgt de bouwkosten terug (wat erin zat gaat naar de opslag).
 export function sloop(s: SpelStaat, x: number, y: number): boolean {
   const i = industrie(s);
+  const v = s.voorraad;
   const band = i.banden.get(tegel(x, y));
   if (band) {
-    if (band.goed) s.voorraad[band.goed] = (s.voorraad[band.goed] ?? 0) + 1;
+    if (band.goed) v[band.goed] = (v[band.goed] ?? 0) + 1;
     i.banden.delete(tegel(x, y));
-    i.delen.band++;
+    terug(v, G.bouw.band);
     return true;
   }
-  const b = boorOp(s, x, y);
-  if (b) {
-    for (const g of b.buffer) s.voorraad[g] = (s.voorraad[g] ?? 0) + 1;
-    i.boren.splice(i.boren.indexOf(b), 1);
-    i.delen.boor++;
-    return true;
-  }
-  const p = stapelOp(s, x, y);
-  if (p) {
-    i.stapels.splice(i.stapels.indexOf(p), 1);
-    i.delen.stapel++;
+  const lijsten: [Bouwsel, Ding[]][] = [['boor', i.boren], ['fabricator', i.fabrieken], ['stapel', i.stapels]];
+  for (const [d, lijst] of lijsten) {
+    const t = lijst.find((b) => binnenBlok(blok2(b), x, y));
+    if (!t) continue;
+    for (const g of (t as Maker).buffer ?? []) v[g] = (v[g] ?? 0) + 1;
+    const f = t as Fabriek;
+    if (d === 'fabricator' && f.betaald && f.recept) terug(v, G.recepten[f.recept].in);
+    lijst.splice(lijst.indexOf(t), 1);
+    terug(v, G.bouw[d]);
     return true;
   }
   const q = paalOp(s, x, y);
   if (q) {
     i.palen.splice(i.palen.indexOf(q), 1);
-    i.delen.paal++;
+    terug(v, G.bouw.paal);
     return true;
   }
   return false;
 }
 
-// ---- de fabricator ----
-export function maak(s: SpelStaat, d: Onderdeel): void {
-  const f = industrie(s).fabricator;
-  if (f.rij.length >= 8) return log(energie(s), 'FABRICATOR: WACHTRIJ VOL (8)', 'rood');
-  f.rij.push(d);
-  log(energie(s), `FABRICATOR: ${d.toUpperCase()} IN DE RIJ (${kostTekst(G.maak[d].kosten)})`, 'cyaan');
+// ---- fabricators ----
+export function kiesRecept(s: SpelStaat, f: Fabriek, r: Deel | null): void {
+  if (f.recept === r) return;
+  if (f.betaald && f.recept) terug(s.voorraad, G.recepten[f.recept].in);
+  f.recept = r;
+  f.betaald = false;
+  f.klok = 0;
+  log(energie(s), r ? `FABRICATOR MAKES ${naamVan(r)} (${kostTekst(G.recepten[r].in, true)})` : 'FABRICATOR STOPPED', 'cyaan');
 }
-export function schrap(s: SpelStaat): void {
-  const f = industrie(s).fabricator;
-  const d = f.rij.pop();
-  if (!d) return;
-  if (f.rij.length === 0 && f.betaald) {
-    for (const [g, n] of Object.entries(G.maak[d].kosten)) s.voorraad[g] = (s.voorraad[g] ?? 0) + (n ?? 0);
-    f.betaald = false;
-    f.klok = 0;
-  }
-}
-function stapFabricator(s: SpelStaat, sec: number): void {
+function stapFabrieken(s: SpelStaat, sec: number): void {
   const i = industrie(s);
-  const f = i.fabricator;
-  const d = f.rij[0];
-  if (!d) return void (f.geblokt = '');
-  const r = G.maak[d];
-  if (!f.betaald) {
-    if (!kanBetalen(s.voorraad, r.kosten)) return void (f.geblokt = `WACHT OP ${kostTekst(r.kosten)}`);
-    betaal(s.voorraad, r.kosten);
-    f.betaald = true;
-  }
-  if (!gevoed(s, vast(s).fabricator) || kracht(s) <= 0) return void (f.geblokt = 'GEEN STROOM');
-  if (!f.ploeg) return void (f.geblokt = 'WACHT OP MUIZEN');
-  f.geblokt = '';
-  f.klok += (sec * kracht(s) * Math.min(1, f.ploeg / G.fabricator.ploeg)) / r.sec;
-  if (f.klok >= 1) {
-    f.klok = 0;
-    f.betaald = false;
-    f.rij.shift();
-    i.delen[d] += r.aantal;
-    log(energie(s), `FABRICATOR: ${r.aantal > 1 ? `${r.aantal}X ` : ''}${d.toUpperCase()} KLAAR`, 'groen');
+  const k = kracht(s);
+  for (const f of i.fabrieken) {
+    if (f.af) continue;
+    if (f.buffer.length) zetOpBand(i, f);
+    if (!f.recept) {
+      f.geblokt = 'PICK A RECIPE';
+      continue;
+    }
+    const r = G.recepten[f.recept];
+    if ((s.voorraad[f.recept] ?? 0) >= opslagMax(s, f.recept) && !f.betaald) {
+      f.geblokt = 'STOCK FULL';
+      continue;
+    }
+    if (f.buffer.length + r.uit > G.fabricator.buffer) {
+      f.geblokt = 'OUTPUT FULL';
+      continue;
+    }
+    if (!f.betaald) {
+      if (!betaal(s.voorraad, r.in)) {
+        f.geblokt = `NEEDS ${kostTekst(r.in, true)}`;
+        continue;
+      }
+      f.betaald = true;
+    }
+    if (!gevoed(s, blok2(f)) || k <= 0) {
+      f.geblokt = 'NO POWER';
+      continue;
+    }
+    if (!f.ploeg) {
+      f.geblokt = 'WAITING FOR MICE';
+      continue;
+    }
+    f.geblokt = '';
+    f.klok += (sec * k * Math.min(1, f.ploeg / G.fabricator.ploeg)) / r.sec;
+    if (f.klok >= 1) {
+      f.klok = 0;
+      f.betaald = false;
+      for (let n = 0; n < r.uit; n++) f.buffer.push(f.recept);
+    }
   }
 }
 
@@ -361,15 +378,15 @@ function stapIndustrie(s: SpelStaat, sec: number): void {
   const v = s.voorraad;
 
   // opslag vol: wat er meer is valt eraf
-  for (const g of GRONDSTOFFEN) {
+  for (const g of GOEDEREN) {
     const max = opslagMax(s, g);
     if ((v[g] ?? 0) > max) v[g] = max;
     const vol = (v[g] ?? 0) >= max;
-    if (vol && !i.volGemeld[g]) log(energie(s), `OPSLAG VOL: ${g.toUpperCase()} ${max}. ZET EEN STAPEL VOOR ${g.toUpperCase()}`, 'rood');
+    if (vol && !i.volGemeld[g]) log(energie(s), `STOCK FULL: ${naamVan(g)} ${max}${GRONDSTOFFEN.includes(g as Grondstof) ? `. BUILD A STOCKPILE FOR ${naamVan(g)}` : ''}`, 'rood');
     i.volGemeld[g] = vol;
   }
 
-  stapFabricator(s, sec);
+  stapFabrieken(s, sec);
 
   // boren
   const k = kracht(s);
@@ -406,7 +423,7 @@ function stapIndustrie(s: SpelStaat, sec: number): void {
     const [dx, dy] = RICHTINGEN[t.naar];
     const nx = t.x + dx, ny = t.y + dy;
     const volgende = i.banden.get(tegel(nx, ny));
-    const g = t.goed as Grondstof;
+    const g = t.goed as Goed;
     if (volgende && !volgende.af) {
       if (!volgende.goed) {
         volgende.goed = g;
@@ -441,18 +458,18 @@ function afstandTotEind(i: IndustrieStaat, t: Band): number {
 }
 
 // Ligt er een band tegen de voet van deze boor? Dan hoeven muizen niet te sjouwen.
-export function boorHeeftBand(i: IndustrieStaat, b: Boor): boolean {
+export function heeftBand(i: IndustrieStaat, b: Maker): boolean {
   return randVan(b).some(([x, y]) => {
     const t = i.banden.get(tegel(x, y));
     return !!t && !t.af;
   });
 }
-const randVan = (b: Boor): [number, number][] => {
+const randVan = (b: Ding): [number, number][] => {
   const r: [number, number][] = [];
   for (let d = 0; d < 2; d++) r.push([b.x + d, b.y - 1], [b.x + 2, b.y + d], [b.x + 1 - d, b.y + 2], [b.x - 1, b.y + 1 - d]);
   return r;
 };
-function zetOpBand(i: IndustrieStaat, b: Boor): void {
+function zetOpBand(i: IndustrieStaat, b: Maker): void {
   const rand = randVan(b);
   for (let n = 0; n < rand.length; n++) {
     const k = (b.uitvoer + n) % rand.length;
@@ -460,39 +477,40 @@ function zetOpBand(i: IndustrieStaat, b: Boor): void {
     if (!t || t.goed || t.af) continue;
     const [dx, dy] = RICHTINGEN[t.naar];
     if (binnenBlok(blok2(b), t.x + dx, t.y + dy)) continue;
-    t.goed = b.buffer.shift() as Goed;
+    t.goed = b.buffer.shift();
     t.voortgang = 0;
     b.uitvoer = k + 1;
     return;
   }
 }
 
-// De stream: alles buiten de ring blijft achter, dus inpakken. De onderdelen komen terug.
+// De stream: alles buiten de ring blijft achter, dus inpakken. De bouwkosten komen terug.
 function opStream(s: SpelStaat): void {
   const i = industrie(s);
   const k = s.kaart;
+  const v = s.voorraad;
   let n = 0;
   i.boren = i.boren.filter((b) => {
     if (binnenRing(k, b.x + 0.5, b.y + 0.5)) return true;
-    for (const g of b.buffer) s.voorraad[g] = (s.voorraad[g] ?? 0) + 1;
-    i.delen.boor++;
+    for (const g of b.buffer) v[g] = (v[g] ?? 0) + 1;
+    terug(v, G.bouw.boor);
     n++;
     return false;
   });
   i.palen = i.palen.filter((p) => {
     if (binnenRing(k, p.x, p.y)) return true;
-    i.delen.paal++;
+    terug(v, G.bouw.paal);
     n++;
     return false;
   });
   for (const [sleutel, t] of i.banden) {
     if (binnenRing(k, t.x, t.y)) continue;
-    if (t.goed) s.voorraad[t.goed] = (s.voorraad[t.goed] ?? 0) + 1;
+    if (t.goed) v[t.goed] = (v[t.goed] ?? 0) + 1;
     i.banden.delete(sleutel);
-    i.delen.band++;
+    terug(v, G.bouw.band);
     n++;
   }
-  if (n) log(energie(s), `INGEPAKT: ${n} ONDERDELEN. ZET ZE OPNIEUW NEER`, 'cyaan');
+  if (n) log(energie(s), `PACKED UP ${n} THINGS OUTSIDE THE RING. COSTS REFUNDED`, 'cyaan');
 }
 
 export function industrieTrucje(getallen: IndustrieGetallen): Trucje {

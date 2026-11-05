@@ -31,14 +31,15 @@ Linksonder zit het controlepaneel van de muizen. Elke knop doet iets; wijs iets 
   hoger. De machine moet volle stroom krijgen als de stream komt.
 
 ## Bouwen (muizen)
-Rechtsboven zit de bouwbalk. Alles wat je neerzet moet eerst gemaakt worden in de **fabricator** naast de machine.
-- Klik op **+kosten** onder een knop (of **shift** + toets) om er een te laten maken. Rechtsklik op de regel eronder
-  schrapt de laatste. De fabricator heeft stroom en muizen nodig.
-- **B Boor**: klik naast een veld grondstoffen. De machine gooit de boor erheen. Hij heeft stroom nodig.
-- **L Band**: sleep van de boor naar de opslag of een stapel. **R** draait een losse tegel.
-- **P Paal**: brengt stroom verder. Kabels lopen van paal naar paal; een rode paal hangt nergens aan.
-- **O Stapel**: meer opslag voor één grondstof (**R** wisselt welke). Binnen de ring.
-- **X Slopen**: klik of sleep. Je krijgt het onderdeel terug.
-- **Muizen werken zelf**: eerst bouwen, dan de fabricator, dan boren leeghalen, en anders zelf graven.
+Rechts zit het bouwmenu (BUILD). Bij elk ding staat wat het kost: groen = je hebt genoeg, rood = te weinig.
+Bouwen kost onderdelen: **platen** (PLATE) en **balken** (BEAM). Die maak je in een fabricator.
+- **F Fabricator**: binnen de ring. Klik erop en kies rechts wat hij maakt (PLATE, BEAM of STOP). Hij heeft stroom en
+  muizen nodig; wat eruit komt gaat op een band of de muizen brengen het naar de opslag.
+- **B Boor** (DRILL): klik naast een veld grondstoffen. De machine gooit de boor erheen. Hij heeft stroom nodig.
+- **L Band** (BELT): sleep van een boor of fabricator naar de opslag of een stapel. **R** draait een losse tegel.
+- **P Paal** (POLE): brengt stroom verder. Kabels lopen van paal naar paal; een rode paal hangt nergens aan.
+- **O Stapel** (STOCKPILE): meer opslag voor één grondstof (**R** wisselt welke). Binnen de ring.
+- **X Slopen** (DEMOLISH): klik of sleep. Je krijgt de kosten terug.
+- **Muizen werken zelf**: eerst bouwen, dan de fabricators, dan boren en fabricators leeghalen, en anders zelf graven.
   Stuur je ze ergens heen, dan doen ze dat.
-- Bij de stream wordt alles buiten de ring ingepakt en krijg je de bouwkosten terug.
+- Bij de stream wordt alles buiten de ring ingepakt en krijg je de bouwkosten terug. Alle tekst in het spel is Engels.

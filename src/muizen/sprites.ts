@@ -24,6 +24,10 @@ export const MUIZEN_SPRITES = {
   'hoop-hout': { w: 28, h: 24, ankerX: 14, ankerY: 19, tegels: 0, gloed: false },
   'last-kristal': { w: 18, h: 16, ankerX: 9, ankerY: 13, tegels: 0, gloed: true },
   'hoop-kristal': { w: 28, h: 24, ankerX: 14, ankerY: 19, tegels: 0, gloed: true },
+  'last-plaat': { w: 18, h: 16, ankerX: 9, ankerY: 13, tegels: 0, gloed: false },
+  'hoop-plaat': { w: 28, h: 24, ankerX: 14, ankerY: 19, tegels: 0, gloed: false },
+  'last-balk': { w: 18, h: 16, ankerX: 9, ankerY: 13, tegels: 0, gloed: false },
+  'hoop-balk': { w: 28, h: 24, ankerX: 14, ankerY: 19, tegels: 0, gloed: false },
   'stapel': { w: 80, h: 60, ankerX: 40, ankerY: 28, tegels: 2, gloed: true },
   'houtbrander': { w: 88, h: 130, ankerX: 44, ankerY: 90, tegels: 2, gloed: true },
 } as const;

@@ -1,16 +1,16 @@
 // Muizen werken zelf. Een muis die niets te doen heeft zoekt werk, in deze volgorde:
-//   1. bouwen: bouwplekken afmaken (boor, band, paal, stapel)
-//   2. fabriceren: in de fabricator werken als er iets in de rij staat
-//   3. sjouwen: een boor zonder band leeghalen en de brokken naar de stapel brengen
+//   1. bouwen: bouwplekken afmaken (fabricator, boor, band, paal, stapel)
+//   2. fabriceren: in een fabricator werken die een recept heeft
+//   3. sjouwen: een boor of fabricator zonder band leeghalen en het naar de stapel of de opslag brengen
 //   4. graven: zelf grondstof halen uit het dichtstbijzijnde veld waar nog plek voor is in de opslag
 // Je kunt muizen nog steeds verplaatsen of naar een veld sturen; daarna zoeken ze werk vanaf waar ze staan.
 // Het lopen, graven en sjouwen naar de opslag doet de kern (werkers.ts); dit trucje kiest alleen het werk.
 import type { SpelStaat } from '../kern/spel';
-import type { EenheidSoort, Grondstof, Trucje } from '../kern/types';
+import type { EenheidSoort, Goed, Grondstof, Trucje } from '../kern/types';
 import { stuur, type Werker } from '../kern/werkers';
 import { hash01 } from '../kern/toeval';
 import {
-  blok2, boorHeeftBand, getallen, gevoed, GRONDSTOFFEN, industrie, midden, opslagMax, vast, type Boor,
+  blok2, getallen, gevoed, GRONDSTOFFEN, heeftBand, industrie, midden, opslagMax, type Maker,
 } from './industrie';
 
 export type Klus = 'bouw' | 'fab' | 'haal' | 'breng' | 'graaf';
@@ -47,7 +47,7 @@ function randPlek(b: { x: number; y: number; breed: number; diep: number }, id: 
 }
 
 // Waar breng je een grondstof heen? De dichtstbijzijnde stapel voor die grondstof, anders de opslag.
-function brengPlek(s: SpelStaat, g: Grondstof, w: Werker): { x: number; y: number } {
+function brengPlek(s: SpelStaat, g: Goed, w: Werker): { x: number; y: number } {
   const st = industrie(s).stapels.filter((p) => p.goed === g && !p.af);
   let beste = midden(s.kaart.opslag), af = Infinity;
   for (const p of st) {
@@ -68,10 +68,11 @@ function stapWerk(s: SpelStaat, sec: number): void {
   // eerst: wie is waar mee bezig, en het werk zelf
   const bouwplek = new Map<number | string, { af: number }>();
   for (const b of i.boren) if (b.af && !b.vlieg) bouwplek.set(b.id, b);
-  for (const p of [...i.palen, ...i.stapels]) if (p.af) bouwplek.set(p.id, p);
+  for (const p of [...i.palen, ...i.stapels, ...i.fabrieken]) if (p.af) bouwplek.set(p.id, p);
   for (const [k, t] of i.banden) if (t.af) bouwplek.set(`b${k}`, t);
   const aantal = new Map<number | string, number>();
-  let ploeg = 0;
+  const ploeg = new Map<number, number>();
+  const makers: Maker[] = [...i.boren, ...i.fabrieken];
   for (const w of s.werkers) {
     const t = W.taken.get(w.id);
     if (!t) continue;
@@ -101,14 +102,15 @@ function stapWerk(s: SpelStaat, sec: number): void {
       aantal.set(t.doel, (aantal.get(t.doel) ?? 0) + 1);
       if (daar(w, t)) plek.af = Math.max(0, plek.af - sec);
     } else if (t.klus === 'fab') {
-      if (!i.fabricator.rij.length) {
+      const f = i.fabrieken.find((x) => x.id === t.doel);
+      if (!f || f.af || !f.recept) {
         W.taken.delete(w.id);
         continue;
       }
-      aantal.set('fab', (aantal.get('fab') ?? 0) + 1);
-      if (daar(w, t)) ploeg++;
+      aantal.set(`f${f.id}`, (aantal.get(`f${f.id}`) ?? 0) + 1);
+      if (daar(w, t)) ploeg.set(f.id, (ploeg.get(f.id) ?? 0) + 1);
     } else if (t.klus === 'haal') {
-      const b = i.boren.find((x) => x.id === t.doel);
+      const b = makers.find((x) => x.id === t.doel);
       if (!b) {
         W.taken.delete(w.id);
         continue;
@@ -126,7 +128,7 @@ function stapWerk(s: SpelStaat, sec: number): void {
           b.buffer.shift();
           n++;
         }
-        w.lading = { goed: g, n };
+        w.lading = { goed: g as Grondstof, n }; // de kern noemt het Grondstof, maar telt elk goed op in de opslag
         const p = brengPlek(s, g, w);
         W.taken.set(w.id, { klus: 'breng', doel: g, x: p.x, y: p.y });
         stuur(s, [w.id], p.x, p.y);
@@ -140,7 +142,7 @@ function stapWerk(s: SpelStaat, sec: number): void {
       }
     }
   }
-  i.fabricator.ploeg = ploeg;
+  for (const f of i.fabrieken) f.ploeg = ploeg.get(f.id) ?? 0;
 
   // telling voor het paneel
   const tel = { bouw: 0, fab: 0, haal: 0, breng: 0, graaf: 0, vrij: 0 };
@@ -184,7 +186,7 @@ function stapWerk(s: SpelStaat, sec: number): void {
 
   // 1. bouwen
   for (const b of i.boren) if (b.af && !b.vlieg) need(b.id, G.ploegBouw, blok2(b));
-  for (const p of i.stapels) if (p.af) need(p.id, G.ploegBouw, blok2(p));
+  for (const p of [...i.stapels, ...i.fabrieken]) if (p.af) need(p.id, G.ploegBouw, blok2(p));
   for (const p of i.palen) if (p.af) need(p.id, 1, { x: p.x, y: p.y, breed: 1, diep: 1 });
   for (const [k, t] of i.banden) if (t.af) need(`b${k}`, 1, { x: t.x, y: t.y, breed: 1, diep: 1 }, true);
   function need(doel: number | string, max: number, b: { x: number; y: number; breed: number; diep: number }, op = false) {
@@ -197,15 +199,15 @@ function stapWerk(s: SpelStaat, sec: number): void {
     });
   }
   // 2. fabriceren
-  const fb = vast(s).fabricator;
-  if (i.fabricator.rij.length && gevoed(s, fb)) {
-    const c = midden(fb);
-    geef(G.fabricator.ploeg - (aantal.get('fab') ?? 0), c.x, c.y, (w) => ({ klus: 'fab', doel: 'fab', ...randPlek(fb, w.id) }));
+  for (const f of i.fabrieken) {
+    if (f.af || !f.recept || !gevoed(s, blok2(f))) continue;
+    const fb = blok2(f), c = midden(fb);
+    geef(G.fabricator.ploeg - (aantal.get(`f${f.id}`) ?? 0), c.x, c.y, (w) => ({ klus: 'fab', doel: f.id, ...randPlek(fb, w.id) }));
   }
   // 3. boren zonder band leeghalen (alleen als er plek in de opslag is)
-  const ruimte = (g: Grondstof) => opslagMax(s, g) - (v[g] ?? 0);
-  for (const b of i.boren as Boor[]) {
-    if (b.af || b.vlieg || !b.buffer.length || boorHeeftBand(i, b) || ruimte(b.buffer[0]) <= 0) continue;
+  const ruimte = (g: Goed) => opslagMax(s, g) - (v[g] ?? 0);
+  for (const b of makers) {
+    if (b.af || (b as { vlieg?: number }).vlieg || !b.buffer.length || heeftBand(i, b) || ruimte(b.buffer[0]) <= 0) continue;
     const n = Math.min(4, Math.ceil(b.buffer.length / DRAAGT)) - (aantal.get(b.id) ?? 0);
     if (n > 0) geef(n, b.x + 0.5, b.y + 0.5, (w) => ({ klus: 'haal', doel: b.id, ...randPlek(blok2(b), w.id) }));
   }

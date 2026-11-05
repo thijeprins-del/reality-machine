@@ -18,7 +18,7 @@ Pak je een taak op: zet eerst je naam erachter in je PR. Klaar: `- [x] … (#PR)
   in massa selecteren en laten graven (Thije)
 - [x] M0 Visuele proto: muizen, mech, fabriek, machines en kabels als sprites, scène op `?proto=muizen`
 - [ ] M1 Spellus en machine-energie (met K3/K4). Stroomnet + paneel: thije/energiepaneel (Thije)
-- [ ] M1b Economische lus: boor gooien, lompe band, fabricator, palen met kabels, stapel per grondstof, muizen werken zelf, energie als keuze (Thije)
+- [ ] M1b Economische lus: boor gooien, lompe band, fabricator (te bouwen, recepten), onderdelen, bouwmenu, palen met kabels, stapel per grondstof, muizen werken zelf, energie als keuze, Engels in beeld (Thije)
 - [ ] M2 4 eenheden, loot-tabel, inbouwen/ontleden
 
 ## Otters (Lieuwe)
