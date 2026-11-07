@@ -19,7 +19,9 @@ export const KAART_MIN = 48; // kleiner past de schijf met de velden eromheen ni
 export const RING_STRAAL = 14; // tegels vanaf het midden van de machine
 
 // Hoogte van het land, in hele niveaus. Elke tegel heeft zijn eigen vier hoeken (zie kern/terrein.ts); één niveau is
-// HOOGTE_PX schermpixels omhoog. Een tegel met alle hoeken op HOOGTE_MIN is water. Je schijf ligt op 0.
+// HOOGTE_PX schermpixels omhoog. Een tegel met alle hoeken op HOOGTE_MIN is water. De wereld rond de schijf ligt op 0, de schijf zelf op SCHIJF_HOOGTE:
+// één blok hoog, met kleppen rondom die bij de landing uitklappen tot hellingen naar de grond (zie kaart.ts).
+export const SCHIJF_HOOGTE = 1;
 export const HOOGTE_MIN = -1;
 export const HOOGTE_MAX = 5;
 export const HOOGTE_PX = 16;
@@ -30,8 +32,9 @@ export const MAX_OPRITTEN = 12;
 export const MIN_PLATEAU = 40;
 // Plateaus komen pas vanaf dit deel van de weg tussen TERREIN_VLAK en TERREIN_VOL: niet vlak naast je schijf.
 export const PLATEAU_VANAF = 0.6;
-// Tot zo ver buiten de ring blijft de wereld vlak (de schijf en haar schaduw); hier zijn de heuvels op volle hoogte.
-export const TERREIN_VLAK = 3.5;
+// Tot zo ver buiten de ring blijft de wereld vlak (de schijf en haar kleppen: de verste klephoek ligt op 4,82); hier zijn de
+// heuvels op volle hoogte.
+export const TERREIN_VLAK = 5;
 export const TERREIN_VOL = 10;
 
 // Hoe hoger, hoe lichter: elk niveau is een stap helderder, zodat je hoogte in één oogopslag ziet. Laag land op 0 krijgt

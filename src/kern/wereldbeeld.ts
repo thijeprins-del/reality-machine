@@ -2,9 +2,9 @@
 // De factie levert de plaatjes (FactieBeeld); de kern weet niet welke factie het is.
 import { Assets, BlurFilter, ColorMatrixFilter, Container, Graphics, Rectangle, Sprite, Texture } from 'pixi.js';
 import { naarScherm, TEGEL_B, TEGEL_H } from './iso';
-import { dimensieKleur, DIMENSIE_DUUR_SEC, hoogteTint, HOOGTE_MIN, HOOGTE_PX, SPRONG_SEC, THUIS, type DimensieWereld } from '../data/dimensies';
+import { dimensieKleur, DIMENSIE_DUUR_SEC, hoogteTint, HOOGTE_MIN, HOOGTE_PX, SCHIJF_HOOGTE, SPRONG_SEC, THUIS, type DimensieWereld } from '../data/dimensies';
 import { tekenDebug } from './debugbeeld';
-import { opSchijf, schijfStraal, type Blok, type Kaart } from './kaart';
+import { klepHoeken, opKlep, opSchijf, schijfStraal, type Blok, type Kaart } from './kaart';
 import type { SpelStaat } from './spel';
 import { hoeken, hoogteOp, knikLinksRechts, TEGEL_LAND, tegelOnder, TEGEL_WATER } from './terrein';
 import { TerreinBewerker } from './terreinbewerker';
@@ -118,7 +118,8 @@ export class WereldBeeld {
       zIndex: '4',
     });
     document.body.append(this.duister, this.flits);
-    this.schijf.addChild(tekenSchijf(k));
+    this.kleppen = new Kleppen(k);
+    this.schijf.addChild(tekenSchijf(k), this.kleppen.g);
     this.schijfVan = k.machine;
     this.machineNu = k.machine;
     this.dimensie = this.staat.dimensie;
@@ -241,7 +242,9 @@ export class WereldBeeld {
       for (let kol = 0; kol < breed; kol++) {
         if (opSchijf(k, kol, rij)) continue;
         const h = hash01(rij * 1000 + kol + 77);
-        const c4 = hoeken(k, kol, rij);
+        // Onder een klep ligt gewoon vlakke grond: die zie je zolang hij nog niet uitgeklapt is. De klep zelf tekent Kleppen.
+        const klep = opKlep(k, kol, rij);
+        const c4 = klep ? { a: 0, r: 0, v: 0, l: 0 } : hoeken(k, kol, rij);
         if (k.soort[rij * breed + kol] === TEGEL_WATER) {
           // De gloed ligt boven alles, dus alleen op water dat je ook echt ziet: niet achter een heuvel.
           if (wereld.waterGloeit) {
@@ -263,17 +266,17 @@ export class WereldBeeld {
           leg(celLand(c4.a - laag, c4.r - laag, c4.v - laag, c4.l - laag, Math.floor(h * VARIANTEN)), kol, rij, laag, hoogteTint((c4.a + c4.r + c4.v + c4.l) / 4));
           const v = hash01(h * 1e6);
           if (wereld.vlekGloeit && v < wereld.vlekKans) {
-            const p = naarScherm(kol, rij, hoogteOp(k, kol, rij));
+            const p = naarScherm(kol, rij, klep ? 0 : hoogteOp(k, kol, rij));
             gl.rect(Math.round((p.x - 8 + Math.round(v * 400) % 14) / PIXEL) * PIXEL, Math.round((p.y - 2 + Math.round(v * 900) % 4) / PIXEL) * PIXEL, 4 + Math.round(v * 77) % 6, PIXEL).fill(wereld.vlek);
           }
         }
         // achter-links: de buur (kol - 1, rij), van de linkerhoek naar de achterhoek
-        if (kol > 0) {
+        if (kol > 0 && !klep) {
           const n = hoeken(k, kol - 1, rij);
           wand(1, kol - 0.5, rij + 0.5, n.v, n.r, c4.l, c4.a, hash01(h * 7e5));
         }
         // achter-rechts: de buur (kol, rij - 1), van de achterhoek naar de rechterhoek
-        if (rij > 0) {
+        if (rij > 0 && !klep) {
           const n = hoeken(k, kol, rij - 1);
           wand(0, kol - 0.5, rij - 0.5, n.l, n.v, c4.a, c4.r, hash01(h * 9e5));
         }
@@ -298,6 +301,7 @@ export class WereldBeeld {
   // Stream gehaald: de oude wereld wordt eronder weggerukt, de nieuwe pas zichtbaar bij de landing.
   private sprong(): void {
     this.dimensie = this.staat.dimensie;
+    this.sprongTijd = this.t;
     const k = this.staat.kaart;
     this.oudeGrond?.destroy({ children: true });
     this.oudeGrond = new Container();
@@ -342,6 +346,8 @@ export class WereldBeeld {
   private golven: { s: Sprite; set: TegelSet; cel: (beeld: number) => number }[] = []; // water en schuim die bewegen
   private golfBeeld = 0;
   private landTijd = -10; // wanneer we landden (op de klok van this.t)
+  private sprongTijd = -10; // wanneer we voor het laatst sprongen
+  private kleppen!: Kleppen;
 
   private landt(): void {
     const k = this.staat.kaart;
@@ -434,6 +440,10 @@ export class WereldBeeld {
     const geland = this.t - this.landTijd;
     this.wereldGrond.alpha = s.onderweg > 0 ? 0 : Math.min(1, geland / 0.6 + 0.4) * (Math.random() < 0.1 && geland < 1 ? 0.5 : 1);
     this.duister.style.opacity = String(duister);
+    // de kleppen: snel dicht bij de sprong, rustig uit na de landing
+    const klepUit = s.onderweg > 0 ? 1 - (this.t - this.sprongTijd) / 0.4 : (geland - 0.1) / 0.8;
+    const klep = Math.max(0, Math.min(1, klepUit));
+    this.kleppen.teken(klep * klep * (3 - 2 * klep));
 
     // schudden
     this.schud = Math.max(0, this.schud - sec * (this.schud > 8 ? 18 : 6));
@@ -590,7 +600,7 @@ const ruit = (x: number, y: number) => [x, y - TEGEL_H / 2, x + TEGEL_B / 2, y, 
 function tekenHoogtelijnen(k: Kaart): Graphics {
   const g = new Graphics();
   const { breed, diep } = k;
-  const land = (x: number, y: number) => x >= 0 && y >= 0 && x < breed && y < diep && k.soort[y * breed + x] === TEGEL_LAND && !opSchijf(k, x, y);
+  const land = (x: number, y: number) => x >= 0 && y >= 0 && x < breed && y < diep && k.soort[y * breed + x] === TEGEL_LAND && !opSchijf(k, x, y) && !opKlep(k, x, y);
   const vlak = (c: { a: number; r: number; v: number; l: number }) => c.a === c.r && c.a === c.v && c.a === c.l;
   const zacht: number[] = [], hard: number[] = [];
   const lijn = (naar: number[], x0: number, y0: number, z0: number, x1: number, y1: number, z1: number, kol: number, rij: number) => {
@@ -650,13 +660,15 @@ function tekenRand(k: Kaart, wereld: DimensieWereld): Graphics {
 
 // Je eigen schijf: grauwe tegels, grof afgebroken rand die boven de wereld uitsteekt (rotswand aan de voorkant,
 // slagschaduw op de wereld), een naad, brokken die eraf vallen en roestige klemmen. De ring er matte verf op.
+// Hij ligt echt één blok hoger dan de wereld: alles hieronder wordt op z = 0 getekend en de hele schijf dan opgetild.
 function tekenSchijf(k: Kaart): Container {
   const c = new Container();
+  c.y = -SCHIJF_HOOGTE * HOOGTE_PX;
   const schaduw = new Graphics();
   const wand = new Graphics();
   const top = new Graphics();
   const naad = new Graphics();
-  const WAND = 14;
+  const WAND = SCHIJF_HOOGTE * HOOGTE_PX; // de wand loopt van de bovenkant tot de grond
   const r0 = Math.ceil(k.ring.r + 3);
   for (let rij = Math.floor(k.ring.y - r0); rij <= k.ring.y + r0; rij++)
     for (let kol = Math.floor(k.ring.x - r0); kol <= k.ring.x + r0; kol++) {
@@ -712,6 +724,59 @@ function tekenSchijf(k: Kaart): Container {
   return c;
 }
 
+// De kleppen rond de schijf. Tijdens de sprong staan ze rechtop tegen de rand; bij de landing klappen ze uit tot een helling
+// naar de grond. Het uitklappen is alleen beeld: voor de spelregels liggen ze er altijd (tijdens de sprong loopt toch niemand).
+// Elke klep is een stuk vervormend staal, dus dit kan geen sprite zijn.
+class Kleppen {
+  readonly g = new Graphics();
+  private stand = -1;
+  private lijst: { kol: number; rij: number; z: number[]; h: number }[] = [];
+
+  constructor(k: Kaart) {
+    const r0 = Math.ceil(k.ring.r + 5);
+    for (let rij = Math.floor(k.ring.y - r0); rij <= k.ring.y + r0; rij++)
+      for (let kol = Math.floor(k.ring.x - r0); kol <= k.ring.x + r0; kol++)
+        if (opKlep(k, kol, rij)) this.lijst.push({ kol, rij, z: klepHoeken(k, kol, rij), h: hash01(rij * 1000 + kol + 5) });
+    this.lijst.sort((a, b) => a.kol + a.rij - (b.kol + b.rij)); // van achter naar voor
+  }
+
+  // stand: 0 = rechtop, 1 = helemaal uit.
+  teken(stand: number): void {
+    if (stand === this.stand) return;
+    this.stand = stand;
+    const g = this.g.clear();
+    const HOEK = [[0, 0], [1, 0], [1, 1], [0, 1]];
+    for (const { kol, rij, z, h } of this.lijst) {
+      const uit = HOEK.map(([di, dj], i) => naarScherm(kol + di - 0.5, rij + dj - 0.5, z[i]));
+      const pt = z.map((zi, i) => {
+        if (zi > 0) return uit[i];
+        // een lage hoek draait om de dichtstbijzijnde hoge hoek: de buur langs de rand, anders de overkant
+        const scharnier = [(i + 1) & 3, (i + 3) & 3, (i + 2) & 3].find((j) => z[j] > 0) as number;
+        const op = { x: uit[scharnier].x, y: uit[scharnier].y - KLEP_OP };
+        return { x: op.x + (uit[i].x - op.x) * stand, y: op.y + (uit[i].y - op.y) * stand };
+      });
+      const [a, r, v, l] = pt;
+      // licht van linksvoor: een helling die daarheen kijkt is lichter
+      const naarX = (z[1] + z[2] - z[0] - z[3]) / 2, naarY = (z[2] + z[3] - z[0] - z[1]) / 2;
+      const kleur = staal(1 + (naarX - naarY) * 0.22 + (h - 0.5) * 0.1);
+      const drie = knikLinksRechts(z[0], z[1], z[2], z[3]) ? [[a, r, l], [v, l, r]] : [[a, r, v], [a, v, l]];
+      for (const [p, q, s] of drie) g.poly([p.x, p.y, q.x, q.y, s.x, s.y]).fill(kleur);
+      // de vier randen: scharnier bovenaan donker, naden tussen de platen, gele lip waar de klep op de grond komt
+      for (let i = 0; i < 4; i++) {
+        const j = (i + 1) & 3, p = pt[i], q = pt[j];
+        if (z[i] === 0 && z[j] === 0) g.moveTo(p.x, p.y).lineTo(q.x, q.y).stroke({ width: PIXEL, color: 0x8c7420, alpha: 0.9 });
+        else if (z[i] > 0 && z[j] > 0) g.moveTo(p.x, p.y).lineTo(q.x, q.y).stroke({ width: PIXEL, color: 0x0a0908, alpha: 0.9 });
+        else g.moveTo(p.x, p.y).lineTo(q.x, q.y).stroke({ width: 1, color: 0x0a0908, alpha: 0.5 });
+      }
+    }
+  }
+}
+const KLEP_OP = 24; // zo ver steekt een klep boven de rand als hij rechtop staat
+const staal = (f: number) => {
+  const d = (c: number) => Math.max(0, Math.min(255, Math.round(c * f)));
+  return (d(0x48) << 16) | (d(0x4a) << 8) | d(0x48);
+};
+
 // De transportring: slecht geverfde gele streepjes, mat, op pixelmaat. Verf mist hier en daar, kleur wisselt, randen rafelen.
 function tekenRing(k: Kaart): Graphics {
   const g = new Graphics();
@@ -747,10 +812,10 @@ interface Pt {
 // Punt bovenop de machine, waar de bliksem uit komt (schermcoördinaten van de wereld).
 function machineTop(k: Kaart): Pt {
   const p = naarScherm(k.machine.x + k.machine.breed / 2 - 0.5, k.machine.y + k.machine.diep / 2 - 0.5);
-  return { x: p.x, y: p.y - 460 };
+  return { x: p.x, y: p.y - 460 - SCHIJF_HOOGTE * HOOGTE_PX };
 }
 function ringPunt(k: Kaart, hoek: number): Pt {
-  return naarScherm(k.ring.x + Math.cos(hoek) * k.ring.r, k.ring.y + Math.sin(hoek) * k.ring.r);
+  return naarScherm(k.ring.x + Math.cos(hoek) * k.ring.r, k.ring.y + Math.sin(hoek) * k.ring.r, SCHIJF_HOOGTE);
 }
 
 // Speciale effecten: bliksem, schokgolven, vonken en stof. Alleen beeld, dus Math.random mag.

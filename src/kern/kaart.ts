@@ -1,5 +1,5 @@
 // De kaart van een dimensie: de machine en de opslag in het midden, velden met grondstoffen eromheen.
-import { dimensieHeuvels, dimensieKaart, KAART_BREED, KAART_DIEP, KAART_MIN, RING_STRAAL, VELDEN } from '../data/dimensies';
+import { dimensieHeuvels, dimensieKaart, KAART_BREED, KAART_DIEP, KAART_MIN, RING_STRAAL, SCHIJF_HOOGTE, VELDEN } from '../data/dimensies';
 import type { Doorgang } from './routes';
 import { maakTerrein, openRanden, tegelSoorten, type Terrein } from './terrein';
 import { hash01, volgende } from './toeval';
@@ -36,7 +36,7 @@ export function binnenRing(k: Kaart, x: number, y: number): boolean {
 
 // Je eigen land: een grove schijf die buiten de ring steekt, alsof hij lomp in de wereld is geplakt.
 // Straal op hoek `hoek` (radialen). Altijd dezelfde vorm: het is steeds hetzelfde stuk land.
-export function schijfStraal(k: Kaart, hoek: number): number {
+export function schijfStraal(k: Pick<Kaart, 'ring'>, hoek: number): number {
   const n = 28;
   const f = ((hoek / (Math.PI * 2)) % 1 + 1) % 1 * n;
   const i = Math.floor(f), t = f - i;
@@ -59,9 +59,34 @@ function kaartMaat(dimensie: number): [number, number] {
 }
 
 // Is tegel (kol, rij) deel van je eigen schijf?
-export function opSchijf(k: Kaart, kol: number, rij: number): boolean {
+export function opSchijf(k: Pick<Kaart, 'ring'>, kol: number, rij: number): boolean {
   const dx = kol - k.ring.x, dy = rij - k.ring.y;
   return Math.hypot(dx, dy) <= schijfStraal(k, Math.atan2(dy, dx));
+}
+
+// Is tegel (kol, rij) een klep: geen schijf, maar hij raakt de schijf wel (ook schuin)? De kleppen klappen bij de landing uit
+// tot een helling rondom, zodat eenheden van de schijf af kunnen lopen.
+export function opKlep(k: Pick<Kaart, 'ring'>, kol: number, rij: number): boolean {
+  if (Math.hypot(kol - k.ring.x, rij - k.ring.y) > k.ring.r + 4.2 || opSchijf(k, kol, rij)) return false;
+  for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) if (opSchijf(k, kol + di, rij + dj)) return true;
+  return false;
+}
+
+// De vier hoeken van een klep (achter, rechts, voor, links, zoals hoeken() in terrein.ts): boven waar hij de schijf raakt,
+// verder op de grond.
+export function klepHoeken(k: Pick<Kaart, 'ring'>, kol: number, rij: number): number[] {
+  return [[0, 0], [1, 0], [1, 1], [0, 1]].map(([di, dj]) =>
+    opSchijf(k, kol + di - 1, rij + dj - 1) || opSchijf(k, kol + di, rij + dj - 1) || opSchijf(k, kol + di - 1, rij + dj) || opSchijf(k, kol + di, rij + dj) ? SCHIJF_HOOGTE : 0);
+}
+
+// Zet de schijf en haar kleppen in het terrein. Mag vaker: de uitkomst is steeds hetzelfde.
+function legSchijf(t: Terrein, ring: Kaart['ring']): void {
+  const k = { ring }, r0 = Math.ceil(ring.r + 5);
+  for (let y = Math.max(0, Math.floor(ring.y - r0)); y <= Math.min(t.diep - 1, ring.y + r0); y++)
+    for (let x = Math.max(0, Math.floor(ring.x - r0)); x <= Math.min(t.breed - 1, ring.x + r0); x++) {
+      if (opSchijf(k, x, y)) t.hoogte.fill(SCHIJF_HOOGTE, (y * t.breed + x) * 4, (y * t.breed + x) * 4 + 4);
+      else if (opKlep(k, x, y)) t.hoogte.set(klepHoeken(k, x, y), (y * t.breed + x) * 4);
+    }
 }
 
 export function maakKaart(seed: number, dimensie: number): Kaart {
@@ -74,13 +99,14 @@ export function maakKaart(seed: number, dimensie: number): Kaart {
   const ring = { x: mx + 1.5, y: my + 1.5, r: RING_STRAAL };
   const stroom = stroomVoor(seed, dimensie, 1);
   const terrein = maakTerrein(breed, diep, ring, dimensieHeuvels(dimensie), stroom, midden);
+  legSchijf(terrein, ring);
   const soort = tegelSoorten(terrein);
   const lopen = maakLopen(terrein, soort, midden, machine);
 
   const bezet = new Uint8Array(breed * diep);
   const vrij = (x: number, y: number) =>
     x >= 1 && y >= 1 && x < breed - 1 && y < diep - 1 && !bezet[y * breed + x] && lopen.vrij[y * breed + x] === 1 &&
-    Math.hypot(x - ring.x, y - ring.y) > ring.r + 3.5; // grondstoffen alleen buiten de ring en de schijf
+    Math.hypot(x - ring.x, y - ring.y) > ring.r + 4.5; // grondstoffen alleen buiten de ring, de schijf en de kleppen
 
   const afzettingen: Afzetting[] = [];
   const veldStroom = stroomVoor(seed, dimensie, 2);
@@ -123,6 +149,7 @@ export function maakKaart(seed: number, dimensie: number): Kaart {
 
 // Het terrein is veranderd (terreinbewerker): tegelsoorten en routes opnieuw.
 export function herberekenTerrein(k: Kaart): void {
+  legSchijf(k, k.ring);
   k.soort = tegelSoorten(k);
   k.lopen = maakLopen(k, k.soort, { x: k.machine.x + 2, y: k.machine.y + 2 }, k.machine);
 }

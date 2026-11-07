@@ -50,7 +50,9 @@ Nog een skelet. Werk dit bij bij elke grote regelwijziging.
 - Hoe hoger, hoe lichter (`hoogteTint`): elk niveau is een stap helderder, zodat je hoogte in één oogopslag ziet.
 - Hoogtelijnen: een dunne lijn waar de grond een heel niveau passeert, zoals op een wandelkaart, en een donkerder lijn
   langs een rand waar het land erachter lager ligt (een wand die van je af kijkt zie je anders niet).
-- De schijf ligt op hoogte 0. Tot 3,5 tegels buiten de ring blijft de wereld vlak, want muizen moeten eraf kunnen.
+- De schijf ligt één blok hoog (`SCHIJF_HOOGTE`). Langs de hele rand zitten kleppen: bij de landing klappen ze uit tot
+  een helling van één tegel naar de grond, zodat eenheden eraf kunnen. Tot 5 tegels buiten de ring blijft de wereld vlak,
+  zodat elke klep op hoogte 0 uitkomt.
 - Eenheden en grondstoffen staan op de grond; **eenheden worden altijd boven het terrein getekend**, zodat een muis
   achter een heuvel zichtbaar blijft. Klikken raakt de voorste grond op die plek.
 - Lopende eenheden kunnen niet over water en niet langs een wand, hoe laag ook, in geen van beide richtingen; ze kunnen
