@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reality Machine · GitHub Game Off 2026</title>
+<meta name="description" content="Bouw een gigantische muizenindustrie op een stuk rots dat van dimensie naar dimensie springt. Strategie en economie, isometrisch. GitHub Game Off 2026, thema SHIFT.">
+<meta property="og:title" content="Reality Machine">
+<meta property="og:description" content="Jouw fabriek. Op een stuk rots. Dat steeds van dimensie springt. Muizen tegen otters, GitHub Game Off 2026.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://thijeprins.nl/reality-machine/dev/teaser/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#07080a">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root{--zwart:#07080a;--staal:#15171a;--rand:#2c3033;--tekst:#e8ecf4;--grijs:#8a8f94;--neon:#9dff2e;--geel:#ffd23f;--rood:#ff2e4a;--cyaan:#3ff0ff;--dim:#ff7a1a;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--zwart);color:var(--tekst);font:16px/1.55 "Share Tech Mono",ui-monospace,monospace}
+a{color:inherit}
+.held{position:relative;height:100vh;height:100svh;min-height:520px;overflow:hidden}
+#scene{position:absolute;inset:0;width:100%;height:100%;display:block}
+.laag{position:absolute;inset:0;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between;padding:clamp(16px,4vw,48px)}
+.laag a,.laag button{pointer-events:auto}
+.tag{display:inline-block;font-size:.8rem;letter-spacing:.2em;color:var(--neon);border:1px solid var(--neon);padding:.3em .7em;box-shadow:0 0 12px #9dff2e55,inset 0 0 12px #9dff2e22;text-shadow:0 0 8px var(--neon);background:#07080acc}
+h1{margin:.35em 0 0;font:400 clamp(2.6rem,8.5vw,7.2rem)/.9 "Bungee",system-ui,sans-serif;letter-spacing:.02em;color:#fff6f0;max-width:9ch;
+  text-shadow:0 0 6px #fff,0 0 18px var(--dim),0 0 42px var(--dim),0 0 90px var(--dim),4px 4px 0 #000;animation:zoem 6s infinite}
+h1 span{display:block;color:var(--cyaan);text-shadow:0 0 6px #fff,0 0 18px var(--cyaan),0 0 46px var(--cyaan),4px 4px 0 #000}
+@keyframes zoem{0%,91%,95%,100%{opacity:1}92%{opacity:.45}93%{opacity:1}94%{opacity:.6}}
+.hype{margin:18px 0 0;max-width:30ch;font-size:clamp(1.05rem,2.3vw,1.45rem);line-height:1.35;color:var(--tekst);text-shadow:0 2px 0 #000,0 0 14px #000}
+.hud{align-self:flex-start;min-width:min(440px,100%);background:#07080ad9;border:1px solid var(--rand);border-left:3px solid var(--dim);padding:12px 14px;box-shadow:0 0 24px #000}
+.hud .rij{display:flex;justify-content:space-between;gap:16px;align-items:baseline}
+.hud small{color:var(--grijs);letter-spacing:.14em;font-size:.72rem}
+.hud b{font-weight:400;color:var(--dim);text-shadow:0 0 10px var(--dim);letter-spacing:.06em}
+#streamTijd{font-size:1.7rem;color:#fff;text-shadow:0 0 10px var(--dim)}
+.balk{height:4px;background:#1c1f22;margin:8px 0 6px;overflow:hidden}
+#streamBalk{height:100%;background:var(--dim);box-shadow:0 0 10px var(--dim);transform-origin:left;transition:transform .1s linear}
+#dimZin{color:var(--grijs);font-size:.85rem;margin:0}
+body.alarm .hud{border-left-color:var(--rood);animation:alarm .25s steps(2) infinite}
+body.alarm #streamTijd{color:var(--rood);text-shadow:0 0 12px var(--rood)}
+@keyframes alarm{50%{box-shadow:0 0 30px #ff2e4a88}}
+.knoppen{display:flex;flex-wrap:wrap;gap:12px;margin-top:22px}
+.knop{display:inline-block;font:400 .95rem "Bungee",system-ui,sans-serif;letter-spacing:.06em;text-decoration:none;padding:.75em 1.2em;color:var(--zwart);background:var(--neon);box-shadow:0 0 18px #9dff2e88,4px 4px 0 #000;transition:transform .1s,box-shadow .1s}
+.knop:hover{transform:translate(-2px,-2px);box-shadow:0 0 30px #9dff2ecc,6px 6px 0 #000}
+.knop.twee{background:#07080acc;color:var(--cyaan);box-shadow:inset 0 0 0 2px var(--cyaan),0 0 14px #3ff0ff55,4px 4px 0 #000}
+.omlaag{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);color:var(--grijs);font-size:.75rem;letter-spacing:.2em;animation:hup 1.6s ease-in-out infinite}
+@keyframes hup{50%{transform:translate(-50%,4px)}}
+
+main{position:relative;max-width:1080px;margin:0 auto;padding:64px 16px 80px}
+h2{font:400 clamp(1.4rem,3.6vw,2.1rem)/1.1 "Bungee",system-ui,sans-serif;margin:0 0 20px;color:var(--geel);text-shadow:0 0 14px #ffd23f88}
+.lead{font-size:1.1rem;max-width:62ch;color:#cfd4dc;margin:0 0 36px}
+.punten{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin:0 0 56px;padding:0;list-style:none}
+.punten li{background:var(--staal);border:1px solid var(--rand);border-top:3px solid var(--c,var(--neon));padding:16px;color:var(--grijs)}
+.punten b{display:block;font:400 .95rem "Bungee",system-ui,sans-serif;letter-spacing:.04em;color:var(--c,var(--neon));text-shadow:0 0 10px var(--c,var(--neon));margin-bottom:6px}
+.duo{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px}
+.paneel{background:var(--staal);border:1px solid var(--rand);padding:18px}
+.paneel h3{margin:0 0 10px;font:400 .9rem "Bungee",system-ui,sans-serif;letter-spacing:.1em;color:var(--cyaan)}
+#aftel{font-size:clamp(1.6rem,5vw,2.4rem);color:#fff;text-shadow:0 0 14px var(--rood),0 0 30px var(--rood);letter-spacing:.04em}
+.log{margin:0;padding:0;list-style:none}
+.log li{padding:6px 0;border-bottom:1px dashed var(--rand);color:#cfd4dc}
+.log time{color:var(--neon);margin-right:.6em}
+footer{color:var(--grijs);font-size:.8rem;margin-top:48px}
+a:focus-visible,button:focus-visible{outline:2px solid var(--geel);outline-offset:3px}
+
+/* ?kaart: compact, voor een iframe op thijeprins.nl. Hele kaart is een link naar de teaser. */
+body.kaart{overflow:hidden;background:#000}
+body.kaart main,body.kaart .omlaag,body.kaart .hype,body.kaart .knoppen,body.kaart #dimZin{display:none}
+body.kaart .held{height:100vh;min-height:0}
+body.kaart .laag{padding:10px 12px}
+body.kaart .tag{font-size:.6rem;padding:.2em .5em}
+body.kaart h1{font-size:clamp(1.4rem,7.5vw,2.6rem);margin-top:.25em}
+body.kaart .hud{min-width:0;width:100%;padding:5px 9px;align-self:stretch;display:grid;grid-template-columns:auto 1fr;column-gap:12px;align-items:center}
+body.kaart .hud .balk{grid-column:1/-1;grid-row:2}
+body.kaart #streamTijd{font-size:1rem}
+body.kaart .hud small{font-size:.58rem}
+body.kaart .hud b{font-size:.7rem}
+body.kaart .balk{margin:5px 0 0}
+.kaartlink{display:none}
+body.kaart .kaartlink{display:block;position:absolute;inset:0;z-index:2}
+/* ?og: stilstaand beeld voor delen op sociale media */
+body.og .omlaag,body.og main,body.og .knoppen{display:none}
+body.og .held{height:630px;min-height:0}
+@media (max-width:640px){.hud{min-width:0;width:100%}.omlaag{display:none}}
+@media (prefers-reduced-motion:reduce){h1,.omlaag,body.alarm .hud{animation:none}}
+</style>
+</head>
+<body>
+<section class="held">
+  <canvas id="scene" aria-label="Een zwevend stuk land vol muizenmachines: een torenhoge reality machine, boren, persen, lopende banden, een mech en tientallen piepkleine muizen die grondstoffen sjouwen. Om de paar seconden springt alles naar een andere dimensie." role="img"></canvas>
+  <a class="kaartlink" href="./" target="_top" aria-label="Open de Reality Machine-teaser"></a>
+  <div class="laag">
+    <div>
+      <span class="tag">GITHUB GAME OFF 2026 · THEMA SHIFT</span>
+      <h1>Reality <span>Machine</span></h1>
+      <p class="hype">Jouw fabriek. Op een stuk rots. Dat elke vier minuten van dimensie springt.</p>
+      <div class="knoppen">
+        <a class="knop" data-dev href="dev/">Speel de dev-build</a>
+        <a class="knop twee" href="https://github.com/thijeprins-del/reality-machine">Volg de bouw</a>
+      </div>
+    </div>
+    <div class="hud" aria-live="off">
+      <div class="rij"><small>VOLGENDE STREAM</small><span id="streamTijd">00:13</span></div>
+      <div class="balk"><div id="streamBalk"></div></div>
+      <div class="rij"><b id="dimNaam">DIMENSIE 0413 · ROESTREGEN</b></div>
+      <p id="dimZin">Het regent roest. De muizen merken het niet eens.</p>
+    </div>
+  </div>
+  <div class="omlaag" aria-hidden="true">▼ SCROL</div>
+</section>
+
+<main>
+  <h2>Driehonderd muizen. Eén machine. Geen weg terug.</h2>
+  <p class="lead">Bouw een gigantische muizenindustrie op een zwevend stuk land. Boren, persen, lopende banden en kabels, en
+    honderden piepkleine muizen die alles sjouwen. Je ketens voeden de reality machine, en die moet vol zitten als de stream
+    komt. Want dan springt alles naar de volgende dimensie. Wie de sprong niet haalt, blijft achter. Voor altijd.</p>
+  <ul class="punten">
+    <li style="--c:var(--dim)"><b>DE STREAM</b>Elke dimensie duurt vier minuten. Daarna springt je land. Genoeg energie en een heel machine, of het is voorbij.</li>
+    <li style="--c:var(--cyaan)"><b>LOOT IS TECH</b>Geen techboom. Wat je in vreemde dimensies vindt, bouw je in of sloop je tot bouwplan.</li>
+    <li style="--c:var(--neon)"><b>DE INDUSTRIE</b>Lange ketens van boor naar pers naar machine. Lopende banden zijn je bloedbaan.</li>
+    <li style="--c:var(--rood)"><b>MUIZEN TEGEN OTTERS</b>Mep de otters zo hard dat hun machine de volgende sprong niet meer haalt.</li>
+  </ul>
+  <div class="duo">
+    <div class="paneel">
+      <h3>GAME OFF SLUIT OVER</h3>
+      <div id="aftel">--</div>
+      <p style="color:var(--grijs);margin:8px 0 0">1 december 2026, 22:37. Daarna speel je het op itch.io.</p>
+    </div>
+    <div class="paneel">
+      <h3>LOGBOEK</h3>
+      <ul class="log">
+        <li><time datetime="2026-11-02">2 nov</time>Speelbaar: 300 muizen graven schroot, hout en kristal.</li>
+        <li><time datetime="2026-11-02">2 nov</time>De muizenstijl staat: grauw, hoekig, veel te veel neon.</li>
+        <li><time datetime="2026-11-01">1 nov</time>Het thema is SHIFT. De machine draait.</li>
+      </ul>
+    </div>
+  </div>
+  <footer>Een spel van Thije en Lieuwe voor GitHub Game Off 2026. Alle beelden getekend met code, geen AI-beelden. Code geschreven met hulp van AI (Claude).</footer>
+</main>
+<script type="module" src="./teaser.ts"></script>
+</body>
+</html>
