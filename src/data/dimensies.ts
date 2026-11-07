@@ -20,7 +20,7 @@ export const RING_STRAAL = 14; // tegels vanaf het midden van de machine
 
 // Hoogte van het land, in hele niveaus. Elke tegel heeft zijn eigen vier hoeken (zie kern/terrein.ts); één niveau is
 // HOOGTE_PX schermpixels omhoog. Een tegel met alle hoeken op HOOGTE_MIN is water. De wereld rond de schijf ligt op 0, de schijf zelf op SCHIJF_HOOGTE:
-// één blok hoog, met kleppen rondom die bij de landing uitklappen tot hellingen naar de grond (zie kaart.ts).
+// één blok hoog, met kleppen rondom die bij de landing uitschuiven tot hellingen naar de grond (zie kaart.ts).
 export const SCHIJF_HOOGTE = 1;
 export const HOOGTE_MIN = -1;
 export const HOOGTE_MAX = 5;

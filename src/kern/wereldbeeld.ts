@@ -242,7 +242,7 @@ export class WereldBeeld {
       for (let kol = 0; kol < breed; kol++) {
         if (opSchijf(k, kol, rij)) continue;
         const h = hash01(rij * 1000 + kol + 77);
-        // Onder een klep ligt gewoon vlakke grond: die zie je zolang hij nog niet uitgeklapt is. De klep zelf tekent Kleppen.
+        // Onder een klep ligt gewoon vlakke grond: die zie je zolang hij nog niet uitgeschoven is. De klep zelf tekent Kleppen.
         const klep = opKlep(k, kol, rij);
         const c4 = klep ? { a: 0, r: 0, v: 0, l: 0 } : hoeken(k, kol, rij);
         if (k.soort[rij * breed + kol] === TEGEL_WATER) {
@@ -440,7 +440,7 @@ export class WereldBeeld {
     const geland = this.t - this.landTijd;
     this.wereldGrond.alpha = s.onderweg > 0 ? 0 : Math.min(1, geland / 0.6 + 0.4) * (Math.random() < 0.1 && geland < 1 ? 0.5 : 1);
     this.duister.style.opacity = String(duister);
-    // de kleppen: snel dicht bij de sprong, rustig uit na de landing
+    // de kleppen: snel weg bij de sprong, rustig uit na de landing
     const klepUit = s.onderweg > 0 ? 1 - (this.t - this.sprongTijd) / 0.4 : (geland - 0.1) / 0.8;
     const klep = Math.max(0, Math.min(1, klepUit));
     this.kleppen.teken(klep * klep * (3 - 2 * klep));
@@ -724,8 +724,9 @@ function tekenSchijf(k: Kaart): Container {
   return c;
 }
 
-// De kleppen rond de schijf. Tijdens de sprong staan ze rechtop tegen de rand; bij de landing klappen ze uit tot een helling
-// naar de grond. Het uitklappen is alleen beeld: voor de spelregels liggen ze er altijd (tijdens de sprong loopt toch niemand).
+// De kleppen rond de schijf. Tijdens de sprong zitten ze weggeschoven en zie je ze niet; bij de landing schuiven ze onder de
+// rand uit tot een helling naar de grond. Het schuiven is alleen beeld: voor de spelregels liggen ze er altijd (tijdens de
+// sprong loopt toch niemand).
 // Elke klep is een stuk vervormend staal, dus dit kan geen sprite zijn.
 class Kleppen {
   readonly g = new Graphics();
@@ -740,20 +741,20 @@ class Kleppen {
     this.lijst.sort((a, b) => a.kol + a.rij - (b.kol + b.rij)); // van achter naar voor
   }
 
-  // stand: 0 = rechtop, 1 = helemaal uit.
+  // stand: 0 = weggeschoven, 1 = helemaal uit.
   teken(stand: number): void {
     if (stand === this.stand) return;
     this.stand = stand;
     const g = this.g.clear();
+    if (stand <= 0) return;
     const HOEK = [[0, 0], [1, 0], [1, 1], [0, 1]];
     for (const { kol, rij, z, h } of this.lijst) {
       const uit = HOEK.map(([di, dj], i) => naarScherm(kol + di - 0.5, rij + dj - 0.5, z[i]));
       const pt = z.map((zi, i) => {
         if (zi > 0) return uit[i];
-        // een lage hoek draait om de dichtstbijzijnde hoge hoek: de buur langs de rand, anders de overkant
-        const scharnier = [(i + 1) & 3, (i + 3) & 3, (i + 2) & 3].find((j) => z[j] > 0) as number;
-        const op = { x: uit[scharnier].x, y: uit[scharnier].y - KLEP_OP };
-        return { x: op.x + (uit[i].x - op.x) * stand, y: op.y + (uit[i].y - op.y) * stand };
+        // een lage hoek schuift uit de dichtstbijzijnde hoge hoek naar de grond: de buur langs de rand, anders de overkant
+        const van = uit[[(i + 1) & 3, (i + 3) & 3, (i + 2) & 3].find((j) => z[j] > 0) as number];
+        return { x: van.x + (uit[i].x - van.x) * stand, y: van.y + (uit[i].y - van.y) * stand };
       });
       const [a, r, v, l] = pt;
       // licht van linksvoor: een helling die daarheen kijkt is lichter
@@ -771,7 +772,6 @@ class Kleppen {
     }
   }
 }
-const KLEP_OP = 24; // zo ver steekt een klep boven de rand als hij rechtop staat
 const staal = (f: number) => {
   const d = (c: number) => Math.max(0, Math.min(255, Math.round(c * f)));
   return (d(0x48) << 16) | (d(0x4a) << 8) | d(0x48);

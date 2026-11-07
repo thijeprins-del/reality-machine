@@ -64,7 +64,7 @@ export function opSchijf(k: Pick<Kaart, 'ring'>, kol: number, rij: number): bool
   return Math.hypot(dx, dy) <= schijfStraal(k, Math.atan2(dy, dx));
 }
 
-// Is tegel (kol, rij) een klep: geen schijf, maar hij raakt de schijf wel (ook schuin)? De kleppen klappen bij de landing uit
+// Is tegel (kol, rij) een klep: geen schijf, maar hij raakt de schijf wel (ook schuin)? De kleppen schuiven bij de landing uit
 // tot een helling rondom, zodat eenheden van de schijf af kunnen lopen.
 export function opKlep(k: Pick<Kaart, 'ring'>, kol: number, rij: number): boolean {
   if (Math.hypot(kol - k.ring.x, rij - k.ring.y) > k.ring.r + 4.2 || opSchijf(k, kol, rij)) return false;
