@@ -19,13 +19,15 @@ try {
     window.SPEL.stuur('alle', a.x, a.y);
     for (let i = 0; i < 600; i++) window.SPEL.stap(0.1);
     const posities = s.werkers.flatMap((w) => [w.x, w.y]);
-    return { tijd: s.tijd, dimensie: s.dimensie, voor, schroot: s.voorraad.schroot, werkers: s.werkers.length,
+    const k = s.kaart, schijfHoogte = k.hoogte[((k.machine.y - 2) * k.breed + k.machine.x) * 4];
+    return { tijd: s.tijd, dimensie: s.dimensie, voor, schroot: s.voorraad.schroot, werkers: s.werkers.length, schijfHoogte,
       posities_ok: posities.every(Number.isFinite) ? 1 : NaN };
   });
   for (const [k, v] of Object.entries(staat)) {
     if (typeof v === 'number' && !Number.isFinite(v)) fouten.push(`staat.${k} = ${v}`);
   }
   if (!(staat.schroot > staat.voor)) fouten.push('muizen hebben geen schroot naar de opslag gebracht');
+  if (staat.schijfHoogte !== 1) fouten.push(`schijf ligt op hoogte ${staat.schijfHoogte}, niet 1`);
   if (!(await page.$('canvas'))) fouten.push('geen canvas');
   console.log('staat na 60 s:', JSON.stringify(staat));
 } finally {

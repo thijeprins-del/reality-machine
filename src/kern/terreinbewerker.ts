@@ -4,7 +4,7 @@
 import { HOOGTE_MAX, HOOGTE_MIN } from '../data/dimensies';
 import type { Graphics } from 'pixi.js';
 import { naarScherm } from './iso';
-import { herberekenTerrein, opSchijf, type Kaart } from './kaart';
+import { herberekenTerrein, opKlep, opSchijf, type Kaart } from './kaart';
 import type { SpelStaat } from './spel';
 import { hoeken, hoogteOp, verzetHoeken } from './terrein';
 
@@ -154,8 +154,8 @@ ${rijen.join(',\n')}
 
   private verf(kol: number, rij: number): void {
     const k = this.staat().kaart, b = k.breed;
-    // je schijf blijft vast: dat land reist mee
-    const vast = (tegel: number) => opSchijf(k, tegel % b, Math.floor(tegel / b));
+    // je schijf en haar kleppen blijven vast: dat land reist mee
+    const vast = (tegel: number) => opSchijf(k, tegel % b, Math.floor(tegel / b)) || opKlep(k, tegel % b, Math.floor(tegel / b));
     const nieuw = (z: number) => Math.max(HOOGTE_MIN, Math.min(HOOGTE_MAX, this.gereedschap === 'vlak' ? this.vlakHoogte : z + (this.gereedschap === 'omhoog' ? 1 : -1)));
     const doelen = new Map<number, number>();
     if (this.vorm === 'blok') {
