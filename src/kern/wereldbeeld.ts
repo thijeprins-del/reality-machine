@@ -185,6 +185,7 @@ export class WereldBeeld {
   }
 
   private bouwGrond(k: Kaart): void {
+    this.mistVersie = -1; // nieuwe brokken: de mist moet ze opnieuw beoordelen
     for (const c of this.grondGloed.removeChildren()) c.destroy();
     const wereld = dimensieKleur(this.staat.dimensie);
     this.golven = [];
@@ -383,10 +384,17 @@ export class WereldBeeld {
   private mistVoor: object | null = null; // voor welke kaart het canvas gemaakt is
   private mistVersie = -1;
   private mistPixels: ImageData | null = null;
+  // De mist staat uit voor de testgereedschappen (F1 raster, F2 terreinbewerker): daar wil je het hele land zien.
+  private mistActief(): boolean {
+    return this.mistAan && !this.debugAan && !this.staat.klokStil;
+  }
   private werkMistBeeld(): void {
     const s = this.staat, k = s.kaart, m = k.mist;
-    this.mistLaag.visible = this.mistAan && s.onderweg <= 0;
-    if (!this.mistLaag.visible) return;
+    this.mistLaag.visible = this.mistActief() && s.onderweg <= 0;
+    if (!this.mistLaag.visible) {
+      this.mistVersie = -1; // bij terugkomen de brokken opnieuw beoordelen
+      return;
+    }
     if (this.mistVoor !== k) {
       this.mistLaag.removeChildren().forEach((c) => c.destroy());
       this.mistTex?.destroy(true);
@@ -407,11 +415,18 @@ export class WereldBeeld {
     }
     if (m.versie === this.mistVersie) return;
     this.mistVersie = m.versie;
+    // Een brok waar nog niets van gezien is hoeft niet getekend: de mist ligt er toch overheen. Gezien blijft gezien.
+    for (const b of this.brokken) {
+      if (b.gezien) continue;
+      for (let r = b.rij; r < Math.min(m.diep, b.rij + BROK) && !b.gezien; r++)
+        for (let c = b.kol; c < Math.min(m.breed, b.kol + BROK); c++)
+          if (m.toestand[r * m.breed + c] !== MIST_ONBEKEND) { b.gezien = true; break; }
+    }
     const ctx = this.mistCanvas!.getContext('2d')!;
     const kleur = (i: number, d: Uint8ClampedArray) => {
       const t = m.toestand[i];
       d[i * 4] = 4; d[i * 4 + 1] = 5; d[i * 4 + 2] = 9;
-      d[i * 4 + 3] = t === MIST_ONBEKEND ? 255 : t === MIST_VERKEND ? 140 : 0;
+      d[i * 4 + 3] = t === MIST_ONBEKEND ? 255 : t === MIST_VERKEND ? 80 : 0;
     };
     // Alleen de tegels die veranderden: de rest van het canvas blijft staan.
     if (m.alles || !this.mistPixels) {
@@ -443,7 +458,7 @@ export class WereldBeeld {
     const marge = 160;
     const x0 = -this.wereld.position.x / z - marge, x1 = (window.innerWidth - this.wereld.position.x) / z + marge;
     const y0 = -this.wereld.position.y / z - marge, y1 = (window.innerHeight - this.wereld.position.y) / z + marge;
-    for (const b of this.brokken) b.c.visible = (b.gezien || !this.mistAan) && b.x1 >= x0 && b.x0 <= x1 && b.y1 >= y0 && b.y0 <= y1;
+    for (const b of this.brokken) b.c.visible = (b.gezien || !this.mistActief()) && b.x1 >= x0 && b.x0 <= x1 && b.y1 >= y0 && b.y0 <= y1;
   }
   private golven: { s: Sprite; set: TegelSet; cel: (beeld: number) => number }[] = []; // water en schuim die bewegen
   private golfBeeld = 0;
