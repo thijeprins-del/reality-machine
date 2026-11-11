@@ -1,5 +1,7 @@
-import { DIMENSIE_DUUR_SEC, SPRONG_SEC } from '../data/dimensies';
+import { DIMENSIE_DUUR_SEC, MIST_ZICHT_MACHINE, MIST_ZICHT_MUIS, SPRONG_SEC } from '../data/dimensies';
 import { binnenRing, maakKaart, type Kaart } from './kaart';
+import { werkMist, type Kijker } from './mist';
+import { meet } from './prestatie';
 import { hash01 } from './toeval';
 import type { Factie, FactieId, Machine, Voorraad } from './types';
 import { maakWerkers, stapWerkers, type Werker } from './werkers';
@@ -22,7 +24,7 @@ export interface SpelStaat {
 
 export function nieuwSpel(seed: number, f: Factie): SpelStaat {
   const s = { toeval: seed >>> 0 };
-  const kaart = maakKaart(seed, 1);
+  const kaart = meet('generate map', () => maakKaart(seed, 1));
   const werkers: Werker[] = [];
   for (const [soort, aantal] of Object.entries(f.startEenheden)) {
     const nieuw = maakWerkers(soort, aantal ?? 0, kaart, s);
@@ -52,6 +54,7 @@ export function stap(s: SpelStaat, f: Factie, sec: number): void {
     return;
   }
   stapWerkers(s, f.eenheden, sec);
+  werkMist(s.kaart.mist, sec, () => kijkers(s));
   f.trucje.opTik?.(s, sec);
   if (!s.klokStil) s.tijd += sec;
   while (s.tijd >= DIMENSIE_DUUR_SEC) {
@@ -74,7 +77,7 @@ export function stream(s: SpelStaat, f?: Factie): void {
 
 function verhuis(s: SpelStaat): void {
   const oud = s.kaart.machine;
-  s.kaart = maakKaart(s.seed, s.dimensie); // zelfde machine en opslag, nieuw terrein en nieuwe velden
+  s.kaart = meet('generate map', () => maakKaart(s.seed, s.dimensie)); // zelfde machine en opslag, nieuw terrein en nieuwe velden
   // Een wereld van een andere maat heeft zijn midden ergens anders: alles op de schijf verhuist mee.
   const dx = s.kaart.machine.x - oud.x, dy = s.kaart.machine.y - oud.y;
   for (const w of s.werkers) {
@@ -100,6 +103,12 @@ function verhuis(s: SpelStaat): void {
     w.doelX = w.x;
     w.doelY = w.y;
   }
+}
+
+// Wie de wereld ziet: de machine (de hele ring en een stuk eromheen) en elke eenheid.
+function kijkers(s: SpelStaat): Kijker[] {
+  const r = s.kaart.ring;
+  return [{ x: r.x, y: r.y, r: r.r + MIST_ZICHT_MACHINE }, ...s.werkers.map((w) => ({ x: w.x, y: w.y, r: MIST_ZICHT_MUIS }))];
 }
 
 export function restTijd(s: SpelStaat): number {

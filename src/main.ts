@@ -3,6 +3,7 @@ import { dimensieKleur } from './data/dimensies';
 import { MUIZEN } from './data/muizen';
 import { maakBesturing } from './kern/besturing';
 import { versieTekst } from './kern/omgeving';
+import { beeldKlaar, markeer, maakOverlay, rapport, zetExtra } from './kern/prestatie';
 import { kiesFactie, maakBalk } from './kern/scherm';
 import { nieuwSpel, restTijd, seedUitAdres, stap, stream, type SpelStaat } from './kern/spel';
 import type { Factie, FactieBeeld, FactieId } from './kern/types';
@@ -21,6 +22,7 @@ declare global {
       stream: () => void;
       stuur: (ids: number[] | 'alle', kol: number, rij: number) => void;
     };
+    PERF: { rapport: typeof rapport };
   }
 }
 
@@ -33,8 +35,10 @@ const FACTIES: Partial<Record<FactieId, { data: Factie; beeld: () => FactieBeeld
 };
 
 async function start(): Promise<void> {
+  window.PERF = { rapport };
   const app = new Application();
   await app.init({ resizeTo: window, background: 0x07080a, antialias: false });
+  markeer('renderer ready');
   document.body.appendChild(app.canvas);
   document.getElementById('versie')!.textContent = versieTekst();
 
@@ -72,6 +76,7 @@ async function start(): Promise<void> {
 
   const beeld = new WereldBeeld(staat, factie.beeld());
   await beeld.laad();
+  markeer('world ready');
   app.stage.addChild(beeld.wereld);
   const besturing = maakBesturing(app, beeld.wereld, () => staat, (z) => beeld.zoom(z), (ids, kol, rij) =>
     stuur(staat, ids, kol, rij),
@@ -80,7 +85,11 @@ async function start(): Promise<void> {
   const balk = maakBalk();
   const paneel = factie.paneel ? (await factie.paneel())(() => staat, beeld) : null;
 
+  markeer('ui ready');
+  maakOverlay();
+  zetExtra(() => ({ ...beeld.statistiek(), muizen: staat.werkers.length }));
   app.ticker.add((t) => {
+    const t0 = performance.now();
     const sec = Math.min(0.1, t.deltaMS / 1000);
     stap(staat, factie.data, sec);
     besturing.werk(sec);
@@ -97,6 +106,8 @@ async function start(): Promise<void> {
       `Stock: scrap ${Math.floor(v.schroot ?? 0)} · wood ${Math.floor(v.hout ?? 0)} · crystal ${Math.floor(v.kristal ?? 0)}`,
       `${factie.data.naam}: ${staat.werkers.length} (${bezig} working) · selected ${besturing.selectie.size}`,
     ]);
+    markeer('first frame');
+    beeldKlaar(t.deltaMS, performance.now() - t0);
   });
 }
 
