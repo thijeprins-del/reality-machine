@@ -99,6 +99,6 @@ export const dimensieKaart = (dimensie: number): [number, number] => DIMENSIES[(
 export const dimensieHeuvels = (dimensie: number): Heuvels => DIMENSIES[(dimensie - 1) % DIMENSIES.length].heuvels;
 
 // Mist van de wereld (fog of war): hoe ver iemand ziet, in tegels. De machine ziet de hele ring plus een stuk eromheen.
-export const MIST_ZICHT_MUIS = 6.5;
-export const MIST_ZICHT_MACHINE = 7; // extra bovenop de ringstraal
+export const MIST_ZICHT_MUIS = 9;
+export const MIST_ZICHT_MACHINE = 16; // extra bovenop de ringstraal
 export const MIST_UPDATE_SEC = 0.15; // zo vaak wordt de mist bijgewerkt
