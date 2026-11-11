@@ -29,7 +29,7 @@ export function maakBesturing(
   opdracht: (ids: number[], kol: number, rij: number) => void,
   bewerker?: TerreinBewerker, // testgereedschap (F2): als het open staat, verft de linkerknop terrein
 ): Besturing {
-  const ZOOMS = [0.25, 0.5, 1, 2, 3, 4];
+  const ZOOMS = [0.125, 0.25, 0.5, 1, 2, 3, 4];
   const selectie = new Set<number>();
   const kader = new Graphics();
   app.stage.addChild(kader);

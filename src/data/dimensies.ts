@@ -9,8 +9,8 @@ export const DIMENSIE_DUUR_SEC = 300; // 5 minuten per wereld (Thije, 3 nov)
 export const SPRONG_SEC = 3.5;
 
 // De kaart van een dimensie: de schijf in het midden, ruim wereld eromheen.
-export const KAART_BREED = 64;
-export const KAART_DIEP = 64;
+export const KAART_BREED = 160;
+export const KAART_DIEP = 160;
 export const KAART_MIN = 48; // kleiner past de schijf met de velden eromheen niet
 
 // De transportring: een slecht geverfde gele stippellijn om de machine. Alles binnen de ring springt mee naar de
@@ -97,3 +97,8 @@ export const DIMENSIES: DimensieWereld[] = [
 export const dimensieKleur = (dimensie: number): DimensieWereld => DIMENSIES[(dimensie - 1) % DIMENSIES.length];
 export const dimensieKaart = (dimensie: number): [number, number] => DIMENSIES[(dimensie - 1) % DIMENSIES.length].kaart ?? [KAART_BREED, KAART_DIEP];
 export const dimensieHeuvels = (dimensie: number): Heuvels => DIMENSIES[(dimensie - 1) % DIMENSIES.length].heuvels;
+
+// Mist van de wereld (fog of war): hoe ver iemand ziet, in tegels. De machine ziet de hele ring plus een stuk eromheen.
+export const MIST_ZICHT_MUIS = 6.5;
+export const MIST_ZICHT_MACHINE = 7; // extra bovenop de ringstraal
+export const MIST_UPDATE_SEC = 0.15; // zo vaak wordt de mist bijgewerkt

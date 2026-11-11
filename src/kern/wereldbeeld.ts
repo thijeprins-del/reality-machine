@@ -1,9 +1,11 @@
 // Tekent de spelstaat: grond, grondstoffen, gebouwen en eenheden, met een gloedlaag voor het neon.
 // De factie levert de plaatjes (FactieBeeld); de kern weet niet welke factie het is.
-import { Assets, BlurFilter, ColorMatrixFilter, Container, Graphics, Rectangle, Sprite, Texture } from 'pixi.js';
+import { Assets, BlurFilter, ColorMatrixFilter, Container, Graphics, Matrix, Rectangle, Sprite, Texture } from 'pixi.js';
 import { naarScherm, TEGEL_B, TEGEL_H } from './iso';
 import { dimensieKleur, DIMENSIE_DUUR_SEC, hoogteTint, HOOGTE_MIN, HOOGTE_PX, SCHIJF_HOOGTE, SPRONG_SEC, THUIS, type DimensieWereld } from '../data/dimensies';
 import { tekenDebug } from './debugbeeld';
+import { MIST_ONBEKEND, MIST_VERKEND } from './mist';
+import { meet } from './prestatie';
 import { klepHoeken, opKlep, opSchijf, schijfStraal, type Blok, type Kaart } from './kaart';
 import type { SpelStaat } from './spel';
 import { hoeken, hoogteOp, knikLinksRechts, TEGEL_LAND, tegelOnder, TEGEL_WATER } from './terrein';
@@ -12,6 +14,9 @@ import { hash01 } from './toeval';
 import type { FactieBeeld, SpriteInfo } from './types';
 import { CEL_B, CEL_H, CEL_X, CEL_Y, celLand, celSchuim, celWand, celWater, KOLOMMEN, SCHUIM_BEELDEN, TEGELSETS, VARIANTEN, WAND_B, WAND_H, WAND_KOLOMMEN, WAND_VARIANTEN, WAND_Y, WATER_BEELDEN, WATER_VARIANTEN, type TegelSet } from './tegels';
 import { WERELD_SPRITES } from './wereld-sprites';
+
+const BROK = 16; // tegels per kant van een brok grond
+interface Brok { c: Container; x0: number; y0: number; x1: number; y1: number; kol: number; rij: number; gezien: boolean }
 
 export const PIXEL = 2; // één pixelmaat: elke sprite-pixel is 2 schermpixels bij zoom 1
 
@@ -103,6 +108,7 @@ export class WereldBeeld {
     this.fx.hang(this.scherp, this.waas, los);
     this.debug.visible = false;
     this.wereld.addChild(this.debug, this.kwastLijn);
+    this.wereld.addChild(this.mistLaag); // helemaal bovenop: wat je niet gezien hebt, zie je niet
     this.bewerker = new TerreinBewerker(() => this.staat, () => (this.terreinVuil = true), this.kwastLijn);
     window.addEventListener('keydown', (e) => {
       if (e.key !== 'F1') return;
@@ -153,7 +159,7 @@ export class WereldBeeld {
     const k: Kaart = this.staat.kaart;
     for (const st of this.afzettingen.values()) for (const d of st.delen) d.destroy();
     this.afzettingen.clear();
-    this.bouwGrond(k);
+    meet('build ground', () => this.bouwGrond(k));
     for (const a of k.afzettingen) {
       const naam = `${a.goed}-${a.variant + 1}`;
       const st = this.maak(naam);
@@ -216,6 +222,29 @@ export class WereldBeeld {
   private legTegels(k: Kaart, wereld: DimensieWereld, set: TegelSet): Container {
     const c = new Container();
     c.isRenderGroup = true; // de tegels staan stil: niet elk beeld opnieuw rekenen
+    // Brokken van BROK x BROK tegels, elk een eigen render group. Wat buiten beeld ligt wordt niet getekend (zie kijkBrokken):
+    // zo kost een kaart van 160 x 160 niet meer dan wat je ervan ziet. Van achter naar voor aangemaakt, dus de volgorde klopt.
+    this.brokken = [];
+    const brokMap = new Map<number, Brok>();
+    let doel!: Brok;
+    const brokVan = (kol: number, rij: number): Brok => {
+      const sleutel = Math.floor(rij / BROK) * 10000 + Math.floor(kol / BROK);
+      let b = brokMap.get(sleutel);
+      if (!b) {
+        const bc = new Container();
+        bc.isRenderGroup = true;
+        c.addChild(bc);
+        b = { c: bc, x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity, kol: Math.floor(kol / BROK) * BROK, rij: Math.floor(rij / BROK) * BROK, gezien: false };
+        brokMap.set(sleutel, b);
+        this.brokken.push(b);
+      }
+      return b;
+    };
+    const metBlok = (b: Brok, s: Sprite, w: number, h: number) => {
+      b.c.addChild(s);
+      b.x0 = Math.min(b.x0, s.x); b.y0 = Math.min(b.y0, s.y);
+      b.x1 = Math.max(b.x1, s.x + w * PIXEL); b.y1 = Math.max(b.y1, s.y + h * PIXEL);
+    };
     const gl = new Graphics(); // wat gloeit: lava, gif en kristal
     const leg = (i: number, kol: number, rij: number, laag: number, tint = 1) => {
       const p = naarScherm(kol, rij, laag);
@@ -223,7 +252,7 @@ export class WereldBeeld {
       s.tint = grijs(tint);
       s.scale.set(PIXEL);
       s.position.set(p.x - CEL_X * PIXEL, p.y - CEL_Y * PIXEL);
-      c.addChild(s);
+      metBlok(doel, s, CEL_B, CEL_H);
       return s;
     };
     // Een wand tussen de rand van de hoge buur (tP links, tQ rechts op het scherm) en de eigen rand eronder (bP, bQ).
@@ -235,12 +264,13 @@ export class WereldBeeld {
       s.tint = grijs(hoogteTint(Math.max(tP, tQ)));
       s.scale.set(PIXEL);
       s.position.set(p.x, p.y - WAND_Y * PIXEL);
-      c.addChild(s);
+      metBlok(doel, s, WAND_B, WAND_H);
     };
     const { breed, diep } = k;
     for (let rij = 0; rij < diep; rij++)
       for (let kol = 0; kol < breed; kol++) {
         if (opSchijf(k, kol, rij)) continue;
+        doel = brokVan(kol, rij);
         const h = hash01(rij * 1000 + kol + 77);
         // Onder een klep ligt gewoon vlakke grond: die zie je zolang hij nog niet uitgeschoven is. De klep zelf tekent Kleppen.
         const klep = opKlep(k, kol, rij);
@@ -343,6 +373,78 @@ export class WereldBeeld {
   bewerker!: TerreinBewerker;
   private debugAan = false;
   private debugGetekend: Kaart | null = null; // voor welke kaart het debugbeeld nu klopt
+  private brokken: Brok[] = [];
+  // Mist: één pixel per tegel in een canvas, schuin over de wereld gelegd met dezelfde schuine as als het rooster.
+  // Lineair uitgerekt, dus de randen lopen zacht. Alleen opnieuw tekenen als de mist veranderde.
+  private mistLaag = new Container();
+  private mistAan = new URLSearchParams(location.search).get('mist') !== 'uit';
+  private mistCanvas: HTMLCanvasElement | null = null;
+  private mistTex: Texture | null = null;
+  private mistVoor: object | null = null; // voor welke kaart het canvas gemaakt is
+  private mistVersie = -1;
+  private mistPixels: ImageData | null = null;
+  private werkMistBeeld(): void {
+    const s = this.staat, k = s.kaart, m = k.mist;
+    this.mistLaag.visible = this.mistAan && s.onderweg <= 0;
+    if (!this.mistLaag.visible) return;
+    if (this.mistVoor !== k) {
+      this.mistLaag.removeChildren().forEach((c) => c.destroy());
+      this.mistTex?.destroy(true);
+      const cv = document.createElement('canvas');
+      cv.width = m.breed;
+      cv.height = m.diep;
+      this.mistCanvas = cv;
+      this.mistTex = Texture.from(cv);
+      this.mistTex.source.scaleMode = 'linear';
+      const sp = new Sprite(this.mistTex);
+      // pixel (i, j) is tegel (i, j): het scherm van tegel (kol, rij) is ((kol - rij) * B/2, (kol + rij) * H/2); de pixel
+      // loopt een halve tegel mee omdat het midden van de tegel op het midden van de pixel ligt.
+      sp.setFromMatrix(new Matrix(TEGEL_B / 2, TEGEL_H / 2, -TEGEL_B / 2, TEGEL_H / 2, 0, -TEGEL_H / 2));
+      this.mistLaag.addChild(sp);
+      this.mistVoor = k;
+      this.mistVersie = -1;
+      this.mistPixels = null;
+    }
+    if (m.versie === this.mistVersie) return;
+    this.mistVersie = m.versie;
+    const ctx = this.mistCanvas!.getContext('2d')!;
+    const kleur = (i: number, d: Uint8ClampedArray) => {
+      const t = m.toestand[i];
+      d[i * 4] = 4; d[i * 4 + 1] = 5; d[i * 4 + 2] = 9;
+      d[i * 4 + 3] = t === MIST_ONBEKEND ? 255 : t === MIST_VERKEND ? 140 : 0;
+    };
+    // Alleen de tegels die veranderden: de rest van het canvas blijft staan.
+    if (m.alles || !this.mistPixels) {
+      this.mistPixels = ctx.createImageData(m.breed, m.diep);
+      for (let i = 0; i < m.toestand.length; i++) kleur(i, this.mistPixels.data);
+      ctx.putImageData(this.mistPixels, 0, 0);
+      m.alles = false;
+    } else {
+      let x0 = m.breed, y0 = m.diep, x1 = 0, y1 = 0;
+      for (const i of m.gewijzigd) {
+        kleur(i, this.mistPixels.data);
+        const x = i % m.breed, y = (i - x) / m.breed;
+        x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
+      }
+      if (x1 >= x0) ctx.putImageData(this.mistPixels, 0, 0, x0, y0, x1 - x0 + 1, y1 - y0 + 1);
+    }
+    m.gewijzigd.length = 0;
+    this.mistTex!.source.update();
+  }
+
+  // Voor de prestatie-overlay: hoeveel grondbrokken er getekend worden.
+  statistiek(): { kaart: string; brokken: string } {
+    const k = this.staat.kaart;
+    return { kaart: `${k.breed}x${k.diep} (${(k.breed * k.diep).toLocaleString('en')} tiles)`, brokken: `${this.brokken.filter((b) => b.c.visible).length}/${this.brokken.length}` };
+  }
+  // Alleen de brokken grond tekenen die (bijna) in beeld zijn. De wereld heeft de camera als positie en schaal.
+  private kijkBrokken(): void {
+    const z = this.wereld.scale.x || 1;
+    const marge = 160;
+    const x0 = -this.wereld.position.x / z - marge, x1 = (window.innerWidth - this.wereld.position.x) / z + marge;
+    const y0 = -this.wereld.position.y / z - marge, y1 = (window.innerHeight - this.wereld.position.y) / z + marge;
+    for (const b of this.brokken) b.c.visible = (b.gezien || !this.mistAan) && b.x1 >= x0 && b.x0 <= x1 && b.y1 >= y0 && b.y0 <= y1;
+  }
   private golven: { s: Sprite; set: TegelSet; cel: (beeld: number) => number }[] = []; // water en schuim die bewegen
   private golfBeeld = 0;
   private landTijd = -10; // wanneer we landden (op de klok van this.t)
@@ -470,6 +572,8 @@ export class WereldBeeld {
       for (const g of this.golven) g.s.texture = this.cel(g.set, g.cel(beeld));
     }
 
+    this.kijkBrokken();
+    this.werkMistBeeld();
     this.grondGloed.alpha = 0.7 + 0.3 * Math.sin(this.t * 1.7);
     const hapering = Math.random() < 0.015 ? 0.35 : 1;
     this.waas.alpha = (0.85 + 0.15 * Math.sin(this.t * 2.1) * Math.sin(this.t * 7.3)) * hapering;

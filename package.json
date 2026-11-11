@@ -9,7 +9,8 @@
     "build": "vite build",
     "typecheck": "tsc -p .",
     "snel": "tsc -p . && vite build",
-    "test": "npm run snel && node test/smoke.mjs"
+    "test": "npm run snel && node test/smoke.mjs",
+    "prestatie": "node scripts/prestatie.mjs"
   },
   "devDependencies": {
     "playwright": "1.63.0",
