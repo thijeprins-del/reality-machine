@@ -135,7 +135,7 @@ function gebieden(t: Terrein, soort: Uint8Array, start: { x: number; y: number }
 }
 
 // Het land van één wereld. Eerst glooiend land uit ruis: heuvels, en meren waar het onder de grond zakt. Rond de schijf blijft
-// het vlak, want daar ligt je eigen land en muizen moeten eraf kunnen. Dan plateaus: hele tegels die een paar niveaus omhoog
+// het vlak, want daar ligt je eigen land en komen de kleppen op de grond (kaart.ts zet die er daarna in). Dan plateaus: hele tegels die een paar niveaus omhoog
 // gaan, met een wand eromheen. Elk plateau krijgt een oprit, of het verdwijnt weer.
 export function maakTerrein(breed: number, diep: number, ring: { x: number; y: number; r: number }, heuvels: Heuvels, stroom: { toeval: number }, start: { x: number; y: number }): Terrein {
   const s = breed + 1, n = s * (diep + 1);
