@@ -56,7 +56,8 @@ Code-namen mogen Engels of Nederlands, maar per map consequent.
 
 ## Beeld en stijl
 - Isometrisch, sprites op één pixelmaat, geen ronde hoeken in de interface.
-- Geen AI-gegenereerde beelden of geluid. Sprites tekenen met de hand of met tekenscripts in `scripts/pixel` (zoals Casus Romae).
+- Sprites: PixelLab (API, sleutel in `PIXELLAB_API_KEY`, nooit in de repo) is toegestaan (Thije, 12 nov: gameplay boven kunstprijzen). Tekenscripts in `scripts/pixel` blijven mogen.
+  Meld AI-sprites op de itch-pagina. Geen AI-geluid zonder Thijes woord. Meld de kosten (generaties) vóór je er meer dan 15 uitgeeft.
 - Nieuwe sprite = nieuw bestand in `assets/...`, niet in code tekenen. Geen emoji in beeld.
 - Performance: alleen tekenen wat rond de camera zichtbaar is; streef naar ≤ 16 ms per beeld.
 
