@@ -154,3 +154,59 @@ export interface FactieBeeld {
   sprites: Record<string, SpriteInfo>;
   lading?: Partial<Record<Grondstof, string>>; // sprite van een eenheid die deze grondstof draagt
 }
+
+// ---------------------------------------------------------------------------------------------------------------
+// De dimensie (de vijand is het land zelf, zie DESIGN.md "Het land"). Elke dimensie wordt gerold uit de run-seed en haar
+// nummer (src/land/). De muizeneconomie leest alleen dit contract: welke grondstoffen er liggen, welke uniek zijn,
+// welk bouwplan-pakket de loot geeft. Alles hier is data; het gedrag (Wrath, aanvallen) zit in src/land/.
+// ---------------------------------------------------------------------------------------------------------------
+
+// De drie families bepalen hoe het land vecht; het archetype bepaalt hoe het eruitziet en wat er te halen valt.
+export type Familie = 'beschaving' | 'wildernis' | 'bijzonder';
+
+export type Archetype =
+  | 'steentijd' | 'oudheid' | 'middeleeuwen' | 'industrieel' | 'modern' | 'scifi' // beschaving
+  | 'insecten' | 'monsters' | 'kuddes' // wildernis
+  | 'reuzen' | 'aliens' | 'tentakelbeest'; // bijzonder
+
+// De vier gedeelde grondstoffen: niet elke dimensie heeft ze allemaal (minstens twee wel). Nog niet gekoppeld aan
+// `Grondstof` hierboven (schroot, hout, kristal): die omzetting is Lieuwes keuze en komt in een eigen PR.
+export type GedeeldeGrondstof = 'metaal' | 'hout' | 'water' | 'steen';
+
+// Een grondstof die alleen in deze dimensie ligt (vuursteen, chitine, reuzenijzer). `id` is een vrije string.
+export interface UniekeGrondstof {
+  id: string;
+  naam: string;
+}
+
+// Eén veld met grondstoffen in de dimensie-kaart (positie komt later uit de kaartgenerator).
+export interface GrondstofAanbod {
+  goed: GedeeldeGrondstof | string; // gedeeld of de `id` van een unieke grondstof
+  gewicht: number; // hoe rijk, 1 = gewoon; bepaalt aantal en grootte van velden
+}
+
+// Het klimaat is los van de bewoners gerold: een van de tegelsets uit scripts/pixel (zie data/dimensies.ts).
+export type Klimaat = 'roestduin' | 'kristaltoendra' | 'gifwoud' | 'magmaveld' | 'zoutzee' | 'aarde';
+
+// Een bouwplan dat deze dimensie in zijn loot heeft. `vereist` = unieke grondstof die het plan nodig heeft om te bouwen.
+export interface DimensieLoot {
+  vondst: string; // verwijst naar een VondstSoort.soort van de muizen (of een nog te maken vondst)
+  kans: number; // gewicht, niet per se 0..1
+  vereist?: string;
+}
+
+// Alles wat de kern en de muizeneconomie van een gerolde dimensie weten.
+export interface Dimensie {
+  nummer: number; // hoeveelste dimensie in de run (1 = eerste)
+  seed: number; // wat deze dimensie vastlegt: zelfde seed + nummer = zelfde dimensie
+  naam: string; // gegenereerde naam ("Hive of Krel-Tak")
+  familie: Familie;
+  archetype: Archetype;
+  klimaat: Klimaat;
+  aanbod: GrondstofAanbod[]; // gedeelde (minstens twee) plus unieke grondstoffen
+  uniek: UniekeGrondstof[]; // 1 of 2, alleen hier
+  loot: DimensieLoot[];
+  kaart: [number, number]; // breed en diep in tegels
+  beginWrath: number; // 0..100, de landing zet hem; komt van de plek waar de schijf neerkomt
+  sterkte: number; // schaal van de natives: neemt toe per dimensie in de run
+}
