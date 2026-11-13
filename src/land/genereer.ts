@@ -1,8 +1,24 @@
 // De dimensiegenerator: een dimensie komt uit de run-seed en haar nummer, dus dezelfde seed geeft dezelfde run.
 // Stappen (plan, "Procedural generation"): familie, archetype, klimaat, gedeelde grondstoffen, unieke grondstoffen,
 // naam. Native sites en shift-regels komen later. Geen DOM of Pixi: werkt ook in een los script of artifact.
-import type { Archetype, Dimensie, Familie, GedeeldeGrondstof, GrondstofAanbod } from '../kern/types';
+import type { Archetype, Dimensie, Familie, GedeeldeGrondstof, GrondstofAanbod, Klimaat } from '../kern/types';
 import { ARCHETYPES, KLIMAAT_KANS, KLIMATEN, NAAMDELEN, PER_FAMILIE } from './archetypes';
+
+// Wat de generator er bovenop geeft: aantal sites (dorpen, nesten, hopen) en een optionele regel voor deze dimensie.
+// Nog niet in kern/types.ts: komt daar pas als het spel het leest.
+export interface GerolDimensie extends Dimensie {
+  sites: number;
+  regel?: string; // optionele shift-regel ("long night", "acid rain")
+}
+
+const REGELS: { regel: string; klimaat?: Klimaat[] }[] = [
+  { regel: 'long night: the fog closes in', klimaat: ['kristaltoendra', 'zoutzee'] },
+  { regel: 'acid rain: belts and poles corrode', klimaat: ['gifwoud'] },
+  { regel: 'heat: machines overheat faster', klimaat: ['magmaveld', 'roestduin'] },
+  { regel: 'low gravity: loads fly further', klimaat: ['kristaltoendra', 'zoutzee', 'aarde'] },
+  { regel: 'sandstorms: scouting is harder', klimaat: ['roestduin'] },
+  { regel: 'quakes: tall buildings cost more', klimaat: ['magmaveld', 'aarde'] },
+];
 
 const GEDEELD: GedeeldeGrondstof[] = ['metaal', 'hout', 'water', 'steen'];
 
@@ -44,14 +60,14 @@ function families(seed: number, tot: number): Familie[] {
 // De drie landen zijn het eerste half uur steeds nieuw; vanaf nummer 9 (de finale) leidt de generator niets meer: dat is een
 // vaste dimensie, zie het plan. Hier alleen 1..8 en daarna gewoon door voor de galerij.
 // De archetypes wisselen ook: hetzelfde archetype kan pas weer terugkomen als het niet in de vorige twee zat.
-export function genereerDimensie(seed: number, nummer: number, opties: { familie?: Familie; archetype?: Archetype } = {}): Dimensie {
+export function genereerDimensie(seed: number, nummer: number, opties: { familie?: Familie; archetype?: Archetype } = {}): GerolDimensie {
   const fam = families(seed, nummer);
   const vorige: Archetype[] = [];
   for (let n = 1; n < nummer; n++) vorige.push(rol(seed, n, fam[n - 1], vorige.slice(-2)).archetype);
   return rol(seed, nummer, opties.familie ?? fam[nummer - 1], vorige.slice(-2), opties.archetype);
 }
 
-function rol(seed: number, nummer: number, f: Familie, vermijd: Archetype[], gedwongen?: Archetype): Dimensie {
+function rol(seed: number, nummer: number, f: Familie, vermijd: Archetype[], gedwongen?: Archetype): GerolDimensie {
   if (gedwongen) f = ARCHETYPES[gedwongen].familie;
   const r = stroom(dimSeed(seed, nummer));
 
@@ -94,6 +110,12 @@ function rol(seed: number, nummer: number, f: Familie, vermijd: Archetype[], ged
   const plek = weeg(r, info.beginWrathPlekken, p => p.gewicht);
   const opening = Math.round(plek.wrath[0] + r() * (plek.wrath[1] - plek.wrath[0]) + (nummer - 1) * 2); // dieper in de run = kwader
 
+  // Sites: bijzondere werelden hebben er weinig (maar groot), beschavingen en wildernis meer. Dieper in de run: meer.
+  const sites = Math.min(8, Math.max(3, Math.round((f === 'bijzonder' ? 3 : 4) + r() * 3 + diepte * 1.5)));
+  // Regel: ongeveer een op de drie werelden, passend bij het klimaat.
+  const passend = REGELS.filter(x => !x.klimaat || x.klimaat.includes(klimaat));
+  const regel = r() < 0.4 && passend.length ? kies(r, passend).regel : undefined;
+
   return {
     nummer,
     seed: dimSeed(seed, nummer),
@@ -107,6 +129,8 @@ function rol(seed: number, nummer: number, f: Familie, vermijd: Archetype[], ged
     kaart: info.kaart,
     beginWrath: Math.min(70, opening),
     sterkte: +(1 + (nummer - 1) * 0.12).toFixed(2),
+    sites,
+    regel,
   };
 }
 
@@ -120,9 +144,9 @@ function maakNaam(r: () => number, archetype: Archetype): string {
 }
 
 // Een hele run in één keer (voor de galerij en de rooktest): dimensies 1..n van één seed.
-export function genereerRun(seed: number, aantal = 8): Dimensie[] {
+export function genereerRun(seed: number, aantal = 8): GerolDimensie[] {
   const fam = families(seed, aantal);
-  const uit: Dimensie[] = [];
+  const uit: GerolDimensie[] = [];
   for (let n = 1; n <= aantal; n++) uit.push(rol(seed, n, fam[n - 1], uit.slice(-2).map(d => d.archetype)));
   return uit;
 }
