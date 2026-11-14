@@ -49,3 +49,9 @@ Bouwen kost onderdelen: **platen** (PLATE) en **balken** (BEAM). Die maak je in 
 - **Muizen werken zelf**: eerst bouwen, dan de fabricators, dan boren en fabricators leeghalen, en anders zelf graven.
   Stuur je ze ergens heen, dan doen ze dat.
 - Bij de stream wordt alles buiten de ring ingepakt en krijg je de bouwkosten terug. Alle tekst in het spel is Engels.
+
+## Wrath (the land's anger)
+- Every dimension has a Wrath meter, 0 to 100, in 5 stages: CALM, WARY, HOSTILE, ENRAGED, WRATHFUL. The landing sets the starting value.
+- Taking resources from the land raises Wrath. Leave it alone for 10 seconds and it slowly calms down.
+- From WARY on, natives raid your machine. Mice close to a raider fight back, so sending every mouse out to mine leaves the machine open. Raiders damage the machine; the stream needs at least 50% machine health.
+- Test shortcuts in the address bar: `?type=stone` (also antiquity, medieval, industrial, modern, scifi, bugs, monsters, hordes, giants, aliens, tentacle), `?wrath=80`, `?shift=4` (start in dimension 4), `?seed=123`. Combine them: `?factie=muizen&type=stone&wrath=60`.

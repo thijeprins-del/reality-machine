@@ -94,9 +94,17 @@ export const DIMENSIES: DimensieWereld[] = [
   { naam: 'SALT SEA', grond: [0xc98aa5, 0xd496b0, 0xbf7f9b, 0xdca2bb, 0xc48aa3], vlek: 0xfff0fa, vlekKans: 0.1, rand: [0x7a4060, 0x5c2f48], heuvels: { schaal: 22, hoog: 3.5, basis: -0.2, klipSchaal: 24, klipDrempel: 0.42, klipHoog: 2 }, water: [0xe8d4e0, 0xf0dee8, 0xdcc8d6], tegelset: 'zoutzee' }
   ,{ naam: 'EARTH', grond: [0x527e2f], vlek: 0x2f4a1c, vlekKans: 0.08, rand: [0x4a3a22, 0x382b19], heuvels: { schaal: 18, hoog: 4.5, basis: 0.7, klipSchaal: 17, klipDrempel: 0.3, klipHoog: 2 }, water: [0x1f66ad], tegelset: 'aarde' },
 ];
-export const dimensieKleur = (dimensie: number): DimensieWereld => DIMENSIES[(dimensie - 1) % DIMENSIES.length];
-export const dimensieKaart = (dimensie: number): [number, number] => DIMENSIES[(dimensie - 1) % DIMENSIES.length].kaart ?? [KAART_BREED, KAART_DIEP];
-export const dimensieHeuvels = (dimensie: number): Heuvels => DIMENSIES[(dimensie - 1) % DIMENSIES.length].heuvels;
+// Welk klimaat (tegelset) een dimensie heeft: standaard de lijst in volgorde, maar het spel meldt hier de gerolde dimensies aan
+// (src/land/), zodat het land eruitziet als wat de generator rolde. Zonder aanmelding blijft het de oude volgorde.
+let klimaatVan: ((dimensie: number) => TegelSet) | null = null;
+export const zetKlimaatBron = (f: ((dimensie: number) => TegelSet) | null): void => { klimaatVan = f; };
+const wereldVan = (dimensie: number): DimensieWereld => {
+  const set = klimaatVan?.(dimensie);
+  return (set && DIMENSIES.find((d) => d.tegelset === set)) || DIMENSIES[(dimensie - 1) % DIMENSIES.length];
+};
+export const dimensieKleur = (dimensie: number): DimensieWereld => wereldVan(dimensie);
+export const dimensieKaart = (dimensie: number): [number, number] => wereldVan(dimensie).kaart ?? [KAART_BREED, KAART_DIEP];
+export const dimensieHeuvels = (dimensie: number): Heuvels => wereldVan(dimensie).heuvels;
 
 // Mist van de wereld (fog of war): hoe ver iemand ziet, in tegels. De machine ziet de hele ring plus een stuk eromheen.
 export const MIST_ZICHT_MUIS = 9;

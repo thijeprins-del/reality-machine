@@ -5,7 +5,10 @@ import { maakBesturing } from './kern/besturing';
 import { versieTekst } from './kern/omgeving';
 import { beeldKlaar, markeer, maakOverlay, rapport, zetExtra } from './kern/prestatie';
 import { kiesFactie, maakBalk } from './kern/scherm';
-import { nieuwSpel, restTijd, seedUitAdres, stap, stream, type SpelStaat } from './kern/spel';
+import { nieuwSpel, restTijd, seedUitAdres, startUitAdres, stap, stream, type SpelStaat } from './kern/spel';
+import { WRATH_MAX, WRATH_STADIA } from './data/wrath';
+import { landSprites } from './land/beeld';
+import { geefWrath, overval, stadium, stadiumNummer } from './land/wrath';
 import type { Factie, FactieBeeld, FactieId } from './kern/types';
 import { stuur } from './kern/werkers';
 import { WereldBeeld } from './kern/wereldbeeld';
@@ -17,6 +20,8 @@ declare global {
       staat: SpelStaat;
       stap: (sec: number) => void;
       zaai: (seed: number) => void;
+      wrath: (n: number) => void; // zet Wrath (0-100)
+      overval: (n?: number) => void; // laat nu een overval komen
       terrein: () => string;
       laadTerrein: (json: string) => void;
       stream: () => void;
@@ -59,22 +64,26 @@ async function start(): Promise<void> {
     ]);
   const factie = FACTIES[id]!;
 
-  let staat = nieuwSpel(seedUitAdres(), factie.data);
+  const start = startUitAdres();
+  let staat = nieuwSpel(seedUitAdres(), factie.data, start);
   window.SPEL = {
     get staat() {
       return staat;
     },
     stap: (sec) => stap(staat, factie.data, sec),
     zaai: (seed) => {
-      staat = nieuwSpel(seed, factie.data);
+      staat = nieuwSpel(seed, factie.data, start);
     },
     stream: () => stream(staat, factie.data),
+    wrath: (n) => geefWrath(staat, n),
+    overval: (n = 3) => overval(staat, n),
     terrein: () => beeld.bewerker.alsJson(),
     laadTerrein: (json) => beeld.bewerker.laadJson(json),
     stuur: (ids, kol, rij) => stuur(staat, ids === 'alle' ? staat.werkers.map((w) => w.id) : ids, kol, rij),
   };
 
-  const beeld = new WereldBeeld(staat, factie.beeld());
+  const fb = factie.beeld();
+  const beeld = new WereldBeeld(staat, { ...fb, sprites: { ...fb.sprites, ...landSprites() } });
   await beeld.laad();
   markeer('world ready');
   app.stage.addChild(beeld.wereld);
@@ -102,6 +111,7 @@ async function start(): Promise<void> {
       staat.onderweg > 0
         ? `In the void · on the way to ${dimensieKleur(staat.dimensie).naam}`
         : `Dimension ${staat.dimensie} · ${dimensieKleur(staat.dimensie).naam} · stream in ${Math.floor(rest / 60)}:${String(rest % 60).padStart(2, '0')}`,
+      wrathRegel(staat),
       `Machine: power ${Math.floor((100 * staat.machine.energie) / staat.machine.maxEnergie)}% (needs 100% at the stream)${staat.gemist ? ` · stream missed ${staat.gemist}×` : ''}`,
       `Stock: scrap ${Math.floor(v.schroot ?? 0)} · wood ${Math.floor(v.hout ?? 0)} · crystal ${Math.floor(v.kristal ?? 0)}`,
       `${factie.data.naam}: ${staat.werkers.length} (${bezig} working) · selected ${besturing.selectie.size}`,
@@ -110,5 +120,16 @@ async function start(): Promise<void> {
     beeldKlaar(t.deltaMS, performance.now() - t0);
   });
 }
+
+const wrathRegel = (s: SpelStaat): string => {
+  const l = s.land, st = stadium(l.wrath), nr = stadiumNummer(l.wrath);
+  const vak = WRATH_STADIA.map((x, i) => {
+    const volle = Math.max(0, Math.min(1, (l.wrath - x.vanaf) / ((WRATH_STADIA[i + 1]?.vanaf ?? WRATH_MAX) - x.vanaf)));
+    return `<span style="display:inline-block;width:26px;height:8px;margin-right:2px;background:#2a2c28"><span style="display:block;height:8px;width:${Math.round(volle * 26)}px;background:${x.kleur}"></span></span>`;
+  }).join('');
+  const raid = st.raid && s.onderweg <= 0 ? ` · raid in ${Math.max(0, Math.ceil(l.raidIn))}s` : '';
+  const hier = l.raiders.length ? ` · <b style="color:${st.kleur}">${l.raiders.length} raider${l.raiders.length > 1 ? 's' : ''} coming</b>` : '';
+  return `Wrath ${vak} <b style="color:${st.kleur}">${Math.floor(l.wrath)} ${st.naam}</b> (${nr + 1}/5)${raid}${hier}`;
+};
 
 start();
