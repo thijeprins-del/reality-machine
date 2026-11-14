@@ -4,7 +4,7 @@ import { Assets, BlurFilter, ColorMatrixFilter, Container, Graphics, Matrix, Rec
 import { naarScherm, TEGEL_B, TEGEL_H } from './iso';
 import { dimensieKleur, DIMENSIE_DUUR_SEC, hoogteTint, HOOGTE_MIN, HOOGTE_PX, SCHIJF_HOOGTE, SPRONG_SEC, THUIS, type DimensieWereld } from '../data/dimensies';
 import { tekenDebug } from './debugbeeld';
-import { MIST_ONBEKEND, MIST_VERKEND } from './mist';
+import { MIST_ONBEKEND, MIST_VERKEND, MIST_ZICHT } from './mist';
 import { meet } from './prestatie';
 import { klepHoeken, opKlep, opSchijf, schijfStraal, type Blok, type Kaart } from './kaart';
 import type { SpelStaat } from './spel';
@@ -54,6 +54,7 @@ export class WereldBeeld {
   private texturen = new Map<string, Texture>();
   private sprites: Record<string, SpriteInfo>;
   private werkers: Stuk[] = [];
+  private overvallers = new Map<number, Stuk>(); // de overvallers van het land, per id
   private afzettingen = new Map<number, Stuk>();
   private t = 0;
   private dimensie = 0; // welke dimensie nu getekend is
@@ -619,6 +620,24 @@ export class WereldBeeld {
       }
     });
     if (selectie.size) this.markering.stroke({ width: 1, color: 0x9dff2e, alpha: 0.7 });
+    this.werkOvervallers();
+  }
+
+  // De overvallers van het land (src/land/wrath.ts): een sprite per overvaller, weg als hij verslagen is of de dimensie wisselt.
+  private werkOvervallers(): void {
+    const lijst = this.staat.land.raiders;
+    const leeft = new Set(lijst.map((o) => o.id));
+    for (const [id, st] of this.overvallers) if (!leeft.has(id)) { this.weg(st); this.overvallers.delete(id); }
+    for (const o of lijst) {
+      if (!this.sprites[o.soort] || !this.texturen.get(o.soort)) continue;
+      let st = this.overvallers.get(o.id);
+      if (!st) this.overvallers.set(o.id, (st = this.maak(o.soort, true)));
+      const hup = Math.sin(this.t * 10 + o.id * 3) > 0.3 ? PIXEL : 0;
+      this.zetEenheid(st, o.x, o.y, o.kijkt, hup);
+      // zichtbaar alleen als het stuk land niet in de mist ligt
+      const mi = this.staat.kaart.mist, zicht = mi.toestand[Math.round(o.y) * mi.breed + Math.round(o.x)] === MIST_ZICHT;
+      for (const d of st.delen) d.visible = zicht;
+    }
   }
 
   // Het niets: zwart, met strepen licht die langs de schijf omhoog schieten (de schijf valt erdoorheen).
