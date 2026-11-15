@@ -6,9 +6,9 @@
   "resources": [
     { "id": "kristal", "name": "CRYSTAL", "color": "#4ef2ff", "volume": 1, "sprite": "kristal", "glows": true, "onMap": true, "fields": { "count": 4, "tiles": [5, 8], "perTile": 120, "distance": [19, 26] } },
     { "id": "ijs", "name": "ICE", "color": "#bfe6f2", "volume": 1, "onMap": true, "fields": { "count": 3, "tiles": [8, 12], "perTile": 200, "distance": [19, 26] } },
-    { "id": "schroot", "name": "FROZEN WRECK", "color": "#8f9aa0", "volume": 1, "sprite": "schroot", "onMap": true, "fields": { "count": 1, "tiles": [4, 6], "perTile": 100, "distance": [24, 28] } },
-    { "id": "plaat", "name": "CRYSTAL PANE", "color": "#8fd8e8", "volume": 1 },
-    { "id": "balk", "name": "FROST BEAM", "color": "#a8cfdc", "volume": 1 }
+    { "id": "schroot", "name": "FROZEN WRECK", "color": "#8f9aa0", "volume": 1, "sprite": "wrak", "onMap": true, "fields": { "count": 1, "tiles": [4, 6], "perTile": 100, "distance": [24, 28] } },
+    { "id": "plaat", "name": "CRYSTAL PANE", "color": "#8fd8e8", "volume": 1, "sprite": "kristal-plaat" },
+    { "id": "balk", "name": "FROST BEAM", "color": "#a8cfdc", "volume": 1, "sprite": "ijs-balk" }
   ],
   "recipes": [
     { "id": "mijn_kristal", "name": "Mine crystal", "time": 0.5, "inputs": {}, "outputs": { "kristal": 1 } },

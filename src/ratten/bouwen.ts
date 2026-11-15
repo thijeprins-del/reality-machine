@@ -97,8 +97,10 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
     return { naam, tint: hex(soort.color) };
   };
   const stukVoor = (g: Goed, vorm: 'last' | 'hoop'): { naam: string; tint: number } => {
+    // eerst zijn eigen plaatje; anders dat van zijn id (drijfhout is hout) of het schroot, in zijn eigen kleur
     const eigen = `${vorm}-${goed(g).sprite ?? g}`;
-    return beeld.heeft(eigen) ? { naam: eigen, tint: 0xffffff } : { naam: `${vorm}-schroot`, tint: hex(goed(g).color) };
+    if (beeld.heeft(eigen)) return { naam: eigen, tint: 0xffffff };
+    return { naam: beeld.heeft(`${vorm}-${g}`) ? `${vorm}-${g}` : `${vorm}-schroot`, tint: hex(goed(g).color) };
   };
   const zetNaam = (st: Stuk, p: { naam: string; tint: number }) => {
     if (st.naam !== p.naam) beeld.wissel(st, p.naam);

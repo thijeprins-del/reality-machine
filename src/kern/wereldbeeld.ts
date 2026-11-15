@@ -164,10 +164,11 @@ export class WereldBeeld {
     meet('build ground', () => this.bouwGrond(k));
     for (const a of k.afzettingen) {
       // Het plaatje van de grondstof (assets/wereld/<sprite>-1 en -2). Is dat er nog niet, dan de schroothoop in de kleur
-      // van het goed: zo is een nieuwe economie speelbaar voordat er kunst is.
+      // van het goed (of het plaatje van zijn id in die kleur: drijfhout is hout): zo is een nieuwe economie speelbaar
+      // voordat er kunst is.
       const soort = goed(a.goed);
       const eigen = `${soort.sprite ?? a.goed}-${a.variant + 1}`;
-      const st = this.maak(this.sprites[eigen] ? eigen : `schroot-${a.variant + 1}`);
+      const st = this.maak(this.sprites[eigen] ? eigen : this.sprites[`${a.goed}-${a.variant + 1}`] ? `${a.goed}-${a.variant + 1}` : `schroot-${a.variant + 1}`);
       if (!this.sprites[eigen]) st.delen[0].tint = soort.color;
       this.zetAfzetting(st, a);
       this.afzettingen.set(a.id, st);

@@ -6,9 +6,9 @@
   "resources": [
     { "id": "zout", "name": "SALT", "color": "#f2e6ec", "volume": 1, "onMap": true, "fields": { "count": 4, "tiles": [8, 12], "perTile": 200, "distance": [19, 26] } },
     { "id": "kelp", "name": "KELP", "color": "#4d7a3a", "volume": 1, "onMap": true, "fields": { "count": 3, "tiles": [6, 10], "perTile": 150, "distance": [19, 27] } },
-    { "id": "hout", "name": "DRIFTWOOD", "color": "#c2a98a", "volume": 1, "sprite": "hout", "onMap": true, "fields": { "count": 1, "tiles": [4, 6], "perTile": 100, "distance": [23, 28] } },
-    { "id": "plaat", "name": "SALT BRICK", "color": "#e0c8d2", "volume": 1 },
-    { "id": "balk", "name": "KELP BEAM", "color": "#6b8f3a", "volume": 1 }
+    { "id": "hout", "name": "DRIFTWOOD", "color": "#c2a98a", "volume": 1, "sprite": "drijfhout", "onMap": true, "fields": { "count": 1, "tiles": [4, 6], "perTile": 100, "distance": [23, 28] } },
+    { "id": "plaat", "name": "SALT BRICK", "color": "#e0c8d2", "volume": 1, "sprite": "zout-plaat" },
+    { "id": "balk", "name": "KELP BEAM", "color": "#6b8f3a", "volume": 1, "sprite": "kelp-balk" }
   ],
   "recipes": [
     { "id": "mijn_zout", "name": "Rake salt", "time": 0.5, "inputs": {}, "outputs": { "zout": 1 } },

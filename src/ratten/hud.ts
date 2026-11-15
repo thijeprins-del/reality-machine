@@ -8,16 +8,18 @@ import { actieveEconomie, goed } from '../kern/economie';
 import { besturing, maakDialoog, schermAf, tipsIn, type Dialoog } from '../kern/scherm';
 import type { SpelStaat } from '../kern/spel';
 import type { Goed, Voorraad } from '../kern/types';
+import { goedIcoon } from './beeld';
 import { energie } from './energie';
 import { bouwSoorten, opslagMax, opslagVol } from './industrie';
 import { werk } from './werk';
 
 const kw = (n: number) => (Math.abs(n % 1) > 0.05 ? n.toFixed(1) : String(Math.round(n)));
 const veilig = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
-// Het icoon van een goed: het plaatje uit het economiebestand, anders een blokje in zijn kleur.
+// Het icoon van een goed: zijn hoopje (assets/goederen of assets/muizen), anders een blokje in zijn kleur.
 function icoon(g: Goed): string {
   const s = goed(g);
-  return s.icon ? `<img class="ico" src="${s.icon}" alt="">` : `<i class="ico${s.glows ? ' gloeit' : ''}" style="background:${s.color};color:${s.color}"></i>`;
+  const plaatje = goedIcoon(s) ?? s.icon;
+  return plaatje ? `<img class="ico plaatje" src="${plaatje}" alt="">` : `<i class="ico${s.glows ? ' gloeit' : ''}" style="background:${s.color};color:${s.color}"></i>`;
 }
 // Alle goederen om te tonen: eerst die van deze wereld (in de volgorde van het bestand), dan wat er verder nog ligt.
 const alleGoederen = (s: SpelStaat): Goed[] => [...new Set([...actieveEconomie().goederen.keys(), ...Object.keys(s.voorraad)])];

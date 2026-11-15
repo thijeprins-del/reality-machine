@@ -4,11 +4,11 @@
   "startingResources": { "basalt": 40, "erts": 20, "plaat": 4, "balk": 2 },
   "settings": { "bufferSize": 6, "defaultStorage": 8, "warehouseStorage": 250 },
   "resources": [
-    { "id": "erts", "name": "MAGMA ORE", "color": "#c8502a", "volume": 1, "onMap": true, "fields": { "count": 3, "tiles": [6, 10], "perTile": 180, "distance": [19, 26] } },
+    { "id": "erts", "name": "MAGMA ORE", "color": "#c8502a", "volume": 1, "sprite": "magma-erts", "onMap": true, "fields": { "count": 3, "tiles": [6, 10], "perTile": 180, "distance": [19, 26] } },
     { "id": "basalt", "name": "BASALT", "color": "#5a5462", "volume": 1, "onMap": true, "fields": { "count": 3, "tiles": [8, 12], "perTile": 200, "distance": [19, 26] } },
     { "id": "schroot", "name": "SLAG", "color": "#6e5a52", "volume": 1, "sprite": "slak" },
     { "id": "plaat", "name": "CAST PLATE", "color": "#9aa3ad", "volume": 1 },
-    { "id": "balk", "name": "BASALT BEAM", "color": "#4c4854", "volume": 1 }
+    { "id": "balk", "name": "BASALT BEAM", "color": "#4c4854", "volume": 1, "sprite": "basalt-balk" }
   ],
   "recipes": [
     { "id": "mijn_erts", "name": "Mine magma ore", "time": 0.5, "inputs": {}, "outputs": { "erts": 1 } },

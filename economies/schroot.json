@@ -7,7 +7,7 @@
     { "id": "schroot", "name": "SCRAP", "color": "#a8a49a", "volume": 1, "sprite": "schroot", "onMap": true, "fields": { "count": 4, "tiles": [8, 12], "perTile": 200, "distance": [19, 25] } },
     { "id": "hout", "name": "OLD TYRES", "color": "#3a3a42", "volume": 1, "sprite": "tyres", "onMap": true, "fields": { "count": 2, "tiles": [5, 8], "perTile": 120, "distance": [21, 27] } },
     { "id": "plaat", "name": "PLATE", "color": "#9aa3ad", "volume": 1 },
-    { "id": "balk", "name": "GIRDER", "color": "#7d8288", "volume": 1 }
+    { "id": "balk", "name": "GIRDER", "color": "#7d8288", "volume": 1, "sprite": "ligger" }
   ],
   "recipes": [
     { "id": "mijn_schroot", "name": "Dig scrap", "time": 0.5, "inputs": {}, "outputs": { "schroot": 1 } },

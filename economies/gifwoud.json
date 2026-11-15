@@ -4,10 +4,10 @@
   "startingResources": { "hout": 50, "hars": 15, "plaat": 4, "balk": 2 },
   "settings": { "bufferSize": 6, "defaultStorage": 8, "warehouseStorage": 250 },
   "resources": [
-    { "id": "hout", "name": "ROTWOOD", "color": "#7d8a3c", "volume": 1, "sprite": "hout", "onMap": true, "fields": { "count": 4, "tiles": [8, 12], "perTile": 180, "distance": [19, 26] } },
+    { "id": "hout", "name": "ROTWOOD", "color": "#7d8a3c", "volume": 1, "sprite": "rothout", "onMap": true, "fields": { "count": 4, "tiles": [8, 12], "perTile": 180, "distance": [19, 26] } },
     { "id": "hars", "name": "RESIN", "color": "#d9a13b", "volume": 1, "onMap": true, "fields": { "count": 3, "tiles": [4, 7], "perTile": 100, "distance": [20, 27] } },
     { "id": "kristal", "name": "GLOW SPORES", "color": "#9dff2e", "volume": 1, "sprite": "sporen", "glows": true, "onMap": true, "fields": { "count": 2, "tiles": [4, 6], "perTile": 80, "distance": [23, 28] } },
-    { "id": "plaat", "name": "RESIN BOARD", "color": "#b8a060", "volume": 1 },
+    { "id": "plaat", "name": "RESIN BOARD", "color": "#b8a060", "volume": 1, "sprite": "hars-plaat" },
     { "id": "balk", "name": "BEAM", "color": "#8a6a40", "volume": 1 }
   ],
   "recipes": [
