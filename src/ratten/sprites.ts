@@ -2,11 +2,11 @@
 // anker = pixel in de sprite die op de achterhoek van de tegel valt (voor muizen: de voeten).
 // gloed = er is een <naam>-gloed.png met alleen de neonpixels, voor de gloedlaag.
 export const MUIZEN_SPRITES = {
-  'muis': { w: 19, h: 11, ankerX: 8, ankerY: 9, tegels: 0, gloed: true },
-  'muis-monteur': { w: 19, h: 11, ankerX: 8, ankerY: 9, tegels: 0, gloed: true },
-  'muis-schroot': { w: 19, h: 11, ankerX: 8, ankerY: 9, tegels: 0, gloed: true },
-  'muis-hout': { w: 19, h: 11, ankerX: 8, ankerY: 9, tegels: 0, gloed: true },
-  'muis-kristal': { w: 19, h: 11, ankerX: 8, ankerY: 9, tegels: 0, gloed: true },
+  'muis': { w: 16, h: 17, ankerX: 6, ankerY: 15, tegels: 0, gloed: true },
+  'muis-monteur': { w: 16, h: 17, ankerX: 6, ankerY: 15, tegels: 0, gloed: true },
+  'muis-schroot': { w: 16, h: 17, ankerX: 6, ankerY: 15, tegels: 0, gloed: true },
+  'muis-hout': { w: 16, h: 17, ankerX: 6, ankerY: 15, tegels: 0, gloed: true },
+  'muis-kristal': { w: 16, h: 17, ankerX: 6, ankerY: 15, tegels: 0, gloed: true },
   'mech': { w: 170, h: 228, ankerX: 56, ankerY: 176, tegels: 3, gloed: true },
   'sjouwbot': { w: 128, h: 144, ankerX: 52, ankerY: 100, tegels: 2, gloed: true },
   'boor': { w: 88, h: 152, ankerX: 44, ankerY: 112, tegels: 2, gloed: true },

@@ -109,32 +109,39 @@ const MUIS_KAART = [
   '.mLLmt',
   '..p.p.',
 ];
-// PACK RAT: de rat die over het eiland loopt. Groter en grauwer dan de muisjes in de voertuigen: lang lijf, lange
-// spitse snuit met een roze neus, rond oor, neonbril (gloeit groen) en een kale staart die achter hem aan sleept.
-// Kijkt naar rechts. De sprites heten nog 'muis' (zo kent de code de eenheid).
+// PACK RAT: de rat die over het eiland loopt. Hij loopt rechtop op twee poten, als een klein mannetje: kop met een lange
+// spitse snuit en een roze neus, rond oor, neonbril (gloeit groen), een arm naar voren en een kale staart achter zich.
+// Groter en grauwer dan de muisjes in de voertuigen. Kijkt naar rechts. De sprites heten nog 'muis' (zo kent de code hem).
 const RAT_KAART = [
-  '..........oo....',
-  '.........opo....',
-  '...ddddd.oLL....',
-  '..dLLLLLdLLgLL..',
-  '.dLLLLLLLLLLLLLn',
-  '.dLLLLLLLLhhhh..',
-  '.tLLLLLLLhh.....',
-  'tt.mm...mm......',
+  '....oo......',
+  '...opo......',
+  '...LLLL.....',
+  '..LLLgLLL...',
+  '..LLLLLLLLn.',
+  '..LLLLhhh...',
+  '...LLLh.....',
+  '..dLLhhL....',
+  '..dLLhhLL...',
+  '..dLLhh.....',
+  '.tdLLLh.....',
+  't..LLLL.....',
+  't..m..m.....',
+  '.t.m..m.....',
+  '..tmm.mm....',
 ];
 function tekenMuis(naam, variant) {
-  const d = new Doek(19, 11);
+  const d = new Doek(16, 17);
   const v = T.vacht;
   const kleur = { o: v[2], L: v[2], d: v[1], h: v[4], m: v[1], n: K.neus, t: K.neus, p: K.oorBinnen, g: v[3] };
-  const ox = 2, oy = 2;
+  const ox = 2, oy = 1;
   RAT_KAART.forEach((regel, y) => {
-    if (regel.length !== 16) throw new Error('RAT_KAART: regel ' + y + ' is niet 16 breed');
+    if (regel.length !== 12) throw new Error('RAT_KAART: regel ' + y + ' is niet 12 breed');
     [...regel].forEach((c, x) => { if (c !== '.') d.zet(ox + x, oy + y, kleur[c]); });
   });
   if (variant === 'monteur') {
-    // te grote moersleutel, schuin over de rug
-    d.lijn(ox + 2, oy + 1, ox + 6, oy, T.staal[6]);
-    d.zet(ox + 7, oy - 1, T.staal[5]); d.zet(ox + 7, oy + 1, T.staal[5]);
+    // te grote moersleutel in de hand
+    d.lijn(ox + 8, oy + 8, ox + 10, oy + 6, T.staal[6]);
+    d.zet(ox + 10, oy + 5, T.staal[5]); d.zet(ox + 11, oy + 6, T.staal[5]);
   }
   // met lading: een bundel op de rug
   const lading = {
@@ -143,12 +150,12 @@ function tekenMuis(naam, variant) {
     kristal: [T.glas[4], T.glas[3], T.glas[5], T.glas[5]],
   }[variant];
   if (lading) {
-    for (let j = 0; j < 3; j++) for (let i = 0; i < 4; i++) d.zet(ox + 3 + i, oy - 1 + j, lading[(i + j) % 3]);
-    d.zet(ox + 4, oy - 2, lading[3]); d.zet(ox + 5, oy - 2, lading[3]);
-    if (variant === 'kristal') d.licht(ox + 3, oy - 1, N.magenta);
+    for (let j = 0; j < 4; j++) for (let i = 0; i < 3; i++) d.zet(ox - 1 + i, oy + 5 + j, lading[(i + j) % 3]);
+    d.zet(ox, oy + 4, lading[3]); d.zet(ox + 1, oy + 4, lading[3]);
+    if (variant === 'kristal') d.licht(ox - 1, oy + 5, N.magenta);
   }
-  d.licht(ox + 11, oy + 3, N.gif);
-  bewaar(naam, d, ox + 6, oy + 7, 0);
+  d.licht(ox + 5, oy + 3, N.gif);
+  bewaar(naam, d, ox + 4, oy + 14, 0);
 }
 
 
