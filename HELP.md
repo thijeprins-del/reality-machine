@@ -50,9 +50,10 @@ De knop **POWER** opent het stroompaneel. Elke knop doet iets; wijs iets aan voo
   hoger. De machine moet volle stroom krijgen als de stream komt.
 
 ## Bouwen
-Rechts zit het bouwmenu (BUILD), met erboven de naam van de economie van deze wereld. Bij elk gebouw staat wat het kost:
-groen = je hebt genoeg, rood = te weinig. Zijn er veel gebouwen, dan staat elk op één regel en zie je de kosten onderaan
-als je het aanwijst. De letter voor de naam is de sneltoets. Wat er te bouwen valt verschilt per wereld; dit zijn de soorten:
+Rechts zit het bouwmenu (BUILD). In de kop staat de economie van deze wereld en het bestand waar ze uit komt. Elk gebouw
+is een kaart met zijn plaatje, naam, sneltoets (het gele vakje) en kosten: groen = je hebt genoeg, rood = te weinig.
+Wijs een kaart aan en eronder staat alles over dat gebouw: wat het doet, maat, bouwtijd, stroom, ploeg, de kosten tegen
+wat je hebt, en zijn recepten met iconen. Klik op een gebouw in de wereld en het menu toont zijn stand en zijn knoppen. Wat er te bouwen valt verschilt per wereld; dit zijn de soorten:
 - **Productiegebouw** (in de schrootwereld de **F Fabricator**): binnen de ring. Heeft het meer recepten, klik erop en
   kies rechts wat het maakt (of STOP). Het krijgt zijn invoer van een band die erin loopt of van ratten, en wat het maakt
   gaat op een band die tegen zijn voet begint, of ratten brengen het naar het magazijn. Sommige vragen stroom en een ploeg.

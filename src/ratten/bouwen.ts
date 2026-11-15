@@ -1,27 +1,25 @@
-// Bouwen in de wereld: het bouwmenu rechts (wat je in deze wereld kunt neerzetten en wat het kost, en het gebouw dat je
-// hebt aangeklikt), de muis in bouwmodus, en alles van de industrie tekenen: stroombronnen, gebouwen (winningsgebouwen
+// Bouwen in de wereld: de muis in bouwmodus en alles van de industrie tekenen (het menu zelf staat in bouwmenu.ts): stroombronnen, gebouwen (winningsgebouwen
 // gooit de machine naar hun plek), banden met lading, palen met kabels, bouwplekken en hopen.
 // De knoppen komen uit de economie van de wereld (economies/*.json). Een gebouw of goed zonder eigen plaatje krijgt een
 // bestaand plaatje in zijn kleur. Regels staan in industrie.ts en werk.ts; dit bestand tekent alleen en vertaalt klikken.
 import { Graphics } from 'pixi.js';
 import { naarScherm } from '../kern/iso';
-import { klein, toonTip } from '../kern/scherm';
+import { klein } from '../kern/scherm';
 import type { Blok } from '../kern/kaart';
 import type { SpelStaat } from '../kern/spel';
 import { hoogteOp, tegelOnder } from '../kern/terrein';
-import { actieveEconomie, goed, volumeVan, type BouwSoort } from '../kern/economie';
+import { actieveEconomie, goed, type BouwSoort } from '../kern/economie';
 import type { Goed, Richting, Voorraad } from '../kern/types';
 import { PIXEL, type Stuk, type WereldBeeld } from '../kern/wereldbeeld';
 import { energie, verbruiker } from './energie';
 import {
-  aangesloten, bereikVan, blokVan, bouwSoorten, gebouwOp, getallen, goederen, grondstoffen, industrie, kanBandOp, kanZetten, kiesRecept, legBand,
-  magazijnen, makers, midden, opslagMax, opslagVol, palen as allePalen, poorten, poortenVan, receptenVan, receptVan, RICHTINGEN, sloop, soortVan, tegel, vast, zet, zetUit,
+  aangesloten, bereikVan, blokVan, bouwSoorten, gebouwOp, getallen, goederen, industrie, kanBandOp, kanZetten, kiesRecept, legBand,
+  magazijnen, makers, midden, palen as allePalen, poorten, poortenVan, RICHTINGEN, sloop, soortVan, tegel, vast, zet,
   type Gebouw, type Oordeel, type Poort,
 } from './industrie';
-import { kanBetalen, kostTekst, naamVan } from './kosten';
+import { maakBouwmenu, knoppen } from './bouwmenu';
+import { kanBetalen, kostTekst } from './kosten';
 import { werk } from './werk';
-import { tekenRegels, type Regel } from './letters';
-import { KL } from './paneel';
 
 declare global {
   interface Window {
@@ -41,23 +39,7 @@ declare global {
 
 // Wat je aan het neerzetten bent: de id van een gebouw uit de economie van deze wereld, of 'sloop'.
 type Modus = string | null;
-interface Knop { id: string; naam: string; toets: string; uitleg: string; soort?: BouwSoort }
-function uitlegVan(b: BouwSoort): string {
-  if (b.aard === 'belt') return 'DRAG FROM AN ARROW ON THE RIGHT OF A BUILDING TO THE STOCK, OR TO AN ARROW ON THE LEFT OF ANOTHER. R = TURN';
-  if (b.aard === 'pole') return 'CARRIES POWER. CABLES RUN FROM POLE TO POLE';
-  if (b.aard === 'sink') return `+${b.storage} STORAGE FOR ANYTHING. CLICK IT TO LET A BELT NEXT TO IT TAKE GOODS OUT`;
-  if (b.aard === 'trash') return 'DESTROYS WHAT A BELT BRINGS IN';
-  if (b.aard === 'splitter' || b.aard === 'merger') return 'BELTS RUN IN, BELTS RUN OUT, IN TURNS';
-  if (b.onDeposit) return `CLICK NEXT TO A FIELD OF ${b.depRes.map(naamVan).join(' OR ')}. THE MACHINE THROWS IT THERE`;
-  return `${b.insideRing ? 'INSIDE THE RING. ' : ''}${b.recipes.length > 1 ? 'CLICK IT TO PICK A RECIPE' : 'BRING IT ITS INPUT BY BELT OR BY RATS'}`;
-}
-const knoppen = (): Knop[] => [
-  ...bouwSoorten().map((b) => ({ id: b.id, naam: b.name, toets: b.key, uitleg: uitlegVan(b), soort: b })),
-  { id: 'sloop', naam: 'DEMOLISH', toets: 'X', uitleg: 'CLICK OR DRAG. YOU GET THE BUILD COST BACK' },
-];
 const hex = (k: string) => parseInt(k.slice(1), 16);
-const SW = 136, SH = 384; // bouwmenu in menu-eenheden
-const RIJ = 24; // hoogte van een knop
 
 export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(sec: number): void; zicht(aan: boolean): void } {
   const canvas = document.body.querySelector('canvas') as HTMLCanvasElement; // het spel zelf (eerste canvas)
@@ -118,229 +100,15 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
     beeld.schudden(9);
   };
 
-  // ---- het bouwmenu (pixelart rechts, tekst scherp erbovenop) ----
-  const bv = Object.assign(document.createElement('canvas'), { width: SW, height: SH });
-  bv.id = 'bouwmenu';
-  bv.setAttribute('aria-label', 'Build menu: what you can place, the parts it needs, and the selected fabricator');
-  Object.assign(bv.style, { position: 'fixed', right: '0', top: '0', zIndex: '5', cursor: 'pointer' });
-  document.body.appendChild(bv);
-  const bvc = bv.getContext('2d')!;
-  const laag = Object.assign(document.createElement('canvas'), { width: SW, height: SH });
-  const bc = laag.getContext('2d')!;
-  let bs = 2;
-  let open = !klein(); // op een telefoon dicht tot je op BUILD tikt
-  const maat = () => {
-    bv.style.display = open ? 'block' : 'none';
-    // klein scherm: zo groot als past boven de knoppenbalk, ook kleiner dan 1
-    bs = klein()
-      ? Math.min(2, (innerHeight - 56) / SH, (innerWidth * 0.5) / SW)
-      : Math.max(1, Math.min(3, Math.floor(Math.min((innerHeight * 0.92) / SH, (innerWidth * 0.24) / SW) * 2) / 2));
-    const dpr = Math.min(2, devicePixelRatio || 1);
-    bv.style.width = `${SW * bs}px`;
-    bv.style.height = `${SH * bs}px`;
-    bv.width = Math.round(SW * bs * dpr);
-    bv.height = Math.round(SH * bs * dpr);
-  };
-  maat();
-  window.addEventListener('resize', maat);
-  const R = (x: number, y: number, w: number, h: number, k: string) => {
-    bc.fillStyle = k;
-    bc.fillRect(x, y, w, h);
-  };
-  let regels: Regel[] = [];
-  const txt = (s: string, x: number, y: number, k: string, w?: number) => {
-    regels.push({ s: s.toUpperCase(), x, y, k, sz: 1, w: w && s.length * 4 > w ? w : undefined });
-    return x + Math.min(s.length * 4, w ?? Infinity);
-  };
-  // tekst over meerdere regels, hooguit `n` regels van `breed` tekens
-  const zinnen = (tekst: string, breed: number, n: number) => {
-    const uit = [''];
-    for (const w of tekst.split(' ')) {
-      if ((uit[uit.length - 1] + ' ' + w).trim().length > breed && uit.length < n) uit.push('');
-      uit[uit.length - 1] = (uit[uit.length - 1] + ' ' + w).trim();
-    }
-    return uit;
-  };
-  interface Vak { x: number; y: number; w: number; h: number; doe: (() => void) | null; hulp: string }
-  let vakken: Vak[] = [];
-  const vak = (x: number, y: number, w: number, h: number, doe: Vak['doe'], hulp: string) => vakken.push({ x, y, w, h, doe, hulp });
+  // ---- het bouwmenu (bouwmenu.ts): kaarten met plaatje, naam en kosten, en alles over het gekozen gebouw ----
   let gekozen: number | null = null; // aangeklikt gebouw
-  let wijst = -1;
-
-  const kostKleur = (s: SpelStaat, k: Parameters<typeof kanBetalen>[1]) => (kanBetalen(s.voorraad, k) ? KL.groen : KL.rood);
-  function knopVlak(x: number, y: number, w: number, h: number, aan: boolean, hover: boolean): void {
-    R(x, y, w, h, aan ? '#1d2a14' : hover ? '#1a1c1b' : '#121413');
-    R(x, y, w, 1, aan ? KL.groen : '#060606');
-    R(x, y + h - 1, w, 1, aan ? KL.groen : '#353837');
-  }
-  function tekenMenu(s: SpelStaat): void {
-    const i = industrie(s);
-    regels = [];
-    vakken = [];
-    bc.clearRect(0, 0, SW, SH);
-    R(0, 0, SW, SH, '#0b0c0c');
-    R(0, 0, 1, SH, '#353837');
-    R(0, SH - 1, SW, 1, '#353837');
-    for (let y = 0; y < SH; y++) R(1, y, 2, 1, Math.floor(y / 3) % 2 ? '#0a0a0a' : '#5a4a12');
-    txt('BUILD', 8, 5, KL.stencil);
-    txt(actieveEconomie().name, 40, 5, KL.dim, SW - 48);
-    let y = 14;
-    // Weinig gebouwen: twee regels per knop (naam, kosten). Veel: één regel, de kosten staan dan in de uitleg onderaan.
-    const lijst = knoppen();
-    const krap = lijst.length > 7;
-    const rij = krap ? 11 : RIJ;
-    for (const k of lijst) {
-      const n = vakken.length;
-      const kost = k.soort?.cost;
-      knopVlak(6, y, SW - 10, rij - (krap ? 1 : 2), modus === k.id, wijst === n);
-      txt(k.toets, 10, y + (krap ? 3 : 4), KL.stencil);
-      txt(k.naam, 18, y + (krap ? 3 : 4), modus === k.id ? KL.groen : krap && kost && !kanBetalen(s.voorraad, kost) ? '#a07070' : '#e8e4d4', SW - 30);
-      if (!krap) {
-        if (!kost) txt('REFUNDS THE COST', 10, y + 13, KL.dim);
-        else txt(kostTekst(kost, true) + (k.soort?.aard === 'belt' ? ' / TILE' : ''), 10, y + 13, kostKleur(s, kost), SW - 20);
-      }
-      vak(6, y, SW - 10, rij - (krap ? 1 : 2), () => kies(k.id), `${k.naam}${k.toets ? ` (${k.toets})` : ''}: ${kost && krap ? `${kostTekst(kost, true)}. ` : ''}${k.uitleg}`);
-      y += rij;
-    }
-    // de opslag: hoe vol, en wat er aan onderdelen ligt (de grondstoffen staan op het paneel)
-    y += 4;
-    const vol = opslagVol(s), max = opslagMax(s);
-    txt('STORAGE', 8, y, KL.stencil);
-    txt(`${Math.round(vol)}/${Math.round(max)}`, 44, y, vol >= max - 1 ? KL.amber : '#ffe08a');
-    R(80, y + 2, 48, 3, '#050505');
-    R(80, y + 2, Math.round((48 * Math.min(vol, max)) / max), 3, vol >= max - 1 ? KL.rood : '#a8a49a');
-    vak(6, y - 1, SW - 10, 8, null, 'STORAGE: EVERYTHING SHARES ONE STOCK. BUILD STORAGE BUILDINGS FOR MORE ROOM');
-    y += 9;
-    const ruw = grondstoffen();
-    const delen = [...new Set([...goederen(), ...Object.keys(s.voorraad)])].filter((g) => !ruw.includes(g))
-      .sort((a, b) => +((s.voorraad[b] ?? 0) >= 1) - +((s.voorraad[a] ?? 0) >= 1)).slice(0, 6);
-    const dw = (SW - 14) / 2;
-    delen.forEach((d, n) => {
-      const dx = 8 + (n % 2) * (dw + 2), dy = y + Math.floor(n / 2) * 9;
-      R(dx, dy + 1, 3, 3, goed(d).color);
-      txt(naamVan(d), dx + 5, dy, KL.label, dw - 24);
-      txt(String(Math.floor(s.voorraad[d] ?? 0)), dx + dw - 16, dy, '#ffe08a');
-      vak(dx, dy - 1, dw, 8, null, `${naamVan(d)}: ${Math.floor(s.voorraad[d] ?? 0)} IN STOCK`);
-    });
-    y += Math.ceil(delen.length / 2) * 9;
-    // het aangeklikte gebouw
-    const g = i.gebouwen.find((x) => x.id === gekozen);
-    if (!g) gekozen = null;
-    y += 4;
-    R(6, y - 2, SW - 10, 1, '#353837');
-    if (g) {
-      const soort = soortVan(g);
-      txt(soort.name, 8, y + 2, KL.cyaan, SW - 16);
-      y += 11;
-      if (g.af) {
-        txt(`BEING BUILT${leegKost(g.nodig) ? '' : `. NEEDS ${kostTekst(g.nodig, true)}`}`, 10, y, KL.geel, SW - 20);
-        y += 10;
-      } else if (soort.aard === 'sink') {
-        // magazijn: neemt alles aan; een band ernaast kan er één goed uit trekken
-        txt(`+${soort.storage} STORAGE`, 10, y, KL.groen);
-        y += 9;
-        txt('A BELT NEXT TO IT TAKES OUT', 10, y, KL.label, SW - 20);
-        y += 8;
-        const keuze = [...new Set([...(g.uit ? [g.uit] : []), ...Object.keys(s.voorraad).filter((x) => (s.voorraad[x] ?? 0) >= 1)])].slice(0, 10);
-        keuze.forEach((x, n) => {
-          const bx = 6 + (n % 2) * (dw + 4), by = y + Math.floor(n / 2) * 13;
-          const m = vakken.length;
-          knopVlak(bx, by, dw, 12, g.uit === x, wijst === m);
-          txt(naamVan(x), bx + 4, by + 4, g.uit === x ? KL.groen : '#e8e4d4', dw - 8);
-          vak(bx, by, dw, 12, () => zetUit(s, g, x), `BELTS NEXT TO THIS ${soort.name} TAKE ${naamVan(x)} OUT. CLICK AGAIN TO STOP`);
-        });
-        y += Math.ceil(keuze.length / 2) * 13 + 2;
-      } else if (soort.aard === 'prod') {
-        const recept = receptVan(g);
-        const status = g.geblokt || (recept ? recept.name.toUpperCase() : 'IDLE');
-        txt(status, 10, y, g.geblokt ? KL.rood : KL.groen, SW - 20);
-        y += 8;
-        R(10, y, SW - 20, 4, '#050505');
-        R(10, y, Math.round((SW - 20) * Math.min(1, g.klok)), 4, KL.cyaan);
-        y += 7;
-        txt(`OUTPUT ${Math.round(volumeVan(telling(g.buffer), (x) => goed(x).volume))}/${soort.storage}${soort.crew ? `  RATS ${g.ploeg}/${soort.crew}` : ''}`, 10, y, KL.label, SW - 20);
-        y += 8;
-        if (!soort.onDeposit) {
-          txt(`INPUT ${kostTekst(g.invoer, true).replace('FREE', 'NONE')}`, 10, y, KL.label, SW - 20);
-          y += 9;
-          // de aansluitpunten: wat links in gaat en rechts uit komt, in de kleur van de pijlen in de wereld
-          for (const [kop, lijst] of [['IN  LEFT', Object.keys(recept?.inputs ?? {})], ['OUT RIGHT', Object.keys(recept?.outputs ?? {})]] as [string, Goed[]][]) {
-            if (!lijst.length) continue;
-            let px = txt(kop, 10, y, KL.dim) + 4;
-            for (const x of lijst) {
-              R(px, y + 1, 3, 3, goed(x).color);
-              px = txt(naamVan(x), px + 5, y, '#e8e4d4', 40) + 5;
-            }
-            vak(6, y - 1, SW - 10, 8, null, `BELTS: ${kop === 'IN  LEFT' ? 'BRING INPUT TO THE ARROWS ON THE LEFT SIDES' : 'START A BELT ON AN ARROW ON THE RIGHT SIDES'}. EACH ARROW HAS THE COLOUR OF ITS GOOD`);
-            y += 8;
-          }
-          y += 2;
-          for (const r of [...receptenVan(g), null]) {
-            const n = vakken.length;
-            knopVlak(6, y, SW - 10, 12, g.recept === (r?.id ?? null), wijst === n);
-            txt(r ? r.name : 'STOP', 10, y + 4, g.recept === (r?.id ?? null) ? KL.groen : '#e8e4d4', SW - 20);
-            vak(6, y, SW - 10, 12, () => kiesRecept(s, g, r?.id ?? null), r
-              ? `${r.name}: ${kostTekst(r.inputs, true).replace('FREE', 'NOTHING')} > ${kostTekst(r.outputs, true)} IN ${r.time} S${Object.keys(r.outputs).length > 1 ? '. EACH PRODUCT HAS ITS OWN ARROW' : ''}`
-              : `STOP THIS ${soort.name}`);
-            y += 13;
-          }
-        }
-      } else {
-        for (const z of zinnen(uitlegVan(soort), 30, 3)) {
-          txt(z, 10, y, KL.dim);
-          y += 8;
-        }
-      }
-    }
-    // uitleg en meldingen onderaan
-    // Onderaan alleen wat je nu aan het doen bent: of het hier kan, of wat het gekozen gebouw wil. Uitleg bij een knop
-    // komt als tooltip bij de muis; op een aanraakscherm (geen muis) staat hij hier.
-    const tik = matchMedia('(pointer: coarse)').matches;
-    const regel = melding ? melding.reden : tik && wijst >= 0 && vakken[wijst] ? vakken[wijst].hulp : modus ? lijst.find((k) => k.id === modus)?.uitleg ?? '' : '';
-    if (regel) R(6, SH - 42, SW - 10, 1, '#353837');
-    zinnen(regel, 31, 4).forEach((z, n) => txt(z, 8, SH - 37 + n * 8, melding ? (melding.ok ? KL.groen : KL.rood) : KL.cyaan));
-    // naar het scherm: pixels opschalen, tekst scherp erover
-    bvc.imageSmoothingEnabled = false;
-    bvc.clearRect(0, 0, bv.width, bv.height);
-    bvc.drawImage(laag, 0, 0, bv.width, bv.height);
-    tekenRegels(bvc, regels, bv.width / SW, bv.height / SH);
-  }
-  const leegKost = (v: Voorraad) => !Object.values(v).some((n) => (n ?? 0) > 0);
-  const telling = (lijst: Goed[]): Voorraad => {
-    const uit: Voorraad = {};
-    for (const x of lijst) uit[x] = (uit[x] ?? 0) + 1;
-    return uit;
-  };
   const kies = (m: Modus) => {
     modus = modus === m ? null : m;
     melding = null;
     sleep = null;
   };
-  const opMenu = (e: PointerEvent) => {
-    const r = bv.getBoundingClientRect();
-    const x = ((e.clientX - r.left) / r.width) * SW, y = ((e.clientY - r.top) / r.height) * SH;
-    for (let n = vakken.length - 1; n >= 0; n--) {
-      const v = vakken[n];
-      if (x >= v.x && y >= v.y && x < v.x + v.w && y < v.y + v.h) return n;
-    }
-    return -1;
-  };
-  bv.addEventListener('pointerdown', (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    const n = opMenu(e);
-    wijst = n; // ook bij tikken de uitleg onderaan laten zien
-    if (n >= 0 && e.button === 0) vakken[n].doe?.();
-  });
-  bv.addEventListener('pointermove', (e) => {
-    wijst = opMenu(e);
-    toonTip(wijst >= 0 && e.pointerType === 'mouse' ? vakken[wijst].hulp : null, e.clientX, e.clientY);
-  });
-  bv.addEventListener('pointerleave', () => {
-    wijst = -1;
-    toonTip(null);
-  });
-  bv.addEventListener('contextmenu', (e) => e.preventDefault());
+  const menu = maakBouwmenu({ staat, modus: () => modus, kies, gekozen: () => gekozen, melding: () => melding });
+  menu.zicht(!klein()); // op een telefoon dicht tot je op BUILD tikt
 
   // ---- invoer in de wereld ----
   const opTegel = (e: PointerEvent | MouseEvent) => {
@@ -861,8 +629,7 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
 
   return {
     zicht(aan) {
-      open = aan;
-      maat();
+      menu.zicht(aan);
     },
     werk(sec) {
       t += sec;
@@ -871,7 +638,7 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
       tekenWereld(s, sec);
       tekenGeest(s);
       canvas.style.cursor = modus ? 'crosshair' : '';
-      tekenMenu(s);
+      menu.werk(sec);
     },
   };
 }

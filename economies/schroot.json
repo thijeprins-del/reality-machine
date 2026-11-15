@@ -22,7 +22,7 @@
     { "id": "paal", "name": "POLE", "color": "#6a552d", "sprite": "mast", "key": "P", "pole": true, "link": 8, "reach": 5, "cost": { "balk": 1 }, "work": 3 },
     { "id": "stapel", "name": "WAREHOUSE", "color": "#55606b", "sprite": "stapel", "key": "O", "sink": true, "storage": 150, "size": 2, "insideRing": true, "cost": { "balk": 4 }, "work": 6 },
     { "id": "kist", "name": "SMALL STORE", "color": "#55606b", "sprite": "stapel-1", "key": "K", "sink": true, "storage": 40, "size": 1, "insideRing": true, "cost": { "balk": 1 }, "work": 2 },
-    { "id": "splitter", "name": "SPLITTER", "color": "#4d6478", "key": "T", "splitter": true, "ports": 3, "size": 1, "cost": { "plaat": 2 }, "work": 2 },
-    { "id": "merger", "name": "MERGER", "color": "#6a5a80", "key": "M", "merger": true, "ports": 3, "size": 1, "cost": { "plaat": 2 }, "work": 2 }
+    { "id": "splitter", "name": "SPLITTER", "color": "#4d6478", "sprite": "splitter", "key": "T", "splitter": true, "ports": 3, "size": 1, "cost": { "plaat": 2 }, "work": 2 },
+    { "id": "merger", "name": "MERGER", "color": "#6a5a80", "sprite": "merger", "key": "M", "merger": true, "ports": 3, "size": 1, "cost": { "plaat": 2 }, "work": 2 }
   ]
 }

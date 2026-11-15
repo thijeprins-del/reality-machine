@@ -19,14 +19,14 @@
     { "id": "balk_wrak", "name": "Salvage beam", "time": 3, "inputs": { "schroot": 3 }, "outputs": { "balk": 1 } }
   ],
   "buildings": [
-    { "id": "slijper", "name": "CRYSTAL CUTTER", "color": "#3aa8b8", "sprite": "pers", "size": 2, "insideRing": true, "cost": { "kristal": 15 }, "work": 10, "kW": 2, "crew": 2, "storage": 8, "recipes": ["plaat"], "key": "F" },
-    { "id": "vriezer", "name": "FREEZER", "color": "#7fb6cf", "sprite": "pers", "size": 2, "insideRing": true, "cost": { "ijs": 20, "kristal": 5 }, "work": 10, "kW": 2, "crew": 2, "storage": 8, "recipes": ["balk_ijs", "balk_wrak"], "key": "Z" },
+    { "id": "slijper", "name": "CRYSTAL CUTTER", "color": "#3aa8b8", "sprite": "slijper", "size": 2, "insideRing": true, "cost": { "kristal": 15 }, "work": 10, "kW": 2, "crew": 2, "storage": 8, "recipes": ["plaat"], "key": "F" },
+    { "id": "vriezer", "name": "FREEZER", "color": "#7fb6cf", "sprite": "vriezer", "size": 2, "insideRing": true, "cost": { "ijs": 20, "kristal": 5 }, "work": 10, "kW": 2, "crew": 2, "storage": 8, "recipes": ["balk_ijs", "balk_wrak"], "key": "Z" },
     { "id": "boor", "name": "ICE DRILL", "color": "#7a5c48", "sprite": "boor", "key": "B", "size": 2, "onDeposit": true, "range": 3, "cost": { "plaat": 3, "balk": 1 }, "work": 8, "kW": 2, "storage": 12, "recipes": ["mijn_kristal", "mijn_ijs", "mijn_schroot"] },
     { "id": "band", "name": "BELT", "color": "#5b554b", "sprite": "band-leeg", "key": "L", "belt": true, "speed": 2, "kW": 0.05, "cost": { "plaat": 1 }, "work": 1.2 },
     { "id": "paal", "name": "POLE", "color": "#6a552d", "sprite": "mast", "key": "P", "pole": true, "link": 8, "reach": 5, "cost": { "balk": 1 }, "work": 3 },
     { "id": "stapel", "name": "WAREHOUSE", "color": "#55606b", "sprite": "stapel", "key": "O", "sink": true, "storage": 150, "size": 2, "insideRing": true, "cost": { "balk": 4 }, "work": 6 },
     { "id": "kist", "name": "SMALL STORE", "color": "#55606b", "sprite": "stapel-1", "key": "K", "sink": true, "storage": 40, "size": 1, "insideRing": true, "cost": { "balk": 1 }, "work": 2 },
-    { "id": "splitter", "name": "SPLITTER", "color": "#4d6478", "key": "T", "splitter": true, "ports": 3, "size": 1, "cost": { "plaat": 2 }, "work": 2 },
-    { "id": "merger", "name": "MERGER", "color": "#6a5a80", "key": "M", "merger": true, "ports": 3, "size": 1, "cost": { "plaat": 2 }, "work": 2 }
+    { "id": "splitter", "name": "SPLITTER", "color": "#4d6478", "sprite": "splitter", "key": "T", "splitter": true, "ports": 3, "size": 1, "cost": { "plaat": 2 }, "work": 2 },
+    { "id": "merger", "name": "MERGER", "color": "#6a5a80", "sprite": "merger", "key": "M", "merger": true, "ports": 3, "size": 1, "cost": { "plaat": 2 }, "work": 2 }
   ]
 }
