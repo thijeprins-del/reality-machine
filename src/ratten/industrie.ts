@@ -11,8 +11,9 @@
 // - Neerzetten maakt een bouwplek. Ratten halen de bouwspullen uit de opslag, brengen ze en bouwen het af (werk.ts).
 // - Een productiegebouw krijgt zijn invoer gebracht (ratten, of een band die erin loopt) en legt wat het maakt voor zijn
 //   voet. Daar gaat het een band op die tegen de voet begint, of ratten sjouwen het naar de opslag.
-//   Maakt een recept meer dan één product, dan heeft elk product zijn eigen randtegels (zie `uitgangen`): een band die
-//   daar begint draagt alleen dat product.
+// - Aansluitpunten (`poorten`): een productiegebouw neemt banden aan op zijn linkerkanten (in beeld: zuid en west) en
+//   geeft af op zijn rechterkanten (oost en noord). Elk punt hoort bij één goed van het recept: een band levert alleen af
+//   op het punt van zijn goed, en een band die op een uitgang begint draagt alleen dat product.
 // - Gebouwen met stroomvraag draaien alleen binnen bereik van de machine of van een aangesloten paal.
 // - Een gebouw onthoudt uit welke economie het komt: na een sprong naar een andere wereld blijft het staan en werken.
 // - Bij de stream wordt alles buiten de ring ingepakt: de bouwkosten komen terug.
@@ -474,7 +475,8 @@ function stapIndustrie(s: SpelStaat, sec: number): void {
     // de band loopt een gebouw of de opslag in
     const doel = gebouwOp(s, nx, ny);
     const aard = doel && klaar(doel) ? soortVan(doel).aard : null;
-    if (doel && aard === 'prod' && !soortVan(doel).onDeposit && (doel.invoer[g] ?? 0) < invoerMax(doel, g)) {
+    // een productiegebouw neemt een band alleen aan op de ingang van dat goed
+    if (doel && aard === 'prod' && poorten(doel).some((p) => p.in && p.x === t.x && p.y === t.y && p.goed === g) && (doel.invoer[g] ?? 0) < invoerMax(doel, g)) {
       doel.invoer[g] = (doel.invoer[g] ?? 0) + 1;
       af();
     } else if (aard === 'trash') af();
@@ -513,13 +515,40 @@ export const randVan = (b: Blok): [number, number][] => {
   for (let d = 0; d < m; d++) r.push([b.x + d, b.y - 1], [b.x + m, b.y + d], [b.x + m - 1 - d, b.y + m], [b.x - 1, b.y + m - 1 - d]);
   return r;
 };
-// Welk product bij welke randtegel hoort (zelfde volgorde als randVan). Eén product: elke tegel (null). Meer producten:
-// om de beurt, zodat je per product een eigen band kunt leggen.
-export function uitgangen(g: Gebouw): (Goed | null)[] {
-  const r = receptVan(g), soort = soortVan(g);
-  const producten = r && soort.aard === 'prod' && !soort.onDeposit ? Object.keys(r.outputs) : [];
-  return randVan(blokVan(g)).map((_, k) => (producten.length > 1 ? producten[k % producten.length] : null));
+// Een aansluitpunt: de tegel naast het gebouw waar een band op hoort te liggen. `richting` = hoe de band er loopt
+// (een ingang het gebouw in, een uitgang ervan weg); `goed` = wat er door gaat (null = nog geen recept, of alles).
+export interface Poort {
+  x: number;
+  y: number;
+  richting: Richting;
+  in: boolean;
+  goed: Goed | null;
 }
+// De aansluitpunten van een gebouw van deze soort op (x, y) met dit recept. Net als in de sandbox: invoer links, uitvoer
+// rechts. In beeld is links de zuid- en de westkant, rechts de oost- en de noordkant; de voorste tegels komen eerst.
+// Elk goed van het recept krijgt om de beurt een tegel, dus met één goed mag de band op elke tegel van die kant.
+// Een winningsgebouw staat tegen zijn veld aan en geeft daarom af aan alle kanten.
+export function poortenVan(soort: BouwSoort, recept: ReceptSoort | undefined, x: number, y: number): Poort[] {
+  const uit: Poort[] = [];
+  if (soort.aard !== 'prod') return uit;
+  const m = soort.size;
+  if (soort.onDeposit) {
+    for (const [px, py] of randVan({ x, y, breed: m, diep: m }))
+      uit.push({ x: px, y: py, richting: px < x ? 'W' : px >= x + m ? 'O' : py < y ? 'N' : 'Z', in: false, goed: null });
+    return uit;
+  }
+  const rij = [...Array(m).keys()];
+  const invoer = recept ? Object.keys(recept.inputs) : [], producten = recept ? Object.keys(recept.outputs) : [];
+  const ingangen: [number, number, Richting][] = [...rij.map((d): [number, number, Richting] => [x + d, y + m, 'N']), ...rij.map((d): [number, number, Richting] => [x - 1, y + m - 1 - d, 'O'])];
+  const uitgangen: [number, number, Richting][] = [...rij.map((d): [number, number, Richting] => [x + m, y + m - 1 - d, 'O']), ...rij.map((d): [number, number, Richting] => [x + m - 1 - d, y - 1, 'N'])];
+  if (!recept || invoer.length) ingangen.forEach(([px, py, richting], k) => uit.push({ x: px, y: py, richting, in: true, goed: invoer.length ? invoer[k % invoer.length] : null }));
+  uitgangen.forEach(([px, py, richting], k) => uit.push({ x: px, y: py, richting, in: false, goed: producten.length ? producten[k % producten.length] : null }));
+  return uit;
+}
+export const poorten = (g: Gebouw): Poort[] => poortenVan(soortVan(g), receptVan(g), g.x, g.y);
+// De tegels waar dit gebouw zijn uitvoer op een band legt: zijn uitgangen, of (kruispunten) elke tegel eromheen.
+const afgifte = (g: Gebouw): { x: number; y: number; goed: Goed | null }[] =>
+  soortVan(g).aard === 'prod' ? poorten(g).filter((p) => !p.in) : randVan(blokVan(g)).map(([x, y]) => ({ x, y, goed: null }));
 // Loopt deze band van het gebouw weg (begint hij ertegenaan)?
 const loopt = (i: IndustrieStaat, blok: Blok, x: number, y: number): MBand | null => {
   const t = i.banden.get(tegel(x, y));
@@ -527,10 +556,11 @@ const loopt = (i: IndustrieStaat, blok: Blok, x: number, y: number): MBand | nul
   const [dx, dy] = RICHTINGEN[t.naar];
   return binnenBlok(blok, t.x + dx, t.y + dy) ? null : t;
 };
-// Ligt er een band tegen de voet van dit gebouw die zijn uitvoer meeneemt? Dan hoeven ratten niet te sjouwen.
-export function heeftBand(i: IndustrieStaat, g: Gebouw): boolean {
+// Ligt er een band op een uitgang van dit gebouw die dit goed meeneemt? Dan hoeven ratten het niet te sjouwen.
+// (Per goed: een smederij met een band voor haar platen laat de ratten nog wel de slak ophalen.)
+export function heeftBand(i: IndustrieStaat, g: Gebouw, goedId: Goed): boolean {
   const blok = blokVan(g);
-  return randVan(blok).some(([x, y]) => !!loopt(i, blok, x, y));
+  return afgifte(g).some((p) => (!p.goed || p.goed === goedId) && !!loopt(i, blok, p.x, p.y));
 }
 // Een band naast een magazijn trekt er het ingestelde goed uit (als hij er niet in loopt). Zo haal je voorraad weer op een band.
 function uitMagazijnen(s: SpelStaat): void {
@@ -551,15 +581,15 @@ function uitMagazijnen(s: SpelStaat): void {
     }
   }
 }
-// Leg één stuk uit de buffer op een band die tegen de voet begint: om de beurt, en alleen het product van die tegel.
+// Leg één stuk uit de buffer op een band die op een uitgang begint: om de beurt, en alleen het product van die uitgang.
 function zetOpBand(i: IndustrieStaat, g: Gebouw): void {
   const blok = blokVan(g);
-  const rand = randVan(blok), wat = uitgangen(g);
-  for (let n = 0; n < rand.length; n++) {
-    const k = (g.uitvoer + n) % rand.length;
-    const t = loopt(i, blok, rand[k][0], rand[k][1]);
+  const lijst = afgifte(g);
+  for (let n = 0; n < lijst.length; n++) {
+    const k = (g.uitvoer + n) % lijst.length, p = lijst[k];
+    const t = loopt(i, blok, p.x, p.y);
     if (!t || t.goed) continue;
-    const j = wat[k] ? g.buffer.indexOf(wat[k]!) : 0;
+    const j = p.goed ? g.buffer.indexOf(p.goed) : 0;
     if (j < 0) continue;
     t.goed = g.buffer.splice(j, 1)[0];
     t.voortgang = 0;

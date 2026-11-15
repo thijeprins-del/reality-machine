@@ -46,8 +46,11 @@ als je het aanwijst. De letter voor de naam is de sneltoets. Wat er te bouwen va
 - **Productiegebouw** (in de schrootwereld de **F Fabricator**): binnen de ring. Heeft het meer recepten, klik erop en
   kies rechts wat het maakt (of STOP). Het krijgt zijn invoer van een band die erin loopt of van ratten, en wat het maakt
   gaat op een band die tegen zijn voet begint, of ratten brengen het naar het magazijn. Sommige vragen stroom en een ploeg.
-  Maakt een recept meer dan één product, dan heeft elk product zijn eigen kanten: de gekleurde vlakjes rond het gebouw
-  (zichtbaar als je het aanklikt of een band legt) laten zien waar welk product naar buiten komt.
+  **Aansluitpunten**: rond elk productiegebouw liggen pijlen in de kleur van het goed. Links (de twee kanten links in
+  beeld) zitten de ingangen, met een streep achter de pijl: daar moet een band het gebouw in lopen, en hij levert alleen
+  af op de pijl van zijn eigen goed. Rechts zitten de uitgangen: een band die daar begint neemt dat product mee. Heeft een
+  recept twee grondstoffen of twee producten, dan heeft elk zijn eigen pijl. Kies je een band of klik je het gebouw aan,
+  dan lichten de tegels op; het menu rechts noemt wat er in en uit gaat (IN LEFT, OUT RIGHT). Ratten mogen overal bij.
 - **Winningsgebouw** (**B Boor**, DRILL; in de zoutzee het dok, de kelpkwekerij en de zoutpan): klik naast een veld van
   de goede grondstof. De machine gooit het erheen. Het haalt het veld leeg, ook het deel waar ratten niet bij kunnen.
 - **L Band** (BELT): sleep van een gebouw naar het magazijn of een ander gebouw. **R** draait een losse tegel.

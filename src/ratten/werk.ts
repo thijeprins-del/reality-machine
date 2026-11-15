@@ -257,12 +257,19 @@ function stapWerk(s: SpelStaat, sec: number): void {
           W.taken.delete(w.id);
           continue;
         }
-        // pak wat hij dragen kan van één soort
-        const g = b.buffer[0];
+        // pak wat hij dragen kan van één soort: het eerste goed waar geen band voor ligt
+        const g = b.buffer.find((x) => !heeftBand(i, b, x));
+        if (g === undefined) {
+          W.taken.delete(w.id);
+          continue;
+        }
         let n = 0;
-        while (n < DRAAGT && b.buffer[0] === g) {
-          b.buffer.shift();
-          n++;
+        for (let j = 0; j < b.buffer.length && n < DRAAGT; ) {
+          if (b.buffer[j] !== g) j++;
+          else {
+            b.buffer.splice(j, 1);
+            n++;
+          }
         }
         w.lading = { goed: g, n };
         const p = brengPlek(s, w);
@@ -405,8 +412,10 @@ function stapWerk(s: SpelStaat, sec: number): void {
   // 3. productiegebouwen zonder band leeghalen (alleen als er plek in de opslag is)
   const ruimte = (g: Goed) => ruimteVoor(s, g);
   for (const b of makers) {
-    if (b.af || b.vlieg || !b.buffer.length || heeftBand(i, b) || ruimte(b.buffer[0]) <= 0) continue;
-    const n = Math.min(4, Math.ceil(b.buffer.length / DRAAGT)) - (aantal.get(b.id) ?? 0);
+    if (b.af || b.vlieg) continue;
+    const los = b.buffer.filter((x) => !heeftBand(i, b, x)); // waar geen band voor ligt
+    if (!los.length || ruimte(los[0]) <= 0) continue;
+    const n = Math.min(4, Math.ceil(los.length / DRAAGT)) - (aantal.get(b.id) ?? 0);
     if (n > 0) geef(n, b.x + 0.5, b.y + 0.5, (w) => ({ klus: 'haal', doel: b.id, ...randPlek(blokVan(b), w.id) }));
   }
   // 4. zelf graven, alleen waar nog plek voor is; de grondstof die het leegst is eerst

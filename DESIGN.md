@@ -86,9 +86,11 @@ wereld. Het spel leest twee mappen met JSON-bestanden, zodat je kunt schaven zon
   `economies/index.ts` of `worldtypes/index.ts`.
 - **Een goed is zijn id.** Naam, kleur en plaatje horen bij de economie. Twee economieën mogen hetzelfde id anders
   aankleden ("water" hier, "Murky water" daar): elk recept dat `water` vraagt neemt beide. Alleen `volume` moet gelijk zijn.
-- **Poorten**: een band die een gebouw in loopt levert af als het recept dat goed neemt. Wat het gebouw maakt gaat een
-  band op die tegen zijn voet begint. Maakt een recept meer producten, dan krijgt elk product om de beurt een randtegel
-  (`uitgangen` in `src/ratten/industrie.ts`): een band die daar begint draagt alleen dat product.
+- **Aansluitpunten** (`poortenVan` in `src/ratten/industrie.ts`), zoals in de sandbox: invoer links, uitvoer rechts. In
+  beeld is links de zuid- en de westkant van het gebouw, rechts de oost- en de noordkant. Elk goed van het recept krijgt om
+  de beurt een tegel: een band levert alleen af op de ingang van zijn goed, en een band die op een uitgang begint draagt
+  alleen dat product. Een winningsgebouw geeft af aan alle kanten (het staat tegen zijn veld). De punten staan altijd in
+  beeld als pijlen in de kleur van het goed. Ratten sjouwen alleen wat geen band heeft.
 - **Opslag**: één voorraad, gemeten in volume. Het magazijn van het begin plus elk gebouwd magazijn geeft ruimte voor
   alles. Ratten graven een grondstof met de hand tot haar deel van de opslag (ruimte gedeeld door het aantal goederen).
 - **De sprong**: de voorraad blijft, gebouwen binnen de ring blijven staan en werken door (een gebouw onthoudt uit welke

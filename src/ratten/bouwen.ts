@@ -15,8 +15,8 @@ import { PIXEL, type Stuk, type WereldBeeld } from '../kern/wereldbeeld';
 import { energie, verbruiker } from './energie';
 import {
   aangesloten, bereikVan, blokVan, bouwSoorten, gebouwOp, getallen, goederen, grondstoffen, industrie, kanBandOp, kanZetten, kiesRecept, legBand,
-  magazijnen, makers, midden, opslagMax, opslagVol, palen as allePalen, randVan, receptenVan, receptVan, RICHTINGEN, sloop, soortVan, tegel, uitgangen, vast, zet, zetUit,
-  type Gebouw, type Oordeel,
+  magazijnen, makers, midden, opslagMax, opslagVol, palen as allePalen, poorten, poortenVan, receptenVan, receptVan, RICHTINGEN, sloop, soortVan, tegel, vast, zet, zetUit,
+  type Gebouw, type Oordeel, type Poort,
 } from './industrie';
 import { kanBetalen, kostTekst, naamVan } from './kosten';
 import { werk } from './werk';
@@ -43,7 +43,7 @@ declare global {
 type Modus = string | null;
 interface Knop { id: string; naam: string; toets: string; uitleg: string; soort?: BouwSoort }
 function uitlegVan(b: BouwSoort): string {
-  if (b.aard === 'belt') return 'DRAG FROM A BUILDING TO THE STOCK. R = TURN';
+  if (b.aard === 'belt') return 'DRAG FROM AN ARROW ON THE RIGHT OF A BUILDING TO THE STOCK, OR TO AN ARROW ON THE LEFT OF ANOTHER. R = TURN';
   if (b.aard === 'pole') return 'CARRIES POWER. CABLES RUN FROM POLE TO POLE';
   if (b.aard === 'sink') return `+${b.storage} STORAGE FOR ANYTHING. CLICK IT TO LET A BELT NEXT TO IT TAKE GOODS OUT`;
   if (b.aard === 'trash') return 'DESTROYS WHAT A BELT BRINGS IN';
@@ -260,13 +260,25 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
         y += 8;
         if (!soort.onDeposit) {
           txt(`INPUT ${kostTekst(g.invoer, true).replace('FREE', 'NONE')}`, 10, y, KL.label, SW - 20);
-          y += 10;
+          y += 9;
+          // de aansluitpunten: wat links in gaat en rechts uit komt, in de kleur van de pijlen in de wereld
+          for (const [kop, lijst] of [['IN  LEFT', Object.keys(recept?.inputs ?? {})], ['OUT RIGHT', Object.keys(recept?.outputs ?? {})]] as [string, Goed[]][]) {
+            if (!lijst.length) continue;
+            let px = txt(kop, 10, y, KL.dim) + 4;
+            for (const x of lijst) {
+              R(px, y + 1, 3, 3, goed(x).color);
+              px = txt(naamVan(x), px + 5, y, '#e8e4d4', 40) + 5;
+            }
+            vak(6, y - 1, SW - 10, 8, null, `BELTS: ${kop === 'IN  LEFT' ? 'BRING INPUT TO THE ARROWS ON THE LEFT SIDES' : 'START A BELT ON AN ARROW ON THE RIGHT SIDES'}. EACH ARROW HAS THE COLOUR OF ITS GOOD`);
+            y += 8;
+          }
+          y += 2;
           for (const r of [...receptenVan(g), null]) {
             const n = vakken.length;
             knopVlak(6, y, SW - 10, 12, g.recept === (r?.id ?? null), wijst === n);
             txt(r ? r.name : 'STOP', 10, y + 4, g.recept === (r?.id ?? null) ? KL.groen : '#e8e4d4', SW - 20);
             vak(6, y, SW - 10, 12, () => kiesRecept(s, g, r?.id ?? null), r
-              ? `${r.name}: ${kostTekst(r.inputs, true).replace('FREE', 'NOTHING')} > ${kostTekst(r.outputs, true)} IN ${r.time} S${Object.keys(r.outputs).length > 1 ? '. EACH PRODUCT LEAVES ON ITS OWN SIDE: SEE THE COLOURS' : ''}`
+              ? `${r.name}: ${kostTekst(r.inputs, true).replace('FREE', 'NOTHING')} > ${kostTekst(r.outputs, true)} IN ${r.time} S${Object.keys(r.outputs).length > 1 ? '. EACH PRODUCT HAS ITS OWN ARROW' : ''}`
               : `STOP THIS ${soort.name}`);
             y += 13;
           }
@@ -512,12 +524,22 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
       zetDing(st, b.x + w - 0.2 - (i % 4) * 0.28, b.y + w - 0.1 - Math.floor(i / 4) * 0.22, (b.x + b.y + w + 1) * 10 + 5);
     });
   }
-  // Een recept met meer producten: elk product heeft zijn eigen randtegels. Een vlakje in de kleur van het product.
-  function tekenUitgangen(laag: Graphics, g: Gebouw): void {
-    const wat = uitgangen(g);
-    randVan(blokVan(g)).forEach(([x, y], k) => {
-      if (wat[k]) laag.poly(ruitPad(x, y)).fill({ color: hex(goed(wat[k]!).color), alpha: 0.4 });
-    });
+  // De aansluitpunten van een gebouw: een pijl op de tegel waar een band hoort, in de kleur van het goed dat erdoor gaat
+  // (wit = nog geen recept gekozen, of alles). Ingangen liggen links en wijzen het gebouw in, uitgangen rechts en wijzen weg.
+  // `fel` = met een rand om de tegel erbij: voor het gekozen gebouw, en voor alles als je een band legt.
+  function tekenPoorten(laag: Graphics, lijst: Poort[], fel: boolean): void {
+    for (const p of lijst) {
+      const kleur = p.goed ? hex(goed(p.goed).color) : 0xe8e4d4;
+      const [dx, dy] = RICHTINGEN[p.richting];
+      const punt = iso(p.x + dx * 0.32, p.y + dy * 0.32), l = iso(p.x - dx * 0.22 + dy * 0.3, p.y - dy * 0.22 + dx * 0.3), r = iso(p.x - dx * 0.22 - dy * 0.3, p.y - dy * 0.22 - dx * 0.3);
+      if (fel) laag.poly(ruitPad(p.x, p.y)).fill({ color: kleur, alpha: 0.12 }).stroke({ width: PIXEL, color: kleur, alpha: 0.6 });
+      laag.poly([punt.x, punt.y, l.x, l.y, r.x, r.y]).fill({ color: kleur, alpha: fel ? 1 : 0.7 }).stroke({ width: PIXEL / 2, color: 0x050505, alpha: fel ? 0.9 : 0.6 });
+      // een ingang heeft een streep achter de pijl (er gaat iets in), een uitgang niet
+      if (p.in) {
+        const s1 = iso(p.x - dx * 0.38 + dy * 0.3, p.y - dy * 0.38 + dx * 0.3), s2 = iso(p.x - dx * 0.38 - dy * 0.3, p.y - dy * 0.38 - dx * 0.3);
+        laag.poly([s1.x, s1.y, s2.x, s2.y], false).stroke({ width: PIXEL, color: kleur, alpha: fel ? 1 : 0.7 });
+      }
+    }
   }
 
   function tekenWereld(s: SpelStaat, sec: number): void {
@@ -527,6 +549,9 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
     const e = energie(s);
     const krijgt = verbruiker(s, 'industrie').krijgt;
     balken.clear();
+    // de aansluitpunten van elk productiegebouw, altijd in beeld
+    const legtBand = modusSoort()?.aard === 'belt';
+    for (const g of makers(ind)) if (!g.vlieg) tekenPoorten(balken, poorten(g), legtBand || g.id === gekozen);
     const gezien = new Set<string>();
     const vastAan = (k: string, ...r: Parameters<typeof vastStuk> extends [string, ...infer T] ? T : never) => {
       gezien.add(k);
@@ -568,7 +593,6 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
       }
       if (g.id === gekozen) {
         balken.poly(ruitPad(g.x, g.y, soort.size, soort.size)).stroke({ width: PIXEL, color: 0x4ef2ff, alpha: 0.4 + 0.3 * Math.sin(t * 5) });
-        tekenUitgangen(balken, g);
       }
     }
     for (const [k, st] of vaste) if (!gezien.has(k)) { beeld.weg(st); vaste.delete(k); }
@@ -786,7 +810,6 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
     const soort = modusSoort();
     const band = soort?.aard === 'belt';
     if (band || modus === 'sloop') for (const b of ind.banden.values()) pijl(b.x, b.y, b.naar, 0xffd23f);
-    if (band) for (const g of makers(ind)) tekenUitgangen(geest, g); // waar welk product naar buiten komt
     if (soort && (soort.aard === 'pole' || soort.kW > 0) && !band) {
       // waar is stroom: het bereik van de machine en van elke aangesloten paal
       const net = aangesloten(s);
@@ -815,6 +838,7 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
         for (const a of bereikVan(s, soort, kol, rij)) geest.poly(ruitPad(a.x, a.y)).fill({ color: hex(goed(a.goed).color), alpha: 0.3 });
       }
       if (soort.aard === 'pole') cirkel(kol, rij, soort.reach, kleur);
+      tekenPoorten(geest, poortenVan(soort, soort.recipes.length === 1 ? actieveEconomie().recepten.get(soort.recipes[0]) : undefined, kol, rij), true);
       return;
     }
     const p = pad(sleep ?? muis, muis);
