@@ -8,6 +8,7 @@ import { FINALE, FINALE_TYPE, FINALE_WRATH, KERN_DIMENSIES, type Uitkomst } from
 import { nieuwLand, rolDimensie, stapLand, typeUitTekst, type LandStaat } from '../land/wrath';
 import type { Archetype } from './types';
 import { hash01 } from './toeval';
+import { wereldType } from './wereldtypes';
 import type { Soort, Machine, Voorraad } from './types';
 import { maakWerkers, stapWerkers, type Werker } from './werkers';
 
@@ -24,6 +25,7 @@ export interface SpelStaat {
   kaart: Kaart;
   machine: Machine;
   voorraad: Voorraad; // wat er in de opslag ligt
+  economieen: string[]; // de economieën waarin je deze run al geland bent (elk geeft één keer haar startkapitaal)
   werkers: Werker[];
   uitkomst?: Uitkomst; // gezet als de run voorbij is: gewonnen (finale gehaald) of verloren
   land: LandStaat; // de gerolde dimensie, Wrath en de overvallers (src/land/wrath.ts)
@@ -34,6 +36,7 @@ export interface Start {
   type?: Archetype; // type van de eerste dimensie
   wrath?: number; // Wrath bij de eerste landing
   shift?: number; // begin in deze dimensie in plaats van de eerste
+  wereld?: string; // ?world=: wereldtype van de eerste dimensie (id van een bestand in worldtypes/)
   gratisStroom?: boolean; // ?power=free: de machine telt altijd als opgeladen (om de hele run te kunnen testen)
 }
 
@@ -51,7 +54,7 @@ export function nieuwSpel(seed: number, f: Soort, start: Start = {}): SpelStaat 
   const s = { toeval: seed >>> 0 };
   const eerste = Math.max(1, Math.floor(start.shift ?? 1));
   // De kaart, de kleuren en de economie volgen het wereldtype van de gerolde dimensie; het type uit de URL geldt alleen voor de eerste.
-  zetWereldBron((n) => gerold(seed, n, n === eerste ? start.type : undefined).wereldtype);
+  zetWereldBron((n) => (n === eerste && start.wereld) || gerold(seed, n, n === eerste ? start.type : undefined).wereldtype);
   zetActieveEconomie(economieVan(eerste));
   const kaart = meet('generate map', () => maakKaart(seed, eerste));
   const werkers: Werker[] = [];
@@ -70,6 +73,7 @@ export function nieuwSpel(seed: number, f: Soort, start: Start = {}): SpelStaat 
     kaart,
     machine: { ...f.startMachine },
     voorraad: { ...economieVan(eerste).start }, // het startkapitaal van de economie van de eerste wereld
+    economieen: [economieVan(eerste).id],
     werkers,
     land: undefined as unknown as LandStaat,
   };
@@ -112,8 +116,14 @@ export function stream(s: SpelStaat, f?: Soort): void {
   s.dimensie += 1;
   s.tijd = 0;
   s.onderweg = SPRONG_SEC;
-  zetActieveEconomie(economieVan(s.dimensie)); // de nieuwe wereld heeft haar eigen grondstoffen en gebouwen
+  const eco = economieVan(s.dimensie);
+  zetActieveEconomie(eco); // de nieuwe wereld heeft haar eigen grondstoffen en gebouwen
   verhuis(s);
+  // De eerste keer in een economie krijg je haar startkapitaal erbij: genoeg om er de eerste gebouwen van te zetten.
+  if (!s.economieen.includes(eco.id)) {
+    s.economieen.push(eco.id);
+    for (const [g, n] of Object.entries(eco.start)) s.voorraad[g] = (s.voorraad[g] ?? 0) + (n ?? 0);
+  }
   s.land = nieuwLand(s, gerold(s.seed, s.dimensie), s.dimensie === FINALE ? FINALE_WRATH : undefined); // de landing zet het beginpunt van Wrath
   f?.trucje.opStream?.(s);
 }
@@ -165,7 +175,7 @@ export function seedUitAdres(): number {
   return Number.isFinite(n) ? n : Date.now() % 1_000_000;
 }
 
-// ?type=stone ?wrath=80 ?shift=4: spring in de URL meteen naar een wereld of een Wrath-niveau (voor testen).
+// ?type=stone ?world=zoutzee ?wrath=80 ?shift=4: spring in de URL meteen naar een wereld of een Wrath-niveau (voor testen).
 export function startUitAdres(): Start {
   const p = new URLSearchParams(location.search);
   const start: Start = {};
@@ -175,6 +185,9 @@ export function startUitAdres(): Start {
   const w = p.get('wrath'), sh = p.get('shift');
   if (w !== null && Number.isFinite(Number(w))) start.wrath = Number(w);
   if (p.get('power') === 'free') start.gratisStroom = true;
+  const wereld = p.get('world');
+  if (wereld && wereldType(wereld)) start.wereld = wereld;
+  else if (wereld) console.warn(`?world=${wereld} is unknown; use the id of a file in worldtypes/`);
   if (sh !== null && Number.isFinite(Number(sh))) start.shift = Number(sh);
   return start;
 }

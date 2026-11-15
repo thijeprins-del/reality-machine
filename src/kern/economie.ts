@@ -223,6 +223,9 @@ export function leesEconomie(bron: unknown): { fouten: string[]; economie?: Econ
       else if ((v as number) > 0) start[k] = v as number;
     }
   }
+  // Kun je hier beginnen? Een winningsgebouw moet te betalen zijn uit het startkapitaal of uit wat ratten met de hand delven.
+  for (const b of B.values()) if (b.onDeposit)
+    for (const k of Object.keys(b.cost)) if (!start[k] && !R.get(k)?.onMap) waarschuwingen.push(`Building "${b.id}" costs "${k}", which is neither in startingResources nor on the map: you may not be able to start here`);
   if (fouten.length) return { fouten };
   return { fouten, economie: { id, name: typeof bron.name === 'string' && bron.name ? bron.name : id, start, bufferSize, warehouseStorage, goederen: R, recepten: C, gebouwen: B, waarschuwingen } };
 }
@@ -244,6 +247,7 @@ const ECONOMIEEN = new Map<string, Economie>();
         if (a && a.volume !== g.volume) fouten.push(`Resource "${g.id}" has volume ${g.volume} in "${e.id}" but ${a.volume} in "${ander.id}": it must be the same everywhere`);
       }
     ECONOMIEEN.set(e.id, e);
+    if (import.meta.env?.DEV) for (const x of e.waarschuwingen) console.warn(`economies/${e.id}.json: ${x}`);
   }
   if (fouten.length) throw new Error('Economy files are wrong:\n' + fouten.join('\n'));
 }
