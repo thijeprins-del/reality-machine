@@ -1,6 +1,6 @@
 # Reality Machine — werkafspraken voor AI-assistenten
 
-Game Off 2026-spel (thema SHIFT). Team: Thije (eigenaar, muizen) en Lieuwe (otters). Nederlands in docs, commits en antwoorden.
+Game Off 2026-spel (thema SHIFT). Team: Thije (eigenaar) en Lieuwe. Nederlands in docs, commits en antwoorden.
 Code-namen mogen Engels of Nederlands, maar per map consequent.
 
 ## Het spel in het kort (details in DESIGN.md)
@@ -8,20 +8,23 @@ Code-namen mogen Engels of Nederlands, maar per map consequent.
 - Tussendoor: verkennen, loot zoeken, grondstoffen oogsten, bouwen op je eigen eiland, en de tegenstander lastigvallen.
 - Om de stream te halen moet je reality machine genoeg energie en heelheid hebben. Haal je hem niet, dan verlies je.
 - Tech alleen uit loot: vondsten inbouwen of ontleden tot bouwplan. Geen techboom.
-- Facties: muizen (cyberpunk/dieselpunk, tech) tegen otters (Lieuwe). Speler tegen computer; tweespeler is een "misschien".
+- Eén soort: de pack rats (hamsterende ratten, cyberpunk/dieselpunk). De tegenstander is het land zelf.
+- Elke wereld heeft een wereldtype (`worldtypes/*.json`: tegelset, kleuren, economie) en een economie
+  (`economies/*.json`: grondstoffen, recepten, gebouwen, startkapitaal). Schaven doe je in die bestanden.
 
 ## Mappen en eigenaars (vermijdt conflicten)
 | map | eigenaar | inhoud |
 |---|---|---|
 | `src/kern/` | samen | spellus, tijd, dimensies, stream, iso-tekenen, loot-systeem, invoer |
-| `src/muizen/` | Thije | eenheden, gebouwen, loot-tabellen, AI van de muizen |
-| `src/otters/` | Lieuwe | idem voor de otters |
-| `src/data/` | samen | getallen per factie in eigen bestand: `muizen.ts`, `otters.ts`, `dimensies.ts` |
-| `assets/muizen/`, `assets/otters/`, `assets/wereld/` | per factie / samen | sprites (PNG of SVG) |
+| `src/ratten/` | af te spreken (was `src/muizen/`, Thije) | de pack rats: werk, industrie, stroomnet, bouwmenu, paneel |
+| `economies/`, `worldtypes/` | Lieuwe | de economieën en wereldtypes als JSON; een nieuw bestand ook in `index.ts` |
+| `tools/` | Lieuwe | `economy.html`: sandbox om een economie te bouwen en te wegen (leest en schrijft `economies/*.json`) |
+| `src/data/` | samen | getallen die niet bij een economie horen: `ratten.ts`, `dimensies.ts`, `run.ts`, `wrath.ts` |
+| `assets/muizen/`, `assets/wereld/`, `assets/land/` | samen | sprites (PNG of SVG); `assets/muizen/` houdt zijn naam, de sprites zijn van de ratten |
 
-- Een factie praat met de kern alleen via `src/kern/types.ts` (`Factie` met eenheden, gebouwen, loot en `trucje`).
-  Afspraken over asymmetrie en balans: DESIGN.md, "Samenwerking facties". Getallen van de ander niet zelf aanpassen.
-  Nieuw veld nodig? Kleine aparte PR op `src/kern/types.ts`, eerst mergen, dan je factiewerk.
+- De ratten praten met de kern via `src/kern/types.ts` (`Soort` met eenheden en `trucje`) en `src/kern/economie.ts`.
+  Een gebouw, recept of grondstof erbij: het economiebestand, geen code. Nieuw gedrag voor gebouwen: `src/ratten/industrie.ts`.
+  Nieuw veld in de kern nodig? Kleine aparte PR op `src/kern/`, eerst mergen.
 - Werk je in de map van de ander: alleen als die erom vraagt, en zeg het in de PR-titel.
 
 ## Git-werkwijze (twee mensen, twee AI's)
@@ -45,13 +48,13 @@ Code-namen mogen Engels of Nederlands, maar per map consequent.
   met daarachter DEV, het buildnummer van de workflow en de korte commit. De changelog komt uit de PR-titels.
 
 ## Taken
-- `TAKEN.md` heeft per persoon een lijst `- [ ]` met nummers (`M3` muizen, `O2` otters, `K5` kern). Bij afronding
+- `TAKEN.md` heeft per persoon een lijst `- [ ]` met nummers (`M3` ratten, `E2` economie, `K5` kern). Bij afronding
   `- [x] … (#PR)`. Een taak die je oppakt: eerst je naam erachter zetten in je PR, zo pakken twee AI's niet hetzelfde op.
 
 ## Commando's
 - `npm run dev` devserver. `npm run snel` typecheck + build (±10 s; unit-tests komen erbij zodra er regels zijn). `npm test` = snel + rooktest (±30 s), vóór elke PR.
 - Testhaak: `window.SPEL` met `staat`, `stap(sec)` (regels zonder tekenen), `zaai(seed)`, `stream()` (forceer sprong),
-  `stuur(ids | 'alle', kol, rij)` (opdracht zoals rechtsklik), `terrein()` en `laadTerrein(json)` (hoogtekaart als JSON, ook via F2 EXPORTEER). `?factie=muizen` slaat het startmenu over, `?kaart=256x64` kiest de kaartmaat. In het spel: F1 raster en hoogte per tegel, F2 terreinbewerker (de klok staat dan stil).
+  `stuur(ids | 'alle', kol, rij)` (opdracht zoals rechtsklik), `terrein()` en `laadTerrein(json)` (hoogtekaart als JSON, ook via F2 EXPORTEER). `?world=zoutzee` kiest het wereldtype van de eerste wereld, `?kaart=256x64` kiest de kaartmaat. In het spel: F1 raster en hoogte per tegel, F2 terreinbewerker (de klok staat dan stil).
   Toeval voor spelregels via seed (`?seed=123`); toeval alleen voor beeld mag `Math.random`.
 
 ## Beeld en stijl

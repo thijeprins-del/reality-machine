@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Economy Sandbox</title>
+<style>
+:root{--bg:#f4f1ea;--panel:#fffdf8;--ink:#2b2a27;--mute:#7a766c;--line:#ddd6c8;--accent:#c8642d;--ok:#4f8a4a;--warn:#c99a1f;--bad:#b9473c}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;font:14px/1.35 system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg)}
+body{display:flex;flex-direction:column}
+header{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
+header h1{font-size:15px;margin:0 2px 0 0}
+.treesel{border:1px solid var(--line);background:#fff;border-radius:6px;padding:4px 8px;font-weight:600}
+.tabs{display:flex;gap:4px}
+.tab{border:1px solid var(--line);background:transparent;padding:5px 11px;border-radius:6px;cursor:pointer;font:inherit;color:inherit}
+.tab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+main{flex:1;min-height:0;position:relative}
+.view{position:absolute;inset:0;display:none;flex-direction:column}
+.view.on{display:flex}
+.toolbar{display:flex;gap:6px;padding:6px 10px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--line);background:var(--panel)}
+button,select{font:inherit;color:inherit}
+.btn,.toolbar select{border:1px solid var(--line);background:#fff;border-radius:6px;padding:4px 9px;cursor:pointer}
+.btn:hover{border-color:var(--mute)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.sep{width:1px;height:20px;background:var(--line);margin:0 2px}
+.hint{color:var(--mute);font-size:12px}
+.stats{display:flex;gap:4px;flex-wrap:wrap;padding:5px 10px;border-bottom:1px solid var(--line);background:#faf7f0;font-size:12px;min-height:30px;align-items:center}
+#scroller{flex:1;overflow:auto;position:relative;background:#e9e4d8}
+#sizer{position:relative}
+#world{position:absolute;left:0;top:0;transform-origin:0 0;background-color:#ebe6da;background-image:linear-gradient(to right,rgba(90,78,55,.16) 1px,transparent 1px),linear-gradient(to bottom,rgba(90,78,55,.16) 1px,transparent 1px)}
+#deps{position:absolute;inset:0;pointer-events:none}
+.dep{position:absolute;border-radius:10px;overflow:hidden;border:2px solid rgba(0,0,0,.08)}
+.dep .dbg{position:absolute;inset:0;opacity:.2;background-size:30px 30px;image-rendering:pixelated}
+.dep .dl{position:absolute;left:7px;top:4px;font-size:10.5px;font-weight:600;color:#3a352c;display:flex;align-items:center;gap:4px}
+.dep.ok{border-color:var(--accent);box-shadow:inset 0 0 0 3px rgba(200,100,45,.35)}
+#belts{position:absolute;left:0;top:0;pointer-events:none;overflow:visible}
+#belts .hit{pointer-events:stroke;cursor:pointer}
+.node{position:absolute;width:180px;background:var(--panel);border:2px solid var(--line);border-radius:10px;box-shadow:0 2px 6px rgba(0,0,0,.08);font-size:12px;user-select:none;-webkit-user-select:none}
+.node.working{border-color:var(--ok)}
+.node.starved{border-color:var(--warn)}
+.node.blocked{border-color:var(--bad)}
+.nh{display:flex;align-items:center;gap:6px;padding:0 16px 0 10px;height:32px;border-radius:8px 8px 0 0;color:#fff;cursor:grab;touch-action:none;font-weight:600;font-size:13px}
+.nh .nm{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;text-shadow:0 1px 1px rgba(0,0,0,.25)}
+.nh .x{border:0;background:rgba(0,0,0,.18);color:#fff;border-radius:5px;width:22px;height:22px;cursor:pointer;font-size:11px;padding:0}
+.nb{padding:6px 8px 7px;display:flex;flex-direction:column;gap:4px}
+.nb select{width:100%;border:1px solid var(--line);border-radius:5px;padding:2px 4px;background:#fff;font-size:12px}
+.rtext{color:var(--mute);font-size:11px}
+.row{display:flex;flex-wrap:wrap;gap:3px;align-items:center;min-height:18px}
+.lb{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--mute);width:24px}
+.chip{display:inline-flex;align-items:center;gap:4px;background:#f1ece2;border-radius:9px;padding:1px 7px 1px 3px;font-size:11px;white-space:nowrap}
+.ico{width:14px;height:14px;image-rendering:pixelated;flex:0 0 auto}
+.plabel .ico{width:10px;height:10px;vertical-align:-1px;margin-right:3px}
+.chip i{width:10px;height:10px;border-radius:50%;display:inline-block;border:1px solid rgba(0,0,0,.2)}
+.prog{height:6px;background:#ece6da;border-radius:3px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--ok);width:0}
+.cap{font-size:10.5px;color:var(--mute);display:flex;align-items:center;gap:6px}
+.cap span{white-space:nowrap}
+.capbar{flex:1;height:4px;background:#ece6da;border-radius:2px;overflow:hidden}
+.capbar i{display:block;height:100%;width:0}
+.st{font-size:11px;color:var(--mute)}
+.node.starved .st{color:#9a7412}.node.blocked .st{color:var(--bad)}
+.port{position:absolute;top:8px;width:16px;height:16px;border-radius:50%;background:#fff;border:3px solid var(--ink);touch-action:none;cursor:crosshair;z-index:2}
+.port::after{content:"";position:absolute;inset:-7px;border-radius:50%}
+.port.in{left:-10px}.port.out{right:-10px;background:var(--ink)}
+.port.in.typed{background:#fff}
+.plabel{position:absolute;right:calc(100% + 6px);font-size:9.5px;line-height:12px;white-space:nowrap;background:rgba(255,253,248,.92);border-radius:6px;padding:0 5px;pointer-events:none;color:var(--ink);border-left:3px solid}
+.plabel.o{right:auto;left:calc(100% + 6px);border-left:none;border-right:3px solid}
+.port:hover,.port.pend{background:var(--accent);border-color:var(--accent);box-shadow:0 0 0 4px rgba(200,100,45,.25)}
+.mute{color:var(--mute)}
+/* JSON */
+#msgs{padding:0 10px;font-size:12px}
+#msgs div{padding:3px 0}
+#msgs .err{color:var(--bad)}#msgs .warn{color:#8f6a0c}#msgs .ok{color:var(--ok)}
+.jsonwrap{flex:1;min-height:0;display:flex;flex-direction:column;padding:8px 10px;gap:8px}
+#json{flex:1;min-height:200px;width:100%;font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;border:1px solid var(--line);border-radius:8px;padding:10px;background:#fff;white-space:pre;overflow:auto;resize:none;tab-size:2}
+details.help{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12.5px}
+details.help summary{cursor:pointer;font-weight:600}
+details.help code{background:#f1ece2;padding:0 4px;border-radius:3px;font-size:11.5px}
+details.help ul{margin:6px 0;padding-left:18px}
+/* Tree */
+.tree{flex:1;overflow:auto;padding:12px;display:flex;gap:12px;align-items:flex-start}
+.col{min-width:220px;max-width:260px;flex:0 0 auto;display:flex;flex-direction:column;gap:8px}
+.col h3{margin:0 0 2px;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--mute)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px}
+.card .cn{font-weight:600;display:flex;justify-content:space-between;gap:6px}
+.card .cn span{color:var(--mute);font-weight:400;font-size:12px}
+.card .io{display:flex;flex-wrap:wrap;gap:3px;align-items:center;margin:5px 0}
+.card .by{font-size:11px;color:var(--mute)}
+.card .by.bad{color:var(--bad)}
+</style>
+</head>
+<body>
+<header>
+  <h1>Economy Sandbox</h1>
+  <select id="treeSel" class="treesel" title="Tech tree"></select>
+  <div class="tabs">
+    <button class="tab on" data-v="factory">Factory</button>
+    <button class="tab" data-v="tree">Tree</button>
+    <button class="tab" data-v="json">JSON</button>
+  </div>
+</header>
+<main>
+  <section class="view on" id="v-factory">
+    <div class="toolbar">
+      <select id="addSel"></select><button class="btn primary" id="addBtn">+ Add</button>
+      <span class="sep"></span>
+      <select id="speed" title="Simulation speed"><option value="0">⏸ Pause</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select>
+      <button class="btn" id="zOut" title="Zoom out">−</button><button class="btn" id="zIn" title="Zoom in">+</button>
+      <span class="sep"></span>
+      <select id="demo"></select>
+      <button class="btn danger" id="rmBelt" hidden>Remove conveyor</button>
+      <span class="hint" id="hint"></span>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div id="scroller"><div id="sizer"><div id="world"><div id="deps"></div><svg id="belts" xmlns="http://www.w3.org/2000/svg"><g id="beltLayer"></g><path id="temp" fill="none" stroke="#c8642d" stroke-width="4" stroke-dasharray="6 6" style="display:none"/></svg></div></div></div>
+  </section>
+
+  <section class="view" id="v-tree"><div class="tree" id="tree"></div></section>
+
+  <section class="view" id="v-json">
+    <div class="toolbar">
+      <button class="btn primary" id="apply">Apply</button>
+      <button class="btn" id="tidy">Tidy</button>
+      <button class="btn" id="copy">Copy</button>
+      <button class="btn" id="reset">Reset to default</button>
+      <span class="sep"></span>
+      <button class="btn" id="load" title="Open a file from the game's economies/ folder">Open file…</button><input type="file" id="file" accept=".json,application/json" hidden>
+      <button class="btn" id="dl" title="Save this JSON as a file for the game's economies/ folder">Download</button>
+    </div>
+    <div id="msgs"></div>
+    <div class="jsonwrap">
+      <textarea id="json" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+      <details class="help"><summary>Format</summary>
+        <ul>
+          <li><code>resources</code>: <code>{ "id", "name", "color", "volume", "icon" }</code>. Volume is how much storage space one unit takes (default 1). <code>icon</code> is optional: a small pixel-art image as a <code>data:image/png;base64,…</code> URL (10×10 works well); without one, the color is used.</li>
+          <li><code>recipes</code>: <code>{ "id", "name", "time" (seconds), "inputs": { resourceId: amount }, "outputs": { resourceId: amount } }</code>. Empty inputs make an extraction recipe (mines, quarries).</li>
+          <li><code>buildings</code>: <code>{ "id", "name", "color", "recipes": [recipeIds], "storage", "cost", "speed"? }</code>. <code>cost</code> is <code>{ resourceId: amount }</code>, paid from your warehouses when you add the building and refunded when you remove it. <code>storage</code> is the total volume its output can hold; a recipe only starts if its outputs fit. Add <code>"splitter": true</code> (1 in, <code>ports</code> out; sends to production first, then warehouses, then incinerators) or <code>"merger": true</code> (<code>ports</code> in, 1 out) for logistics buildings. Every connector takes one conveyor; <code>ports</code> also sets how many inputs a warehouse or incinerator has. Add <code>"trash": true</code> for a building that destroys anything piped into it (it only gets items nothing else wants). Add <code>"sink": true</code> for a building that accepts and stores anything (warehouse); its <code>storage</code> is the warehouse capacity (leave it out for unlimited).</li>
+          <li><code>startingResources</code>: <code>{ resourceId: amount }</code>, your starting capital. It's put in the factory's first warehouse (a free one is placed if there is none) whenever the factory is loaded.</li>
+          <li><b>Map</b>: <code>settings.map</code> is <code>{ "cols", "rows" }</code>. A resource with <code>"onmap": true</code> is scattered over the map as <code>deposits</code> cells (default 3). A building with <code>"onDeposit": true</code> must stand on a deposit, and runs whichever of its recipes outputs that deposit's resource.</li>
+          <li><b>Game files</b>: this is the format of the game's <code>economies/*.json</code>. <b>Open file…</b> loads one, <b>Download</b> saves it back. The game adds fields the sandbox keeps but ignores: <code>id</code>, <code>name</code>, <code>sprite</code>, <code>key</code>, <code>size</code>, <code>work</code>, <code>kW</code>, <code>crew</code>, <code>insideRing</code>, <code>range</code>, and buildings with <code>"belt": true</code> or <code>"pole": true</code>. The game writes <code>"onMap": true</code> with <code>"fields": { "count", "tiles", "perTile", "distance" }</code>; the sandbox reads <code>count</code> as the number of deposits.</li>
+          <li><code>settings</code>: <code>beltSpeed</code> (px/s), <code>itemSpacing</code> (px between items on a belt), <code>bufferSize</code> (how many of each input a building holds), <code>defaultStorage</code> (output storage for buildings that don't set their own).</li>
+        </ul>
+        Applying keeps your factory layout; buildings or recipes you removed drop out of it.
+      </details>
+    </div>
+  </section>
+</main>
+
+<script>
+(()=>{
+const NS='http://www.w3.org/2000/svg', W=180, KEY='econ-sandbox-v3';
+let WORLD_W=2400, WORLD_H=1600;
+// Grid: every building occupies one cell; a node sits inside its cell with this offset.
+const CW=240, CH=260, OX=(CW-W)/2, OY=26;
+const $=s=>document.querySelector(s);
+const has=(o,k)=>Object.prototype.hasOwnProperty.call(o,k);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const safeColor=c=>typeof c==='string'&&/^[#a-z0-9(),.%\s-]{1,40}$/i.test(c)?c:'#999';
+
+const DEFAULT_DEFS={
+  settings:{beltSpeed:70,itemSpacing:16,bufferSize:10,defaultStorage:10,map:{cols:10,rows:7}},
+  startingResources:{iron:30,copper:20,bronze:10},
+  resources:[
+    {id:'iron_ore',name:'Iron Ore',color:'#8d5b4c',volume:2,onmap:true,deposits:4,icon:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAgUlEQVR42mNgIBIwInO0VRT+I/Ov3nkAl2dBVhQU6MPAwMDAICsry/D48WMGhvVb/sMUMyErkpWVZQjm/QRRxMDAkJ+XCbeFCdkqmAKsbsRqJQMDQzDvJ4a1n/kYZGVlGSZOmo4wEdlKWVlZDFsY0T2CzbSrdx4wMuIKGmxBRBQAANHsOdUbyZIZAAAAAElFTkSuQmCC'},
+    {id:'iron',name:'Iron',color:'#9aa3ad',volume:1,icon:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAXUlEQVR42mNgoDZgROZoqyj8x6bo6p0HjCzIitbtOoKhKMjNhoGBgYGBBVnRwaMncVrNpK2i8D+/vheroksXLyMU4jIBWRHcanRBGNi/YQHD1TsPGOG+xudbksMRAJOKI6VMnNITAAAAAElFTkSuQmCC'},
+    {id:'copper_ore',name:'Copper Ore',color:'#3f9a8a',volume:2,onmap:true,deposits:4,icon:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAn0lEQVR42mNgIBIwInO0VRT+I/Ov3nkAl2dBVhQU6MPAwMDAICsry/D48WMGhvVb/sMUMyErkpWVZTjkbQJRxMDAkJ+XCbeFCdkqmAJsgBndSsEzNxgYGBgYDnmbMAieucHg5ubMcO/2nQa4ichWysrKYtjCcvXOA0aG9Vv+ByFZs1RPnMFu6xkGWVlZhomTpjNcvfOAkRFX0GALIqIAAHC0PR/rClWAAAAAAElFTkSuQmCC'},
+    {id:'copper',name:'Copper',color:'#d17a3a',volume:1,icon:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAXUlEQVR42mNgoDZgROZoqyj8x6bo6p0HjCzIio52RGAosq5YwcDAwMDAgqzo4blDOK1m0lZR+L8sTAqropM3XiAU4jIBWRHcanRBGJh46R/D1TsPGOG+xudbksMRADUGI4gYt5ChAAAAAElFTkSuQmCC'},
+    {id:'copper_wire',name:'Copper Wire',color:'#f0b23c',volume:0.5,icon:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAaklEQVR42mNgIBIwInO0VRT+I/Ov3nnAiKFQW0Xh/9YyAQYJMwcGBgYGhhenDjB4d31AUcygraLw/8Esg//aKgooGCbGwMDAwITulqt3HjCimAIFTMR6hgVdAN1DOD2DDJA9gzd40DUSBQBezywuIRNbXQAAAABJRU5ErkJggg=='},
+    {id:'tin_ore',name:'Tin Ore',color:'#6f7290',volume:2,onmap:true,deposits:3,icon:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAi0lEQVR42mNgIBIwInO0VRT+I/Ov3nkAl2dBVhQU6MPAwMDAICsry/D48WMGhvVb/sMUMyErkpWVZYhMboEoYmBgyM/LhNvChGwVTAFWN2K1koGBITK5hWH53BoGWVlZhomTpiNMRLZSVlYWwxaWq3ceMDKs34LiWxu3dBTTrt55wMiIK2iwBRFRAADP6Dv05XTUIQAAAABJRU5ErkJggg=='},
+    {id:'tin',name:'Tin',color:'#c9cbd8',volume:1,icon:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAVUlEQVR42mNgoDZgROZoqyj8x6bo6p0HjCiKvnz9jYFhmllgik5evM1w9dpdnFYzaaso/J+3fAdWRadPX0AoxGUCsiK41eiCMDC9rwLuEUaifUssAACsazYZhXYBZQAAAABJRU5ErkJggg=='},
+    {id:'bronze',name:'Bronze',color:'#a8742c',volume:1,icon:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAXUlEQVR42mNgoDZgROZoqyj8x6bo6p0HjCzIita2OGAoCq45wMDAwMDAgqzowpkzOK1m0lZR+F8bwINV0Zk7HxAKcZmArAhuNbogDGy/wsJw9c4DRriv8fmW5HAEAJAxImAQA2XDAAAAAElFTkSuQmCC'},
+    {id:'sand',name:'Sand',color:'#e3cf8e',volume:1,onmap:true,deposits:3,icon:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAWklEQVR42mNgGDygq8jhf1eRw3+Cih6f7/v/7dkGDMVMyIoiY/3gEpGxfgzIipmQFQmLKzEwMDAwvH15j4GBgYEhp6QArpgR3SRhcSW4QhhYvngTAwuMQTUAAKqzKj8vRevnAAAAAElFTkSuQmCC'},
+    {id:'calcite',name:'Calcite',color:'#f4f1e8',volume:2,onmap:true,deposits:3,icon:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAX0lEQVR42mNgIBd0dTT8J0rR75+f/sMUY9UEU3Tnxhm4YmRNTPhseHj/FpzNBDOtsLCI4eH9WwzyimpYNTHhMwlZExOypLyiGoqp/f19DGUVDYwMDAwMjPiCBaaIJAAA0Tk+riv/sD4AAAAASUVORK5CYII='},
+    {id:'silica',name:'Silica',color:'#9fd3e0',volume:1,icon:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAdUlEQVR42mNgIBfY5jf8t81v+E9Q0fzLD/6/+P0ft2JkRfMvP/g///IDFMVMyIo9NeQZtt94COcbObowwBQzwUxLSklg2H7jIYOnhjxWG5nQBWCKL9x9giLOiOxGI0cXFMlz+/cwHJ7YwIiiEKYYmQ9TRBIAAEM9PtV0+EUgAAAAAElFTkSuQmCC'},
+    {id:'circuit_board',name:'Circuit Board',color:'#3f8f4a',volume:1,icon:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAeUlEQVR42mNgIBIwMjAwMMh7qf3Hp+jhtluMLDCOgqsKAwMDA8NG828M/ie54Gz9lmcMDAwMDEzIOjeaf8NpKgsyx/8kF8NG828MD3bfgfAZVDAV4jMNRSHMXQwMDAwXa6SgrG8M+ruxWA3zCLImDBMf7L4D100RAABy4CCuwcDzVAAAAABJRU5ErkJggg=='}
+  ],
+  recipes:[
+    {id:'mine_iron_ore',name:'Mine iron ore',time:2,inputs:{},outputs:{iron_ore:1}},
+    {id:'mine_copper_ore',name:'Mine copper ore',time:2,inputs:{},outputs:{copper_ore:1}},
+    {id:'mine_tin_ore',name:'Mine tin ore',time:2.5,inputs:{},outputs:{tin_ore:1}},
+    {id:'dig_sand',name:'Dig sand',time:1.5,inputs:{},outputs:{sand:1}},
+    {id:'quarry_calcite',name:'Quarry calcite',time:2.5,inputs:{},outputs:{calcite:1}},
+    {id:'smelt_iron',name:'Smelt iron',time:2,inputs:{iron_ore:1},outputs:{iron:1}},
+    {id:'smelt_copper',name:'Smelt copper',time:2,inputs:{copper_ore:1},outputs:{copper:1}},
+    {id:'smelt_tin',name:'Smelt tin',time:2,inputs:{tin_ore:1},outputs:{tin:1}},
+    {id:'alloy_bronze',name:'Alloy bronze',time:3,inputs:{copper:1,tin:1},outputs:{bronze:2}},
+    {id:'draw_wire',name:'Draw copper wire',time:1.5,inputs:{copper:1},outputs:{copper_wire:2}},
+    {id:'fire_silica',name:'Fire silica',time:3,inputs:{sand:2,calcite:1},outputs:{silica:1}},
+    {id:'assemble_circuit',name:'Assemble circuit board',time:4,inputs:{silica:1,copper_wire:3},outputs:{circuit_board:1}}
+  ],
+  buildings:[
+    {id:'mine',name:'Mine',color:'#7a5c48',storage:10,onDeposit:true,cost:{iron:5},recipes:['mine_iron_ore','mine_copper_ore','mine_tin_ore']},
+    {id:'quarry',name:'Quarry',color:'#b0904c',storage:10,onDeposit:true,cost:{iron:4},recipes:['dig_sand','quarry_calcite']},
+    {id:'smelter',name:'Smelter',color:'#c8642d',storage:10,cost:{iron:6,copper:2},recipes:['smelt_iron','smelt_copper','smelt_tin','alloy_bronze']},
+    {id:'wire_mill',name:'Wire Mill',color:'#c98a1c',storage:10,cost:{iron:4,copper:4},recipes:['draw_wire']},
+    {id:'kiln',name:'Kiln',color:'#8f6fb0',storage:10,cost:{iron:4,bronze:2},recipes:['fire_silica']},
+    {id:'assembler',name:'Assembler',color:'#3e7f8f',storage:10,cost:{iron:8,copper:6,bronze:4},recipes:['assemble_circuit']},
+    {id:'warehouse',name:'Warehouse',color:'#55606b',storage:200,cost:{iron:10},sink:true,ports:4},
+    {id:'incinerator',name:'Incinerator',color:'#7a3b32',cost:{iron:3},trash:true,ports:2},
+    {id:'splitter',name:'Splitter',color:'#4d6478',cost:{iron:2},splitter:true,ports:3},
+    {id:'merger',name:'Merger',color:'#6a5a80',cost:{iron:2},merger:true,ports:3}
+  ]
+};
+
+const DEMOS={
+  circuit:{nodes:[
+    {id:1,b:'mine',recipe:'mine_copper_ore',c:0,r:0},
+    {id:2,b:'smelter',recipe:'smelt_copper',c:1,r:0},
+    {id:3,b:'wire_mill',recipe:'draw_wire',c:2,r:0},
+    {id:4,b:'quarry',recipe:'dig_sand',c:0,r:1},
+    {id:5,b:'quarry',recipe:'quarry_calcite',c:0,r:2},
+    {id:6,b:'kiln',recipe:'fire_silica',c:1,r:1},
+    {id:7,b:'assembler',recipe:'assemble_circuit',c:3,r:1},
+    {id:8,b:'warehouse',c:4,r:1}],
+    belts:[[1,2],[2,3],[3,7],[4,6],[5,6],[6,7],[7,8]]},
+  bronze:{nodes:[
+    {id:1,b:'mine',recipe:'mine_copper_ore',c:0,r:0},
+    {id:2,b:'smelter',recipe:'smelt_copper',c:1,r:0},
+    {id:3,b:'mine',recipe:'mine_tin_ore',c:0,r:1},
+    {id:4,b:'smelter',recipe:'smelt_tin',c:1,r:1},
+    {id:5,b:'smelter',recipe:'alloy_bronze',c:2,r:0},
+    {id:6,b:'warehouse',c:3,r:0}],
+    belts:[[1,2],[3,4],[2,5],[4,5],[5,6]]},
+  iron:{nodes:[
+    {id:1,b:'mine',recipe:'mine_iron_ore',c:0,r:0},
+    {id:2,b:'smelter',recipe:'smelt_iron',c:1,r:0},
+    {id:3,b:'warehouse',c:2,r:0}],
+    belts:[[1,2],[2,3]]},
+  fish:{nodes:[
+    {id:1,b:'fishing_dock',recipe:'catch_fish',c:0,r:0},
+    {id:2,b:'gutting_shed',recipe:'gut_fish',c:1,r:0},
+    {id:3,b:'smokehouse',recipe:'smoke_fish',c:2,r:0},
+    {id:4,b:'salt_pan',recipe:'evaporate_salt',c:1,r:1},
+    {id:5,b:'rendering_vat',recipe:'render_oil',c:2,r:1},
+    {id:6,b:'chandlery',recipe:'make_lantern',c:3,r:2},
+    {id:7,b:'kelp_farm',recipe:'harvest_kelp',c:0,r:2},
+    {id:8,b:'ropewalk',recipe:'twist_cord',c:1,r:2},
+    {id:9,b:'warehouse',c:4,r:0},
+    {id:10,b:'splitter',c:3,r:1}],
+    belts:[[1,2],[2,3],[4,3],[2,5],[5,6,'fish_oil'],[7,8],[8,6],[2,10,'fish_scales'],[10,6,'#0','fish_scales'],[10,9,'#1'],[3,9],[6,9],[5,9,'bone_meal']],
+    defs:{
+      resources:[
+        {id:'raw_fish',name:'Raw Fish',color:'#5f8fb3',volume:2,onmap:true,deposits:4,icon:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAfUlEQVR42mNgIBIwInO0VRT+w9hX7zxAkWNBVmSSPRkhMzX3P0yxtorCf0ZkRQaaygwXrt+Fqz0zNRfOZoYp2tQUx8Cv7cBgoKnM8OLNewYGBgYGKTMvBikzL4Znp7czMGJYiQSQTYRbLeKWhaLoza5pDBhuRPcxNl9THwAAIYcwf+TMr2EAAAAASUVORK5CYII='},
+        {id:'kelp',name:'Kelp',color:'#4d7a3a',volume:1,onmap:true,deposits:3,icon:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAUElEQVR42mNgIAfYZRv8xyXGhCxgaKuFoQhdDMM0u2yD//krov4TtBpdIxO6YlymoCg8NPUC4/nD17BqYsEVAoemXmBkYGD4TzCYsAUVUQAACPUism5n0TkAAAAASUVORK5CYII='},
+        {id:'salt',name:'Salt',color:'#f7f7f2',volume:1,onmap:true,deposits:3,icon:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAARUlEQVR42mNgGBxg1pSu/7OmdP0nqAgGYIoxNCIrQlaMohFd0Z07VzD4s6Z0/WeCmXr37lUGBgYGBmVlbax8RoKOJxUAANt7ZXb8AhCtAAAAAElFTkSuQmCC'},
+        {id:'fillet',name:'Fillet',color:'#f2a38f',volume:1,icon:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAa0lEQVR42q2PwQmAMBAE54Ify/EpWIRoA1eaDVxIEYE8U47P+JBAFAUf7ut2dzhY+FtSj22eyhOgIQpAV6FlXS9AP4zsOQEUDVG6CjUFAHtO9MPIctri2qL9ds+chije7BXwZmiI8nnM/zoAACIrwYgtXBQAAAAASUVORK5CYII='},
+        {id:'fish_scales',name:'Fish Scales',color:'#b7d8e8',volume:0.5,icon:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAbklEQVR42mNgIBIwwhheVRP+w9jb2goYsar2qprwf/uNF//f//r/f/uNF/+RNcEAEzLnxL2XKJqRNbAgWQUXzI2LYLBQEodp/L+trYCRCZfjkU2He8arasJ/ZFMmL1rBgO4xFlymoPuctOAhBgAAZYE5BJVygzcAAAAASUVORK5CYII='},
+        {id:'fish_bones',name:'Fish Bones',color:'#e8e0c8',volume:1,icon:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAANUlEQVR42mNgoAl48eDEf2w0MpuJGAMYGBgYGJE5uICEggUjk4SCBSOMg42GASZCJjEMPAAACq8YCM8OifcAAAAASUVORK5CYII='},
+        {id:'fish_oil',name:'Fish Oil',color:'#d9b13b',volume:1,icon:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAYUlEQVR42mNgIBdEWQn8j7IS+I8uzkS2ab9fLvh/c6M1hqmMyIrqy7UxNDd2XmVYduwDI1arlSxSMcRYsCm8d2I2nF1frs3A0Hn1P4rC8xcf4nQ/I7pnsCladuwDI9EhAgDYUiDhavMjqQAAAABJRU5ErkJggg=='},
+        {id:'bone_meal',name:'Bone Meal',color:'#cfc3a5',volume:1,icon:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAaklEQVR42mNgIBdU5Xj9r8rx+o8uzoKuyN7eDsb93zZlGyOGQpgieUU1BgYGBgZ7NMUs2BQxMDAwyCuqoShmQpZAB8hicIUP79/CUIgsxsLAwMAAdcd/ezSFBw8egskxMKL7GpmP7GuiAQCmGCh5A1LB3AAAAABJRU5ErkJggg=='},
+        {id:'smoked_fish',name:'Smoked Fish',color:'#9c5a2e',volume:1,icon:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAfElEQVR42mNgIBIwInO0VRT+w9hX7zxAkWNBVlRoxgeX6GdQ+A9TrK2i8J8RWZGaghjDrQevEIpPfYKzmWGK+nfdYlAT5mBQUxBjePvhKwMDAwODpTQ7g6U0O8OJpz8ZGNGtRAbIJsKtthf7haLo4Cs2Bgw3ovsYm6+pDwCx1y85zjN1cgAAAABJRU5ErkJggg=='},
+        {id:'kelp_cord',name:'Kelp Cord',color:'#6b8f3a',volume:1,icon:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAe0lEQVR42mNgIBIwwhh6XjL/sSm4tO0JIwMDAwMzTFFRWQgDC9cXhpAQVxT6J/P/hpe3PzWywHSePn+K4fDuRwyHdz9iYGBgYDi8+xGDrasc3GQmGMPU0AxuFcw6mBgDAwMDionoboWJoSiE6TY1NGM4ff4UnCbZ19QHAAkvMqLofkXYAAAAAElFTkSuQmCC'},
+        {id:'fish_glue',name:'Fish Glue',color:'#c9b98a',volume:1,icon:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAZElEQVR42mNgIBIwInOivLT+I/OXbbvGiKEjykvr/4dHG1AwskZGbCahg2XbrjGywDj5+QkYCtS0zRiy07IYGBgYGJhwmaKmbcZw6+opOJ8Fl0KYIohNC/4zkRw8+DyENZhwAQAFnikEQTkqBgAAAABJRU5ErkJggg=='},
+        {id:'scale_plate',name:'Scale Plate',color:'#7fb6cf',volume:2,icon:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAY0lEQVR42mNgIBIwMjAwMOhHZf3Hp+jismmMLDBOQEwqQ4CFNsOGE1chfCh7w5LZDAwMDAxMyDphitDZGAoDLLSxsmljIiOMoR+V9T8gJhVFcsOS2QwXl01jRFGILZhgikgCAPZbJBAIV9cyAAAAAElFTkSuQmCC'},
+        {id:'lantern',name:'Oil Lantern',color:'#f5c542',volume:2,icon:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAWElEQVR42mNgQANeVgr/vawU/jPgA8gK0BUz4pKAgW3HHjAyMDAwsCALru5WQlEUWnoPzmZCN4FLNw+rs5iwCWJTzIIu8O3yJKwmsuByE06rYb7D5mOSAACL5RencSNLcwAAAABJRU5ErkJggg=='},
+        {id:'shimmer_armor',name:'Shimmer Armor',color:'#5ec2c9',volume:4,icon:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAdklEQVR42pWQsQmAMBBFX8Q5MoaQLnOkSqmtg9hqaeUcdoJjuMhZnUQTRF/5+e8OPvzBhig2RHnLaxui+LYDYAU5ltloKc1rtXvXXCGAbzt61zBsOwCZ/WSdRo5lNlUa6tUSt6K+KQlVyR62PSubdIqSpCt85gRAAit2vg3uYwAAAABJRU5ErkJggg=='}
+      ],
+      recipes:[
+        {id:'catch_fish',name:'Catch fish',time:1.5,inputs:{},outputs:{raw_fish:1}},
+        {id:'harvest_kelp',name:'Harvest kelp',time:2,inputs:{},outputs:{kelp:1}},
+        {id:'evaporate_salt',name:'Evaporate salt',time:3,inputs:{},outputs:{salt:1}},
+        {id:'gut_fish',name:'Gut fish',time:2,inputs:{raw_fish:1},outputs:{fillet:1,fish_scales:2,fish_bones:1}},
+        {id:'render_oil',name:'Render oil',time:3,inputs:{fish_bones:2},outputs:{fish_oil:1,bone_meal:1}},
+        {id:'boil_glue',name:'Boil fish glue',time:3,inputs:{fish_scales:2,bone_meal:1},outputs:{fish_glue:1}},
+        {id:'smoke_fish',name:'Smoke fish',time:4,inputs:{fillet:2,salt:1},outputs:{smoked_fish:2}},
+        {id:'twist_cord',name:'Twist kelp cord',time:2,inputs:{kelp:2},outputs:{kelp_cord:1}},
+        {id:'make_lantern',name:'Make oil lantern',time:4,inputs:{fish_oil:1,fish_scales:1,kelp_cord:1},outputs:{lantern:1}},
+        {id:'press_plate',name:'Press scale plate',time:3,inputs:{fish_scales:3,fish_glue:1},outputs:{scale_plate:1}},
+        {id:'forge_armor',name:'Lace shimmer armor',time:6,inputs:{scale_plate:2,kelp_cord:1},outputs:{shimmer_armor:1}}
+      ],
+      buildings:[
+        {id:'fishing_dock',name:'Fishing Dock',color:'#3f6f96',storage:10,onDeposit:true,cost:{kelp_cord:3,smoked_fish:2},recipes:['catch_fish']},
+        {id:'kelp_farm',name:'Kelp Farm',color:'#3e6b30',storage:10,onDeposit:true,cost:{kelp_cord:2},recipes:['harvest_kelp']},
+        {id:'salt_pan',name:'Salt Pan',color:'#9aa7ad',storage:10,onDeposit:true,cost:{fish_scales:4},recipes:['evaporate_salt']},
+        {id:'gutting_shed',name:'Gutting Shed',color:'#b65a4a',storage:10,cost:{fish_scales:4,smoked_fish:2},recipes:['gut_fish']},
+        {id:'rendering_vat',name:'Rendering Vat',color:'#a67c1f',storage:10,cost:{fish_scales:6,kelp_cord:2},recipes:['render_oil','boil_glue']},
+        {id:'smokehouse',name:'Smokehouse',color:'#6e4a32',storage:10,cost:{fish_scales:5,smoked_fish:3},recipes:['smoke_fish']},
+        {id:'ropewalk',name:'Ropewalk',color:'#5c7a35',storage:10,cost:{kelp_cord:3,fish_scales:2},recipes:['twist_cord']},
+        {id:'chandlery',name:'Chandlery',color:'#c79a1e',storage:10,cost:{fish_scales:6,kelp_cord:3},recipes:['make_lantern']},
+        {id:'scale_smith',name:'Scale Smith',color:'#3c8d96',storage:10,cost:{fish_scales:10,kelp_cord:4,smoked_fish:4},recipes:['press_plate','forge_armor']},
+        {id:'warehouse',name:'Warehouse',color:'#55606b',storage:200,cost:{kelp_cord:4,fish_scales:6},sink:true,ports:4},
+        {id:'incinerator',name:'Incinerator',color:'#7a3b32',cost:{fish_scales:3},trash:true,ports:2},
+        {id:'splitter',name:'Splitter',color:'#4d6478',cost:{kelp_cord:2},splitter:true,ports:3},
+        {id:'merger',name:'Merger',color:'#6a5a80',cost:{kelp_cord:2},merger:true,ports:3}
+      ]
+    }},
+  empty:{nodes:[],belts:[]}
+};
+for(const d of Object.values(DEMOS)) d.belts=d.belts.map(([from,to,src,res])=>({from,to,src,res}));
+// Each tech tree is fully separate: its own JSON, demos and saved layout.
+const TREES={
+  industrial:{name:'Industrial',defs:DEFAULT_DEFS,demos:{circuit:'Circuit boards',bronze:'Bronze',iron:'Iron'},start:'circuit'},
+  fish:{name:'Fish',defs:{settings:{...DEFAULT_DEFS.settings},startingResources:{smoked_fish:20,kelp_cord:15,fish_scales:30},...DEMOS.fish.defs},demos:{fish:'Smoked fish & lanterns'},start:'fish'}
+};
+
+// ---------- JSON formatting & compiling ----------
+function oneLine(v){
+  if(Array.isArray(v)) return '['+v.map(oneLine).join(', ')+']';
+  if(v&&typeof v==='object'){const e=Object.entries(v);return e.length?'{ '+e.map(([k,x])=>JSON.stringify(k)+': '+oneLine(x)).join(', ')+' }':'{}'}
+  return JSON.stringify(v);
+}
+function fmt(o){
+  return '{\n'+Object.entries(o).map(([k,v])=>Array.isArray(v)
+    ? `  ${JSON.stringify(k)}: [\n${v.map(x=>'    '+oneLine(x)).join(',\n')}\n  ]`
+    : `  ${JSON.stringify(k)}: ${oneLine(v)}`).join(',\n')+'\n}';
+}
+const fmtV=v=>v===Infinity?'∞':String(+v.toFixed(2));
+function outVol(m,R){let v=0;for(const [r,q] of Object.entries(m)) v+=q*(R.get(r)?.volume??1);return v}
+function compile(obj){
+  const errs=[],warns=[];
+  if(!obj||typeof obj!=='object'||Array.isArray(obj)) return {errs:['The top level must be an object { … }']};
+  for(const k of ['resources','recipes','buildings']) if(!Array.isArray(obj[k])) errs.push(`"${k}" must be an array`);
+  if(errs.length) return {errs};
+  const R=new Map(),C=new Map(),B=new Map();
+  obj.resources.forEach((r,i)=>{
+    if(!r||typeof r.id!=='string'||!r.id) return errs.push(`resources[${i}] needs a string "id"`);
+    if(R.has(r.id)) return errs.push(`Duplicate resource id "${r.id}"`);
+    const v=r.volume??1;
+    if(!(typeof v==='number'&&v>0)) errs.push(`Resource "${r.id}": "volume" must be a number > 0`);
+    let icon=null;
+    if(r.icon!==undefined){if(typeof r.icon==='string'&&/^data:image\/(png|gif|webp);base64,[A-Za-z0-9+/=]+$/.test(r.icon)) icon=r.icon;else warns.push(`Resource "${r.id}": "icon" must be a data:image/png;base64,… URL — ignored`)}
+    const onmap=!!(r.onmap??r.onMap),dn=r.deposits??r.fields?.count??3;
+    if(onmap&&!(Number.isInteger(dn)&&dn>=0&&dn<=200)) errs.push(`Resource "${r.id}": "deposits" must be a whole number ≥ 0`);
+    R.set(r.id,{id:r.id,name:esc(r.name||r.id),color:safeColor(r.color),volume:v,icon,onmap,deposits:dn});
+  });
+  obj.recipes.forEach((c,i)=>{
+    if(!c||typeof c.id!=='string'||!c.id) return errs.push(`recipes[${i}] needs a string "id"`);
+    if(C.has(c.id)) return errs.push(`Duplicate recipe id "${c.id}"`);
+    const ins=c.inputs||{},outs=c.outputs||{};
+    for(const [m,what] of [[ins,'inputs'],[outs,'outputs']]){
+      if(typeof m!=='object'||Array.isArray(m)){errs.push(`Recipe "${c.id}": "${what}" must be an object like {"iron_ore": 1}`);continue}
+      for(const [k,v] of Object.entries(m)){
+        if(!R.has(k)) errs.push(`Recipe "${c.id}": unknown resource "${k}" in ${what}`);
+        if(!(Number.isInteger(v)&&v>0)) errs.push(`Recipe "${c.id}": amount of "${k}" must be a whole number ≥ 1`);
+      }
+    }
+    if(typeof outs==='object'&&!Object.keys(outs).length) errs.push(`Recipe "${c.id}" has no outputs`);
+    const t=c.time??1;
+    if(!(typeof t==='number'&&t>0)) errs.push(`Recipe "${c.id}": "time" must be seconds > 0`);
+    C.set(c.id,{id:c.id,name:esc(c.name||c.id),time:t,inputs:ins,outputs:outs});
+  });
+  const s=obj.settings||{},pos=(v,d)=>+v>0?+v:d;
+  const S={beltSpeed:pos(s.beltSpeed,70),itemSpacing:pos(s.itemSpacing,16),bufferSize:pos(s.bufferSize,10),defaultStorage:pos(s.defaultStorage,10)};
+  const mp=s.map||{},dim=(v,d,k)=>{if(v===undefined)return d;if(Number.isInteger(v)&&v>=3&&v<=40)return v;errs.push(`settings.map.${k} must be a whole number 3–40`);return d};
+  S.cols=dim(mp.cols,10,'cols');S.rows=dim(mp.rows,7,'rows');
+  obj.buildings.forEach((b,i)=>{
+    if(!b||typeof b.id!=='string'||!b.id) return errs.push(`buildings[${i}] needs a string "id"`);
+    if(b.belt||b.pole) return; // only on the game's map: the sandbox wires buildings directly
+    if(B.has(b.id)) return errs.push(`Duplicate building id "${b.id}"`);
+    const rs=b.recipes||[];
+    if(!Array.isArray(rs)) return errs.push(`Building "${b.id}": "recipes" must be an array of recipe ids`);
+    rs.forEach(id=>{if(!C.has(id)) errs.push(`Building "${b.id}": unknown recipe "${id}"`)});
+    const kind=b.trash?'trash':b.sink?'sink':b.splitter?'splitter':b.merger?'merger':'prod';
+    if(kind==='prod'&&!rs.length) warns.push(`Building "${b.id}" has no recipes and isn't a sink, trash, splitter or merger`);
+    if(kind!=='prod'&&rs.length) warns.push(`Building "${b.id}" is a ${kind}, so its recipes are ignored`);
+    const ports=b.ports??{sink:4,trash:2,splitter:3,merger:3}[kind]??1;
+    if(!(Number.isInteger(ports)&&ports>=1&&ports<=8)) errs.push(`Building "${b.id}": "ports" must be a whole number 1–8`);
+    const sp=b.speed??1;
+    if(!(typeof sp==='number'&&sp>0)) errs.push(`Building "${b.id}": "speed" must be a number > 0`);
+    if(b.storage!==undefined&&!(typeof b.storage==='number'&&b.storage>0)) errs.push(`Building "${b.id}": "storage" must be a number > 0`);
+    // storage = max total volume held in outputs (or, for a sink, in its store). A sink without one is unlimited.
+    const storage=b.storage??(b.sink?Infinity:S.defaultStorage);
+    rs.forEach(id=>{const c=C.get(id);if(!c)return;const v=outVol(c.outputs,R);
+      if(v>storage) errs.push(`Building "${b.id}" can never run "${id}": its outputs take ${fmtV(v)} volume but storage is ${fmtV(storage)}`)});
+    const cost={};
+    if(b.cost!==undefined){
+      if(!b.cost||typeof b.cost!=='object'||Array.isArray(b.cost)) errs.push(`Building "${b.id}": "cost" must be an object like {"iron": 5}`);
+      else for(const [k,v] of Object.entries(b.cost)){
+        if(!R.has(k)) errs.push(`Building "${b.id}": unknown resource "${k}" in cost`);
+        else if(!(Number.isInteger(v)&&v>=0)) errs.push(`Building "${b.id}": cost of "${k}" must be a whole number ≥ 0`);
+        else if(v>0) cost[k]=v;
+      }
+    }
+    // onDeposit: must stand on a map deposit; only recipes that output that deposit's resource can run there
+    const depRes=new Set();
+    if(b.onDeposit){
+      if(kind!=='prod') errs.push(`Building "${b.id}": only production buildings can be "onDeposit"`);
+      rs.forEach(id=>{const c=C.get(id);if(c) for(const r of Object.keys(c.outputs)) if(R.get(r)?.onmap) depRes.add(r)});
+      if(kind==='prod'&&!depRes.size) errs.push(`Building "${b.id}" is "onDeposit" but none of its recipes output a resource with "onmap": true`);
+    }
+    B.set(b.id,{onDeposit:!!b.onDeposit,depRes,id:b.id,name:b.name||b.id,color:safeColor(b.color||'#666'),recipes:kind==='prod'?rs:[],kind,ports,sink:kind==='sink',trash:kind==='trash',end:kind==='sink'||kind==='trash',logi:kind==='splitter'||kind==='merger',speed:sp,storage,cost});
+  });
+  if(!errs.length){
+    for(const c of C.values()) if(![...B.values()].some(b=>b.recipes.includes(c.id))) warns.push(`Recipe "${c.id}" isn't available in any building`);
+    for(const r of R.values()) if(![...C.values()].some(c=>has(c.outputs,r.id))) warns.push(`Nothing produces "${r.id}"`);
+  }
+  const start={},sr=obj.startingResources;
+  if(sr!==undefined){
+    if(!sr||typeof sr!=='object'||Array.isArray(sr)) errs.push('"startingResources" must be an object like {"iron": 30}');
+    else for(const [k,v] of Object.entries(sr)){
+      if(!R.has(k)) errs.push(`startingResources: unknown resource "${k}"`);
+      else if(!(Number.isInteger(v)&&v>=0)) errs.push(`startingResources: amount of "${k}" must be a whole number ≥ 0`);
+      else if(v>0) start[k]=v;
+    }
+  }
+  return {errs,warns,R,C,B,S,start};
+}
+function tryText(txt){try{const c=compile(JSON.parse(txt));return c.errs.length?null:c}catch(e){return null}}
+
+// ---------- state ----------
+let DEF,S,defText;
+let nodes=[],belts=[],nodeMap=new Map(),nid=1,bid=1;
+let zoom=innerWidth<700?0.6:1,speedMul=1,simT=0,statStart=0;
+let selBelt=null,pending=null,wire=null,drag=null;
+let delivered={};
+
+const world=$('#world'),sizer=$('#sizer'),scroller=$('#scroller'),beltLayer=$('#beltLayer'),temp=$('#temp'),svg=$('#belts');
+function applyMapSize(){
+  WORLD_W=S.cols*CW;WORLD_H=S.rows*CH;
+  world.style.width=WORLD_W+'px';world.style.height=WORLD_H+'px';world.style.backgroundSize=`${CW}px ${CH}px`;
+  svg.setAttribute('width',WORLD_W);svg.setAttribute('height',WORLD_H);applyZoom();
+}
+function applyZoom(){world.style.transform=`scale(${zoom})`;sizer.style.width=WORLD_W*zoom+'px';sizer.style.height=WORLD_H*zoom+'px'}
+
+const rname=r=>DEF.R.get(r)?.name||esc(r);
+const ico=r=>{const R=DEF.R.get(r);return R&&R.icon?`<img class="ico" src="${R.icon}" alt="">`:`<i style="background:${R?.color||'#999'}"></i>`};
+const chip=(r,txt)=>`<span class="chip">${ico(r)}${txt}</span>`;
+const io=m=>Object.entries(m).map(([r,q])=>`${q} ${rname(r)}`).join(' + ');
+const recipeText=rec=>`${io(rec.inputs)||'nothing'} → ${io(rec.outputs)} · ${rec.time}s`;
+// Input connectors: one per recipe ingredient (one conveyor each); warehouses/incinerators get one
+// connector ('' = accepts anything) that takes any number of conveyors.
+const PORT_GAP=30;
+const gen=s=>s[0]==='#',genN=k=>Array.from({length:k},(_,i)=>'#'+i);
+function inSlots(n){const b=DEF.B.get(n.b);if(b.end||b.kind==='merger') return genN(b.ports);if(b.kind==='splitter') return ['#0'];const rec=DEF.C.get(n.recipe);return rec?Object.keys(rec.inputs):[]}
+function outSlots(n){const b=DEF.B.get(n.b);if(b.end) return [];if(b.kind==='splitter') return genN(b.ports);if(b.kind==='merger') return ['#0'];const rec=DEF.C.get(n.recipe);return rec?Object.keys(rec.outputs):[]}
+const slotName=s=>gen(s)?'general':DEF.R.get(s).name.replace(/&amp;/g,'&');
+function portPos(n,k,r){
+  const i=Math.max(0,(k==='out'?outSlots(n):inSlots(n)).indexOf(r||''));
+  return {x:k==='out'?n.x+W:n.x,y:n.y+18+i*PORT_GAP};
+}
+function curve(a,b){const dx=Math.max(40,Math.abs(b.x-a.x)/2);return `M${a.x},${a.y} C${a.x+dx},${a.y} ${b.x-dx},${b.y} ${b.x},${b.y}`}
+function worldPt(e){const r=world.getBoundingClientRect();return {x:(e.clientX-r.left)/zoom,y:(e.clientY-r.top)/zoom}}
+
+// ---------- grid & deposits ----------
+let deps={}; // "c,r" -> resource id of the deposit in that cell
+const ck=(c,r)=>c+','+r;
+const cellXY=(c,r)=>({x:c*CW+OX,y:r*CH+OY});
+const occupant=(c,r,except)=>nodes.find(n=>n!==except&&n.c===c&&n.r===r);
+const depNames=b=>[...b.depRes].map(r=>DEF.R.get(r).name.replace(/&amp;/g,'&')).join(' or ');
+function recipesAt(b,c,r){
+  if(!b.onDeposit) return b.recipes;
+  const d=deps[ck(c,r)];return d?b.recipes.filter(id=>has(DEF.C.get(id).outputs,d)):[];
+}
+function canPlace(b,c,r,except){
+  if(c<0||r<0||c>=S.cols||r>=S.rows) return 'Outside the map';
+  if(occupant(c,r,except)) return 'That cell already has a building';
+  if(b.onDeposit&&!recipesAt(b,c,r).length) return `${b.name} must be placed on a deposit of ${depNames(b)}`;
+  return '';
+}
+// Nearest valid cell; ordinary buildings prefer cells without a deposit.
+function findCell(b,nc,nr,except){
+  let best=null,bd=Infinity;
+  for(let c=0;c<S.cols;c++) for(let r=0;r<S.rows;r++){
+    if(canPlace(b,c,r,except)) continue;
+    const d=(c-nc)**2+(r-nr)**2+(!b.onDeposit&&deps[ck(c,r)]?1000:0);
+    if(d<bd){bd=d;best={c,r}}
+  }
+  return best;
+}
+// Keep valid deposits from `prev`, apply `keep`, then scatter each onmap resource up to its "deposits" count.
+function buildMap(prev,keep,blocked){
+  const out={};
+  for(const [k,r] of Object.entries(prev||{})){const [c,rr]=k.split(',').map(Number);if(c<S.cols&&rr<S.rows&&DEF.R.get(r)?.onmap) out[k]=r}
+  Object.assign(out,keep);
+  for(const R of DEF.R.values()) if(R.onmap){
+    let have=Object.values(out).filter(x=>x===R.id).length,tries=0;
+    while(have<R.deposits&&tries++<2000){
+      const k=ck(Math.floor(Math.random()*S.cols),Math.floor(Math.random()*S.rows));
+      if(out[k]||blocked.has(k)) continue;
+      out[k]=R.id;have++;
+    }
+  }
+  return out;
+}
+const depLayer=$('#deps');
+function renderDeps(){
+  depLayer.innerHTML=Object.entries(deps).map(([k,r])=>{
+    const [c,rr]=k.split(',').map(Number),R=DEF.R.get(r);
+    return `<div class="dep" data-r="${esc(r)}" style="left:${c*CW+3}px;top:${rr*CH+3}px;width:${CW-6}px;height:${CH-6}px">
+      <div class="dbg" style="background-color:${R.color};${R.icon?`background-image:url(${R.icon})`:''}"></div><div class="dl">${ico(r)}${R.name}</div></div>`;
+  }).join('');
+}
+function markDeps(b){depLayer.querySelectorAll('.dep').forEach(d=>d.classList.toggle('ok',!!b&&b.depRes.has(d.dataset.r)))}
+
+// ---------- nodes ----------
+function addNode(bId,recipe,c,r,id){
+  const b=DEF.B.get(bId); if(!b) return null;
+  const al=recipesAt(b,c,r),{x,y}=cellXY(c,r);
+  const n={id:id||nid++,b:bId,recipe:b.end||b.logi?null:(al.includes(recipe)?recipe:al[0]||null),
+    c,r,x,y,inBuf:{},outBuf:{},stored:{},burned:{},storageCap(){return DEF.B.get(this.b).storage},crafting:false,progress:0,rr:0,state:'',status:'',cache:{}};
+  nid=Math.max(nid,n.id+1);
+  nodes.push(n);nodeMap.set(n.id,n);buildNodeEl(n);
+  return n;
+}
+function buildNodeEl(n){
+  const b=DEF.B.get(n.b);
+  const el=document.createElement('div');el.className='node';el.dataset.id=n.id;n.el=el;
+  el.innerHTML=`<div class="nh"><span class="nm"></span><button class="x" title="Remove building">✕</button></div>
+  <div class="nb">${!b.end&&recipesAt(b,n.c,n.r).length>1?`<select class="rsel">${recipesAt(b,n.c,n.r).map(id=>`<option value="${esc(id)}">${DEF.C.get(id).name}</option>`).join('')}</select>`:''}
+  <div class="rtext"></div><div class="row ins"></div>${b.end||b.logi?'':'<div class="prog"><i></i></div><div class="row outs"></div>'}${b.trash||b.logi?'':'<div class="cap"><span></span><div class="capbar"><i></i></div></div>'}<div class="st"></div></div>
+`;
+  const head=el.querySelector('.nh');head.style.background=b.color;
+  el.querySelector('.nm').textContent=b.name;
+  n.ins=el.querySelector('.ins');n.outs=el.querySelector('.outs');n.bar=el.querySelector('.prog i');n.st=el.querySelector('.st');n.capT=el.querySelector('.cap span');n.capB=el.querySelector('.capbar i');
+  const sel=el.querySelector('.rsel');
+  if(sel){sel.value=n.recipe;sel.addEventListener('change',()=>{setRecipe(n,sel.value);setRText(n);buildPorts(n);place(n);save()})}
+  setRText(n);
+  el.querySelector('.x').addEventListener('click',()=>removeNode(n));
+  head.addEventListener('pointerdown',e=>{
+    if(e.target.closest('button,select')) return;
+    e.preventDefault();const p=worldPt(e);drag={n,ox:p.x-n.x,oy:p.y-n.y};head.setPointerCapture(e.pointerId);head.style.cursor='grabbing';
+    el.style.zIndex=5;if(b.onDeposit) markDeps(b);
+  });
+  head.addEventListener('pointermove',e=>{
+    if(!drag||drag.n!==n) return;
+    const p=worldPt(e);
+    n.x=Math.max(10,Math.min(WORLD_W-W-10,p.x-drag.ox));n.y=Math.max(10,Math.min(WORLD_H-60,p.y-drag.oy));
+    place(n);
+  });
+  // Drop: snap to the cell under the building's header; invalid cells send it back.
+  const end=()=>{
+    if(!drag||drag.n!==n) return;
+    drag=null;head.style.cursor='';el.style.zIndex='';markDeps(null);
+    const c=Math.floor((n.x+W/2)/CW),r=Math.floor((n.y+16)/CH);
+    if(c!==n.c||r!==n.r){
+      const err=canPlace(b,c,r,n);
+      if(err) flash(err,true);
+      else{
+        n.c=c;n.r=r;
+        if(b.onDeposit){const al=recipesAt(b,c,r);if(!al.includes(n.recipe)){setRecipe(n,al[0]);flash(`${b.name} now runs ${DEF.C.get(al[0]).name.replace(/&amp;/g,'&')}`)}refreshNode(n)}
+      }
+    }
+    Object.assign(n,cellXY(n.c,n.r));place(n);save();
+  };
+  head.addEventListener('pointerup',end);head.addEventListener('pointercancel',end);
+  buildPorts(n);
+  world.appendChild(el);place(n);
+}
+function setRecipe(n,id){
+  n.recipe=id;n.inBuf={};n.outBuf={};n.crafting=false;n.progress=0;
+  const ins=inSlots(n),outs=outSlots(n);
+  belts.filter(bt=>(bt.to===n.id&&!ins.includes(bt.res))||(bt.from===n.id&&!outs.includes(bt.src))).forEach(removeBelt);
+}
+function refreshNode(n){n.el.remove();n.cache={};buildNodeEl(n)}
+function hookPort(p){
+  p.addEventListener('pointerdown',portDown);p.addEventListener('pointermove',portMove);
+  p.addEventListener('pointerup',portUp);p.addEventListener('pointercancel',()=>{wire=null;temp.style.display='none'});
+}
+function buildPorts(n){
+  n.el.querySelectorAll('.port,.plabel').forEach(x=>x.remove());
+  if(pending&&pending.n===n.id) clearPending();
+  outSlots(n).forEach((r,i)=>{
+    const p=document.createElement('div');p.className='port out';p.dataset.k='out';p.dataset.r=r;p.style.top=(8+i*PORT_GAP)+'px';
+    if(gen(r)){p.title='Output';hookPort(p);n.el.appendChild(p);return}
+    const R=DEF.R.get(r);p.style.background=R.color;p.title=R.name.replace(/&amp;/g,'&')+' out';
+    const l=document.createElement('div');l.className='plabel o';l.style.top=(8+i*PORT_GAP-13)+'px';l.style.borderRightColor=R.color;l.innerHTML=ico(r)+R.name;
+    n.el.appendChild(l);hookPort(p);n.el.appendChild(p);
+  });
+  inSlots(n).forEach((r,i)=>{
+    const p=document.createElement('div');p.className='port in'+(gen(r)?'':' typed');p.dataset.k='in';p.dataset.r=r;
+    p.style.top=(8+i*PORT_GAP)+'px';
+    if(!gen(r)){const R=DEF.R.get(r);p.style.borderColor=R.color==='#f4f1e8'||R.color==='#f7f7f2'?'#9a948a':R.color;p.title=R.name.replace(/&amp;/g,'&')+' in';
+      const l=document.createElement('div');l.className='plabel';l.style.top=(8+i*PORT_GAP-13)+'px';l.style.borderLeftColor=R.color;l.innerHTML=ico(r)+R.name;n.el.appendChild(l);}
+    else p.title='Input (anything)';
+    hookPort(p);n.el.appendChild(p);
+  });
+}
+function setRText(n){
+  const t=n.el.querySelector('.rtext');
+  const bb=DEF.B.get(n.b);
+  if(bb.trash) t.textContent='Destroys anything piped into it';
+  else if(bb.kind==='splitter') t.textContent=`Splits one conveyor into ${bb.ports} · production first, then storage`;
+  else if(bb.kind==='merger') t.textContent=`Merges ${bb.ports} conveyors into one`;
+  else if(bb.sink) t.textContent='Accepts and stores anything';
+  else{const rec=DEF.C.get(n.recipe);t.innerHTML=rec?recipeText(rec):'No recipe'}
+}
+function place(n){n.el.style.left=n.x+'px';n.el.style.top=n.y+'px';for(const bt of belts) if(bt.from===n.id||bt.to===n.id) bt.dirty=true}
+function removeNode(n){
+  belts.filter(bt=>bt.from===n.id||bt.to===n.id).forEach(removeBelt);
+  n.el.remove();nodes=nodes.filter(x=>x!==n);nodeMap.delete(n.id);
+  if(pending&&pending.n===n.id) clearPending();
+  const b=DEF.B.get(n.b),lost=b.sink?Object.values(n.stored).reduce((a,q)=>a+q,0):0;
+  const ok=refund(b.cost);
+  flash(`Removed ${b.name}`+(ok?'; cost refunded':Object.keys(b.cost).length?'; no warehouse left to refund into':'')+(lost?` — its ${lost} stored items are lost`:''),!ok||lost);
+  save();
+}
+
+// ---------- economy: paying from warehouse contents ----------
+const HINT='Drag a building by its header to move it to another cell. Drag from an output to a matching input (or tap one, then the other). Every connector takes one conveyor — use Splitters and Mergers to branch or combine. Tap a conveyor to select it.';
+const sinks=()=>nodes.filter(n=>DEF.B.get(n.b).sink);
+function stockTotals(){const t={};for(const w of sinks()) for(const [r,q] of Object.entries(w.stored)) t[r]=(t[r]||0)+q;return t}
+function missingFor(cost){const t=stockTotals();return Object.entries(cost).filter(([r,q])=>(t[r]||0)<q).map(([r,q])=>[r,q-(t[r]||0)])}
+function pay(cost){
+  for(let [r,q] of Object.entries(cost)) for(const w of sinks()){
+    const take=Math.min(q,w.stored[r]||0);if(!take) continue;
+    w.stored[r]-=take;q-=take;if(!w.stored[r]) delete w.stored[r];if(!q) break;
+  }
+}
+// Refund into the first warehouse with room; if none has room, overfill the first one.
+function refund(cost){
+  const ws=sinks();if(!Object.keys(cost).length) return true;if(!ws.length) return false;
+  const v=outVol(cost,DEF.R),w=ws.find(w=>outVol(w.stored,DEF.R)+v<=w.storageCap())||ws[0];
+  for(const [r,q] of Object.entries(cost)) w.stored[r]=(w.stored[r]||0)+q;
+  return true;
+}
+const costText=c=>Object.entries(c).map(([r,q])=>`${q} ${DEF.R.get(r).name.replace(/&amp;/g,'&')}`).join(', ')||'free';
+let flashT=0;
+function flash(msg,bad){
+  const h=$('#hint');clearTimeout(flashT);h.textContent=msg;h.style.color=bad?'var(--bad)':'var(--ok)';h.hidden=false;
+  flashT=setTimeout(()=>{h.textContent=HINT;h.style.color=''},4000);
+}
+
+// ---------- belts ----------
+// res = which input connector of `to` this conveyor feeds ('' for warehouses/incinerators).
+// Left undefined (demo layouts), it picks a free connector, preferring one the source produces.
+// src = which output connector of `from` it leaves (a product). A conveyor carries only that product.
+// Either left undefined (demo layouts) gets a sensible free connector picked automatically.
+function addBelt(from,to,res,src){
+  const fn=nodeMap.get(from),tn=nodeMap.get(to);
+  if(!fn||!tn||from===to) return null;
+  // Every connector takes exactly one conveyor.
+  const inFree=inSlots(tn).filter(s=>!belts.some(b=>b.to===to&&b.res===s));
+  const outFree=outSlots(fn).filter(s=>!belts.some(b=>b.from===from&&b.src===s));
+  const ok=(o,i)=>gen(o)||gen(i)||o===i;
+  const pairs=[];
+  for(const o of src!=null?[src]:outFree) for(const i of res!=null?[res]:inFree) if(outFree.includes(o)&&inFree.includes(i)&&ok(o,i)) pairs.push([o,i]);
+  if(!pairs.length) return null;
+  [src,res]=pairs.find(([o,i])=>o===i)||pairs[0];
+  // a conveyor is restricted to one product if either end is a product connector
+  const filter=!gen(src)?src:!gen(res)?res:null;
+  const g=document.createElementNS(NS,'g');
+  const mk=(attrs)=>{const p=document.createElementNS(NS,'path');for(const k in attrs)p.setAttribute(k,attrs[k]);g.appendChild(p);return p};
+  const base=mk({fill:'none',stroke:'#5b554b','stroke-width':11,'stroke-linecap':'round'});
+  const dash=mk({fill:'none',stroke:'#9b9385','stroke-width':3,'stroke-dasharray':'6 8'});
+  const ig=document.createElementNS(NS,'g');g.appendChild(ig);
+  const hit=mk({fill:'none',stroke:'transparent','stroke-width':24,class:'hit'});
+  const bt={id:bid++,from,to,res,src,filter,items:[],g,base,dash,hit,ig,circles:[],len:0,off:0,dirty:true};
+  hit.addEventListener('pointerdown',e=>{e.stopPropagation();selectBelt(selBelt===bt?null:bt)});
+  beltLayer.appendChild(g);belts.push(bt);
+  return bt;
+}
+function removeBelt(bt){bt.g.remove();belts=belts.filter(b=>b!==bt);if(selBelt===bt)selectBelt(null)}
+function selectBelt(bt){
+  if(selBelt) selBelt.base.setAttribute('stroke','#5b554b');
+  selBelt=bt;if(bt) bt.base.setAttribute('stroke','#c8642d');
+  $('#rmBelt').hidden=!bt;$('#hint').hidden=!!bt;
+}
+
+function updateBeltPath(bt){
+  const a=portPos(nodeMap.get(bt.from),'out',bt.src),b=portPos(nodeMap.get(bt.to),'in',bt.res),d=curve(a,b);
+  bt.base.setAttribute('d',d);bt.dash.setAttribute('d',d);bt.hit.setAttribute('d',d);
+  bt.len=bt.base.getTotalLength();
+}
+
+// ---------- wiring interaction ----------
+function portInfo(el){return {n:+el.closest('.node').dataset.id,k:el.dataset.k,r:el.dataset.r||'',el}}
+function clearPending(){if(pending)pending.el.classList.remove('pend');pending=null}
+function tryConnect(a,b){
+  if(a.k===b.k||a.n===b.n) return;
+  const o=a.k==='out'?a:b,i=a.k==='out'?b:a;
+  if(!gen(o.r)&&!gen(i.r)&&i.r!==o.r) return flash(`A ${slotName(o.r)} output can't feed the ${slotName(i.r)} connector`,true);
+  if(belts.some(bt=>bt.from===o.n&&bt.src===o.r)) return flash('That output already has a conveyor — use a Splitter to send it to more places',true);
+  if(belts.some(bt=>bt.to===i.n&&bt.res===i.r)) return flash('That input already has a conveyor — use a Merger to combine conveyors',true);
+  if(addBelt(o.n,i.n,i.r,o.r)) save();
+}
+function portDown(e){
+  e.preventDefault();e.stopPropagation();
+  wire={...portInfo(e.currentTarget),sx:e.clientX,sy:e.clientY,moved:false};
+  e.currentTarget.setPointerCapture(e.pointerId);
+}
+function portMove(e){
+  if(!wire||wire.el!==e.currentTarget) return;
+  if(Math.hypot(e.clientX-wire.sx,e.clientY-wire.sy)>6) wire.moved=true;
+  if(wire.moved){
+    const p=worldPt(e),q=portPos(nodeMap.get(wire.n),wire.k,wire.r);
+    temp.setAttribute('d',wire.k==='out'?curve(q,p):curve(p,q));temp.style.display='';
+  }
+}
+function portUp(e){
+  if(!wire) return;
+  const w=wire;wire=null;temp.style.display='none';
+  if(w.moved){
+    const t=document.elementFromPoint(e.clientX,e.clientY),pe=t&&t.closest('.port');
+    if(pe&&pe!==w.el) tryConnect(w,portInfo(pe));
+    clearPending();
+  }else if(pending&&pending.el===w.el) clearPending();
+  else if(pending){tryConnect(pending,w);clearPending()}
+  else{pending=w;w.el.classList.add('pend')}
+}
+world.addEventListener('pointerdown',e=>{if(e.target===world){selectBelt(null);clearPending()}});
+addEventListener('keydown',e=>{if((e.key==='Delete'||e.key==='Backspace')&&selBelt&&document.activeElement.tagName!=='TEXTAREA'){removeBelt(selBelt);save()}});
+$('#rmBelt').addEventListener('click',()=>{if(selBelt){removeBelt(selBelt);save()}});
+
+// ---------- simulation ----------
+function acceptsType(n,r){
+  const b=DEF.B.get(n.b);if(b.end||b.logi) return true;
+  const rec=DEF.C.get(n.recipe);return !!rec&&has(rec.inputs,r);
+}
+function canAccept(n,r){
+  if(!acceptsType(n,r)) return false;
+  const b=DEF.B.get(n.b);
+  if(b.trash) return true;
+  if(b.logi) return Object.values(n.outBuf).reduce((a,q)=>a+q,0)<LOGI_CAP;
+  if(b.sink) return outVol(n.stored,DEF.R)+DEF.R.get(r).volume<=b.storage+1e-9;
+  const rec=DEF.C.get(n.recipe);
+  return (n.inBuf[r]||0)<Math.max(S.bufferSize,rec.inputs[r]*2);
+}
+const LOGI_CAP=4; // items a splitter/merger holds while passing them on
+function tick(dt){
+  for(const n of nodes){
+    const b=DEF.B.get(n.b);
+    if(b.end||b.logi){n.state='working';continue}
+    const rec=DEF.C.get(n.recipe);
+    if(!rec){n.state='';n.status='No recipe';continue}
+    if(n.crafting){
+      n.progress+=dt*b.speed/rec.time;
+      if(n.progress>=1){for(const r in rec.outputs) n.outBuf[r]=(n.outBuf[r]||0)+rec.outputs[r];n.crafting=false;n.progress=0}
+    }
+    if(!n.crafting){
+      const full=outVol(n.outBuf,DEF.R)+outVol(rec.outputs,DEF.R)>b.storage+1e-9;
+      const missing=Object.entries(rec.inputs).filter(([r,q])=>(n.inBuf[r]||0)<q);
+      if(full){n.state='blocked';n.status='Output storage full'}
+      else if(missing.length){n.state='starved';n.status='Needs '+missing.map(([r])=>rname(r)).join(', ')}
+      else{for(const r in rec.inputs) n.inBuf[r]-=rec.inputs[r];n.crafting=true;n.progress=0}
+    }
+    if(n.crafting){n.state='working';n.status='Working'}
+  }
+  const sp=S.beltSpeed*dt,gap=S.itemSpacing;
+  for(const bt of belts){
+    if(bt.dirty){updateBeltPath(bt);bt.dirty=false}
+    const it=bt.items;let moved=false;
+    for(let i=0;i<it.length;i++){
+      const lim=i===0?bt.len:it[i-1].pos-gap;
+      const np=Math.min(it[i].pos+sp,lim);
+      if(np>it[i].pos+1e-6) moved=true;
+      it[i].pos=np;
+    }
+    if(it.length&&it[0].pos>=bt.len-0.01){
+      const to=nodeMap.get(bt.to),r=it[0].r;
+      if(canAccept(to,r)){
+        if(DEF.B.get(to.b).trash){to.burned[r]=(to.burned[r]||0)+1}
+        else if(DEF.B.get(to.b).sink){to.stored[r]=(to.stored[r]||0)+1;const d=delivered[r]||(delivered[r]={total:0,times:[]});d.total++;d.times.push(simT)}
+        else if(DEF.B.get(to.b).logi) to.outBuf[r]=(to.outBuf[r]||0)+1;
+        else to.inBuf[r]=(to.inBuf[r]||0)+1;
+        it.shift();moved=true;
+      }
+    }
+    if(moved||!it.length) bt.off+=sp;
+  }
+  for(const n of nodes){
+    if(DEF.B.get(n.b).end) continue;
+    const outs=belts.filter(bt=>bt.from===n.id);if(!outs.length) continue;
+    for(const r in n.outBuf){
+      if(!n.outBuf[r]) continue;
+      // A conveyor takes r if it isn't restricted to another product. With several candidates
+      // (only possible from a splitter): production first, then warehouses, then incinerators.
+      const ok=outs.filter(bt=>bt.filter==null||bt.filter===r);
+      const rank=bt=>{const b=DEF.B.get(nodeMap.get(bt.to).b);return b.trash?2:b.sink?1:0};
+      for(const group of [0,1,2].map(k=>ok.filter(bt=>rank(bt)===k))){
+        let sent=false;
+        for(let k=0;k<group.length;k++){
+          const bt=group[(n.rr+k)%group.length],last=bt.items[bt.items.length-1];
+          if(!last||last.pos>=gap){bt.items.push({r,pos:0});n.outBuf[r]--;n.rr++;sent=true;break}
+        }
+        if(sent) break;
+      }
+    }
+  }
+}
+
+// ---------- rendering ----------
+function setHTML(n,key,el,html){if(el&&n.cache[key]!==html){n.cache[key]=html;el.innerHTML=html}}
+function setCap(n,used,max){
+  const txt=max===Infinity?`Volume ${fmtV(used)} · unlimited`:`Storage ${fmtV(used)} / ${fmtV(max)}`;
+  setHTML(n,'cap',n.capT,txt);
+  if(n.capB){const pct=max===Infinity?0:Math.min(100,used/max*100);n.capB.style.width=pct+'%';n.capB.style.background=pct>=90?'var(--bad)':pct>=60?'var(--warn)':'#8aa0b0'}
+}
+function render(){
+  for(const n of nodes){
+    const b=DEF.B.get(n.b);
+    if(b.trash){
+      const e=Object.entries(n.burned);
+      setHTML(n,'ins',n.ins,e.length?e.map(([r,q])=>chip(r,`${q} ${rname(r)}`)).join(''):'<span class="mute">nothing burned yet</span>');
+      setHTML(n,'st',n.st,`Incinerated ${e.reduce((s,[,q])=>s+q,0)} items`);
+      continue;
+    }
+    if(b.logi){
+      const e=Object.entries(n.outBuf).filter(([,q])=>q>0),tot=e.reduce((a,[,q])=>a+q,0);
+      setHTML(n,'ins',n.ins,e.length?e.map(([r,q])=>chip(r,`${q} ${rname(r)}`)).join(''):'<span class="mute">empty</span>');
+      const st=tot>=LOGI_CAP?'blocked':tot?'working':'';
+      setHTML(n,'st',n.st,st==='blocked'?'Backed up — nothing downstream takes '+e.map(([r])=>rname(r)).join(', '):st?'Passing items':'Idle');
+      const cls='node'+(st?' '+st:'');if(n.el.className!==cls) n.el.className=cls;
+      continue;
+    }
+    if(b.sink){
+      const e=Object.entries(n.stored);
+      setHTML(n,'ins',n.ins,e.length?e.map(([r,q])=>chip(r,`${q} ${rname(r)}`)).join(''):'<span class="mute">empty</span>');
+      const used=outVol(n.stored,DEF.R),isFull=b.storage!==Infinity&&used+0.5>b.storage;
+      setHTML(n,'st',n.st,(isFull?'Full — ':'')+`Stored ${e.reduce((s,[,q])=>s+q,0)} items`);
+      setCap(n,used,b.storage);
+      const cls='node'+(isFull?' blocked':'');if(n.el.className!==cls) n.el.className=cls;
+      continue;
+    }
+    const rec=DEF.C.get(n.recipe);
+    let ins='',outs='';
+    if(rec){
+      const ik=Object.keys(rec.inputs);
+      ins=ik.length?'<span class="lb">in</span>'+ik.map(r=>chip(r,`${n.inBuf[r]||0} ${rname(r)}`)).join(''):'';
+      const ok=new Set([...Object.keys(rec.outputs),...Object.keys(n.outBuf).filter(r=>n.outBuf[r]>0)]);
+      outs='<span class="lb">out</span>'+[...ok].map(r=>chip(r,`${n.outBuf[r]||0} ${rname(r)}`)).join('');
+    }
+    setHTML(n,'ins',n.ins,ins);n.ins.style.display=ins?'':'none';
+    setHTML(n,'outs',n.outs,outs);
+    setHTML(n,'st',n.st,n.status);
+    if(n.bar) n.bar.style.width=(n.crafting?n.progress*100:0)+'%';
+    setCap(n,outVol(n.outBuf,DEF.R),b.storage);
+    const cls='node'+(n.state?' '+n.state:'');if(n.el.className!==cls) n.el.className=cls;
+  }
+  for(const bt of belts){
+    if(bt.dirty){updateBeltPath(bt);bt.dirty=false}
+    bt.dash.style.strokeDashoffset=-(bt.off%14);
+    while(bt.circles.length<bt.items.length){
+      const g=document.createElementNS(NS,'g'),c=document.createElementNS(NS,'circle'),im=document.createElementNS(NS,'image');
+      c.setAttribute('r',6.5);c.setAttribute('stroke','#2b2a27');c.setAttribute('stroke-width',1.2);
+      im.setAttribute('x',-7);im.setAttribute('y',-7);im.setAttribute('width',14);im.setAttribute('height',14);im.style.imageRendering='pixelated';
+      g.append(c,im);g.c=c;g.im=im;g.r=null;bt.ig.appendChild(g);bt.circles.push(g);
+    }
+    while(bt.circles.length>bt.items.length) bt.circles.pop().remove();
+    bt.items.forEach((it,i)=>{
+      const p=bt.base.getPointAtLength(Math.max(0,Math.min(bt.len,it.pos))),g=bt.circles[i];
+      g.setAttribute('transform',`translate(${p.x.toFixed(1)},${p.y.toFixed(1)})`);
+      if(g.r!==it.r){const R=DEF.R.get(it.r);g.r=it.r;
+        if(R&&R.icon){g.c.style.display='none';g.im.setAttribute('href',R.icon);g.im.style.display=''}
+        else{g.c.style.display='';g.c.setAttribute('fill',R?.color||'#999');g.im.style.display='none'}}
+    });
+  }
+}
+let statsAt=0;
+// Stock = whatever all warehouses currently hold. Building costs are paid from it.
+function renderStats(){
+  const span=Math.max(1,Math.min(60,simT-statStart)),t=stockTotals();
+  const ids=[...DEF.R.keys()].filter(r=>t[r]||delivered[r]);
+  $('#stats').innerHTML='<span class="mute">Warehouse stock:</span> '+(ids.length?ids.map(r=>{
+    const d=delivered[r];let rate='';
+    if(d){d.times=d.times.filter(x=>x>=simT-60);rate=` <span class="mute">· +${(d.times.length*60/span).toFixed(1)}/min</span>`}
+    return chip(r,`${t[r]||0} ${rname(r)}${rate}`);
+  }).join(''):'<span class="mute">empty</span>');
+}
+let last=performance.now();
+function frame(now){
+  let dt=Math.min(0.1,(now-last)/1000)*speedMul;last=now;
+  while(dt>0){const s=Math.min(dt,0.05);tick(s);simT+=s;dt-=s}
+  render();
+  if(now-statsAt>500){statsAt=now;renderStats()}
+  requestAnimationFrame(frame);
+}
+
+// ---------- layout / persistence ----------
+function layout(){return {nodes:nodes.map(n=>({id:n.id,b:n.b,recipe:n.recipe,c:n.c,r:n.r})),belts:belts.map(b=>({from:b.from,to:b.to,res:b.res,src:b.src})),map:deps}}
+function clearAll(){nodes.forEach(n=>n.el.remove());belts.forEach(b=>b.g.remove());nodes=[];belts=[];nodeMap.clear();nid=1;selectBelt(null);clearPending()}
+function loadLayout(L){
+  clearAll();applyMapSize();
+  // Deposits: keep the saved map; make sure every deposit building in the layout stands on a fitting
+  // deposit (demo layouts come without a map); never scatter deposits under other buildings.
+  const keep={},blocked=new Set(),prev=L.map||{};
+  for(const o of L.nodes||[]){
+    const b=DEF.B.get(o.b);if(!b) continue;const k=ck(o.c,o.r);
+    if(!b.onDeposit){blocked.add(k);continue}
+    if(prev[k]&&b.depRes.has(prev[k])) continue;
+    const rec=DEF.C.get(o.recipe),want=rec&&Object.keys(rec.outputs).find(r=>b.depRes.has(r));
+    keep[k]=want||[...b.depRes][0];
+  }
+  deps=buildMap(prev,keep,blocked);renderDeps();
+  for(const o of L.nodes||[]){
+    const b=DEF.B.get(o.b);if(!b) continue;
+    let c=o.c,r=o.r;
+    if(canPlace(b,c,r)){const f=findCell(b,c,r);if(!f) continue;({c,r}=f)}
+    addNode(o.b,o.recipe,c,r,o.id);
+  }
+  (L.belts||[]).forEach(o=>addBelt(o.from,o.to,o.res,o.src));
+  // Starting capital goes into the first warehouse; place a free one if the layout has none.
+  if(Object.keys(DEF.start).length){
+    let w=sinks()[0];
+    const sb=[...DEF.B.values()].find(b=>b.sink);
+    const f=!w&&sb&&findCell(sb,0,0);
+    if(f) w=addNode(sb.id,null,f.c,f.r);
+    if(w) for(const [r,q] of Object.entries(DEF.start)) w.stored[r]=(w.stored[r]||0)+q;
+  }
+  delivered={};statStart=simT;
+}
+let cur='industrial',store={tree:'industrial',trees:{}};
+function save(){store.trees[cur]={text:defText,layout:layout()};store.tree=cur;store.zoom=zoom;try{localStorage.setItem(KEY,JSON.stringify(store))}catch(e){}}
+
+function fillAddSel(){
+  $('#addSel').innerHTML=[...DEF.B.values()].map(b=>`<option value="${esc(b.id)}">${esc(b.name)} (${esc(costText(b.cost))})</option>`).join('');
+}
+$('#addBtn').addEventListener('click',()=>{
+  const id=$('#addSel').value;if(!id) return;
+  const b=DEF.B.get(id),miss=missingFor(b.cost);
+  const f=findCell(b,Math.floor((scroller.scrollLeft+scroller.clientWidth/2)/zoom/CW),Math.floor((scroller.scrollTop+scroller.clientHeight/2)/zoom/CH));
+  if(!f) return flash(b.onDeposit?`No free ${depNames(b)} deposit left on the map`:'No free cell left on the map',true);
+  if(miss.length) return flash(`Can't afford ${b.name}: need ${costText(Object.fromEntries(miss))} more in your warehouses`,true);
+  pay(b.cost);if(Object.keys(b.cost).length) flash(`Built ${b.name} for ${costText(b.cost)}`);
+  addNode(id,null,f.c,f.r);save();
+});
+$('#speed').addEventListener('change',e=>speedMul=+e.target.value);
+$('#zIn').addEventListener('click',()=>{zoom=Math.min(1.6,+(zoom+0.1).toFixed(2));applyZoom();save()});
+$('#zOut').addEventListener('click',()=>{zoom=Math.max(0.3,+(zoom-0.1).toFixed(2));applyZoom();save()});
+$('#demo').addEventListener('change',e=>{const d=DEMOS[e.target.value];if(d){loadLayout(d);scroller.scrollTo(0,0);save()}e.target.value=''});
+function fillDemoSel(){
+  $('#demo').innerHTML='<option value="">Load demo…</option>'+Object.entries(TREES[cur].demos).map(([k,n])=>`<option value="${k}">${n}</option>`).join('')+'<option value="empty">Empty</option>';
+}
+function loadTree(k){
+  cur=k;const T=TREES[k],st=store.trees[k]||{};
+  let txt=st.text,c=txt&&tryText(txt);
+  if(!c){txt=fmt(T.defs);c=compile(T.defs)}
+  DEF=c;S=c.S;defText=txt;ta.value=txt;showMsgs([]);
+  fillAddSel();fillDemoSel();
+  loadLayout(st.layout&&st.layout.nodes?st.layout:DEMOS[T.start]);
+  renderTree();$('#treeSel').value=k;save();
+}
+$('#treeSel').addEventListener('change',e=>{save();loadTree(e.target.value);scroller.scrollTo(0,0)});
+
+// ---------- tabs ----------
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===t));
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on',v.id==='v-'+t.dataset.v));
+  if(t.dataset.v==='tree') renderTree();
+}));
+
+// ---------- tree ----------
+function renderTree(){
+  const t={},rt={};let changed=true,guard=0;
+  while(changed&&guard++<200){
+    changed=false;
+    for(const c of DEF.C.values()){
+      const ins=Object.keys(c.inputs);
+      if(ins.some(r=>t[r]===undefined)) continue;
+      const tier=ins.length?1+Math.max(...ins.map(r=>t[r])):0;
+      if(rt[c.id]===undefined||tier<rt[c.id]){rt[c.id]=tier;changed=true}
+      for(const r of Object.keys(c.outputs)) if(t[r]===undefined||tier<t[r]){t[r]=tier;changed=true}
+    }
+  }
+  const cols={};
+  for(const c of DEF.C.values()){const k=rt[c.id]===undefined?'x':rt[c.id];(cols[k]||(cols[k]=[])).push(c)}
+  const keys=Object.keys(cols).filter(k=>k!=='x').map(Number).sort((a,b)=>a-b);
+  if(cols.x) keys.push('x');
+  const chips=m=>Object.entries(m).map(([r,q])=>chip(r,`${q} ${rname(r)}`)).join('');
+  $('#tree').innerHTML=keys.map(k=>`<div class="col"><h3>${k==='x'?'Unreachable':k===0?'Extraction':'Tier '+k}</h3>${cols[k].map(c=>{
+    const by=[...DEF.B.values()].filter(b=>b.recipes.includes(c.id)).map(b=>esc(b.name)+(b.onDeposit?' (on deposit)':''));
+    return `<div class="card"><div class="cn">${c.name}<span>${c.time}s</span></div>
+      <div class="io">${Object.keys(c.inputs).length?chips(c.inputs):'<span class="mute">—</span>'} → ${chips(c.outputs)}</div>
+      <div class="by${by.length?'':' bad'}">${by.length?by.join(', '):'No building has this recipe'}</div></div>`}).join('')}</div>`).join('')
+    ||'<p class="mute">No recipes defined.</p>';
+}
+
+// ---------- JSON editor ----------
+const ta=$('#json'),msgs=$('#msgs');
+function showMsgs(list){msgs.innerHTML=list.map(([c,t])=>`<div class="${c}">${esc(t)}</div>`).join('')}
+$('#apply').addEventListener('click',()=>{
+  let obj;try{obj=JSON.parse(ta.value)}catch(e){return showMsgs([['err','JSON syntax error: '+e.message]])}
+  const c=compile(obj);
+  if(c.errs.length) return showMsgs(c.errs.map(x=>['err',x]));
+  const L=layout();DEF=c;S=c.S;defText=ta.value;
+  loadLayout(L);fillAddSel();renderTree();save();
+  showMsgs([['ok','Applied ✓ — '+c.R.size+' resources, '+c.C.size+' recipes, '+c.B.size+' buildings'],...c.warns.map(w=>['warn',w])]);
+});
+$('#tidy').addEventListener('click',()=>{try{ta.value=fmt(JSON.parse(ta.value));showMsgs([])}catch(e){showMsgs([['err','JSON syntax error: '+e.message]])}});
+$('#copy').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(ta.value);showMsgs([['ok','Copied to clipboard']])}catch(e){ta.select();showMsgs([['warn','Copy was blocked — the text is selected, copy it manually']])}});
+let resetArm=0;
+$('#reset').addEventListener('click',e=>{
+  if(Date.now()-resetArm>3000){resetArm=Date.now();e.target.textContent='Tap again to reset';setTimeout(()=>e.target.textContent='Reset to default',3000);return}
+  resetArm=0;e.target.textContent='Reset to default';
+  ta.value=fmt(TREES[cur].defs);$('#apply').click();
+});
+
+$('#load').addEventListener('click',()=>$('#file').click());
+$('#file').addEventListener('change',async e=>{
+  const f=e.target.files[0];if(!f) return;
+  ta.value=await f.text();e.target.value='';$('#apply').click();
+});
+$('#dl').addEventListener('click',()=>{
+  let naam='economy';try{naam=JSON.parse(ta.value).id||naam}catch(e){}
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([ta.value.endsWith('\n')?ta.value:ta.value+'\n'],{type:'application/json'}));
+  a.download=naam+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+});
+
+// ---------- init ----------
+try{const sv=JSON.parse(localStorage.getItem(KEY));if(sv&&sv.trees)store=sv}catch(e){}
+if(store.zoom) zoom=store.zoom;
+applyZoom();
+$('#treeSel').innerHTML=Object.entries(TREES).map(([k,t])=>`<option value="${k}">${t.name}</option>`).join('');
+loadTree(TREES[store.tree]?store.tree:'industrial');
+$('#hint').textContent=HINT;
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
