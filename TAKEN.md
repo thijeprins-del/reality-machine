@@ -29,7 +29,8 @@ De otters zijn vervallen (O1, O2): er is één soort, de pack rats, en elke were
 - [ ] E3 Generieke gebouwen uit de economie: productie, winning, magazijn, splitter, merger, band, paal; opslag in volume (Lieuwe, zelfde branch)
 - [ ] E4 Economie per wereld bij de sprong, startkapitaal per economie (Lieuwe, zelfde branch)
 - [ ] E5 Zes economieën, één per wereldtype: elke wereld een eigen weg naar platen en balken (Lieuwe, zelfde branch)
-- [ ] E6 Balans van de zes economieën; langere ketens per wereld
+- [ ] E6 Stroom uit de economie: generatoren als gebouwen (koolstof- en biomassabrander), oude bronnen en upgrades weg (Lieuwe, zelfde branch)
+- [ ] E7 Balans van de zes economieën; langere ketens per wereld
 
 ## Planning
 - Week 1 (t/m 8 nov): repo, uitrol, iso-veld met eiland, één dimensie, streamtimer
@@ -40,7 +41,8 @@ De otters zijn vervallen (O1, O2): er is één soort, de pack rats, en elke were
 
 ## Later-lijst (niet bouwen tenzij alles af is)
 - Bruggen en sorteerders voor banden
-- Brandstof voor de stroombronnen per economie (nu stoken ze alleen hout, schroot en kristal)
+- Plaatjes voor koolstof en biomassa, en eigen plaatjes voor de twee branders (nu de oude houtbrander en dynamo)
+- Een generator die stilvalt als er geen vraag is (nu stookt hij altijd door)
 - De grondstoffen die de generator rolt (`aanbod`: metaal, hout, water, steen) koppelen aan `onMap` in de economie
 - Plaatjes: elk goed heeft een hoopje, een brokje en (als het op de kaart ligt) een veld in `assets/goederen/` (PixelLab,
   30 generaties). De nieuwe gebouwen staan in `assets/gebouwen/` (40 generaties).

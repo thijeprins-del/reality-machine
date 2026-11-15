@@ -1,32 +1,27 @@
-// Energiebeheer van de muizen (alleen muizen, de otters hebben iets anders).
-// Het draait om keuzes, niet om alles overeind houden:
-// - Bronnen verbranden grondstof uit de opslag. Stand LAAG, NORMAAL of OVERLADEN.
-// - Overladen geeft flink meer stroom, maar de bron wordt heet. Een hete bron levert daarna een tijd minder
-//   (bij 100 hitte nog maar de helft, en dan springt hij terug naar NORMAAL). Niets gaat stuk.
+// Het stroomnet van de pack rats. Het draait om keuzes, niet om alles overeind houden:
+// - Stroom komt van twee kanten. Het looprad hoort bij de machine: ratten rennen erin, geen brandstof. En generatoren:
+//   gebouwen uit de economie van de wereld (economies/*.json) met een recept dat stroom levert ("power"), bijvoorbeeld
+//   een brander die koolstof of biomassa stookt. Die zet je neer en voer je zoals elk ander gebouw (industrie.ts).
+// - Het looprad heeft drie standen: LAAG, NORMAAL of OVERLADEN. Overladen geeft flink meer stroom, maar het rad wordt
+//   heet en levert daarna een tijd minder (bij 100 hitte nog maar de helft, en dan springt het terug naar NORMAAL).
 // - Verbruikers staan op volgorde: bij een tekort krijgen de bovensten eerst, de onderste valt uit.
 // Puur regels, geen tekenen en geen Math.random. Getallen in src/data/ratten.ts (RATTEN_ENERGIE).
 import { actieveEconomie, grondstoffenVan } from '../kern/economie';
-import type { EenheidSoort, Goed, Trucje, Voorraad } from '../kern/types';
+import type { EenheidSoort, Goed, Trucje } from '../kern/types';
 import type { SpelStaat } from '../kern/spel';
-import { industrieVraag } from './industrie';
-import { betaal, kostTekst, naamVan } from './kosten';
+import { generatorStroom, industrieVraag } from './industrie';
 
+// Een bron die bij de machine hoort (nu alleen het looprad). Generatoren zijn gebouwen en staan in industrie.ts.
 export interface BronData {
   id: string;
   naam: string;
   kort: string;
-  brandstof?: Goed; // wat hij stookt; geen = looprad (muizen rennen erin)
-  renners?: [number, number, number]; // looprad: zoveel muizen nodig per stand voor volle stroom
+  renners: [number, number, number]; // zoveel ratten nodig per stand voor volle stroom
   kleur: string;
   stroom: [number, number, number]; // kW per stand (laag, normaal, overladen)
-  verbruik: [number, number, number]; // grondstof per seconde per stand
-  mk: number; // waarmee je begint: 0 = nog niet gebouwd, 1..3
-  bouw: Voorraad[]; // bouw[i] = kosten om naar MK i+1 te gaan
-  loot?: boolean; // alleen uit loot
 }
 export interface EnergieGetallen {
   bronnen: BronData[];
-  mkMaal: { stroom: number[]; verbruik: number[] };
   overladen: { hitte: number; af: number; afKoeling: number; zwakTot: number };
   vraag: { machine: number; koeling: number; lampen: number };
   lampenSneller: number;
@@ -40,7 +35,7 @@ export interface Bron extends BronData {
   hitte: number; // 0..100: van overladen; maakt de bron tijdelijk zwakker
   levert: number;
   toets: string;
-  rennen: number; // looprad: muizen die er nu in rennen (zet werk.ts)
+  rennen: number; // ratten die er nu in rennen (zet werk.ts)
 }
 export type VerbruikerId = 'machine' | 'industrie' | 'lampen' | 'koeling';
 export interface Verbruiker {
@@ -58,7 +53,8 @@ export interface LogRegel {
 export interface EnergieStaat {
   bronnen: Bron[];
   verbruikers: Verbruiker[]; // op volgorde van voorrang
-  aanbod: number;
+  aanbod: number; // alles bij elkaar: looprad plus generatoren
+  generatoren: number; // wat de generatoren nu samen leveren
   vraag: number;
   tekort: VerbruikerId | null; // wie als eerste te weinig kreeg
   hist: { a: number; v: number; h: number[] }[];
@@ -77,7 +73,7 @@ export function energie(s: SpelStaat): EnergieStaat {
   let e = STATEN.get(s);
   if (!e) {
     e = {
-      bronnen: G.bronnen.map((b, i) => ({ ...b, aan: b.mk > 0, stand: 1, hitte: 0, levert: 0, rennen: 0, toets: i < 3 ? String(i + 1) : '' })),
+      bronnen: G.bronnen.map((b, i) => ({ ...b, aan: true, stand: 1, hitte: 0, levert: 0, rennen: 0, toets: i < 3 ? String(i + 1) : '' })),
       verbruikers: [
         { id: 'machine', naam: 'MACHINE', vraag: G.vraag.machine, aan: false, krijgt: 0, toets: '4' },
         { id: 'industrie', naam: 'INDUSTRY', vraag: 0, aan: true, krijgt: 0, toets: '5' },
@@ -85,6 +81,7 @@ export function energie(s: SpelStaat): EnergieStaat {
         { id: 'koeling', naam: 'COOLING', vraag: G.vraag.koeling, aan: false, krijgt: 0, toets: '7' },
       ],
       aanbod: 0,
+      generatoren: 0,
       vraag: 0,
       tekort: null,
       hist: [],
@@ -107,12 +104,10 @@ export function log(e: EnergieStaat, tekst: string, kleur: LogRegel['kleur'] = '
 }
 
 const rond = (n: number) => Math.round(n * 10) / 10;
-export const MAX_MK = 3;
 
-// Wat een bron levert en stookt, met zijn MK en zijn hitte erbij.
+// Wat een bron levert, met zijn hitte erbij.
 export const zwakte = (b: Bron) => 1 - (1 - G.overladen.zwakTot) * (b.hitte / 100);
-export const stroomVan = (b: Bron, stand: number = b.stand) => (b.mk ? rond(b.stroom[stand] * G.mkMaal.stroom[b.mk - 1] * (stand === 2 ? 1 : zwakte(b))) : 0);
-export const verbruikVan = (b: Bron, stand: number = b.stand) => (b.mk ? b.verbruik[stand] * G.mkMaal.verbruik[b.mk - 1] : 0);
+export const stroomVan = (b: Bron, stand: number = b.stand) => rond(b.stroom[stand] * (stand === 2 ? 1 : zwakte(b)));
 export const verbruiker = (s: SpelStaat, id: VerbruikerId) => energie(s).verbruikers.find((c) => c.id === id)!;
 
 export function stapEnergie(s: SpelStaat, sec: number, muis: EenheidSoort | undefined, graafSec: number): void {
@@ -122,20 +117,8 @@ export function stapEnergie(s: SpelStaat, sec: number, muis: EenheidSoort | unde
 
   let aanbod = 0;
   for (const b of e.bronnen) {
-    b.levert = 0;
-    if (b.aan && b.mk && b.renners) {
-      // looprad: geen brandstof, wel muizen. Te weinig renners = minder stroom.
-      b.levert = rond(stroomVan(b) * Math.min(1, b.rennen / b.renners[b.stand]));
-    } else if (b.aan && b.mk && b.brandstof) {
-      const kost = verbruikVan(b) * sec;
-      if ((v[b.brandstof] ?? 0) >= kost) {
-        v[b.brandstof] = (v[b.brandstof] ?? 0) - kost;
-        b.levert = stroomVan(b);
-      } else {
-        b.aan = false;
-        log(e, `OUT OF ${naamVan(b.brandstof)}: ${b.naam} STOPS`, 'rood');
-      }
-    }
+    // looprad: geen brandstof, wel ratten. Te weinig renners = minder stroom.
+    b.levert = b.aan ? rond(stroomVan(b) * Math.min(1, b.rennen / b.renners[b.stand])) : 0;
     // hitte: alleen van overladen. Daarna koelt hij af, sneller met koeling.
     if (b.levert > 0 && b.stand === 2) {
       b.hitte = Math.min(100, b.hitte + G.overladen.hitte * sec);
@@ -146,7 +129,9 @@ export function stapEnergie(s: SpelStaat, sec: number, muis: EenheidSoort | unde
     } else b.hitte = Math.max(0, b.hitte - (koeling.krijgt > 0 ? G.overladen.afKoeling * koeling.krijgt + G.overladen.af : G.overladen.af) * sec);
     aanbod += b.levert;
   }
-  aanbod = rond(aanbod);
+  // generatoren: elk gebouw dat nu een recept met stroom draait
+  e.generatoren = rond(generatorStroom(s));
+  aanbod = rond(aanbod + e.generatoren);
 
   // verbruikers op volgorde: wie boven staat krijgt eerst
   verbruiker(s, 'industrie').vraag = industrieVraag(s);
@@ -198,27 +183,12 @@ export function stapEnergie(s: SpelStaat, sec: number, muis: EenheidSoort | unde
 
 // ---- bediening (vanuit het paneel of toetsen) ----
 export function zetBron(s: SpelStaat, b: Bron): void {
-  const e = energie(s);
-  if (!b.mk) return log(e, b.loot ? `${b.naam}: ONLY FROM LOOT` : `${b.naam} IS NOT BUILT YET. CLICK +`, 'rood');
-  if (!b.aan && b.brandstof && (s.voorraad[b.brandstof] ?? 0) < 0.5) return log(e, `NO ${naamVan(b.brandstof)} IN STOCK`, 'rood');
   b.aan = !b.aan;
-  log(e, `${b.naam} ${b.aan ? 'ON' : 'OFF'}`);
+  log(energie(s), `${b.naam} ${b.aan ? 'ON' : 'OFF'}`);
 }
 export function draaiKnop(s: SpelStaat, b: Bron): void {
-  if (!b.mk) return log(energie(s), `${b.naam} IS NOT BUILT YET`, 'rood');
   b.stand = ((b.stand + 1) % 3) as 0 | 1 | 2;
   log(energie(s), `${b.naam} ${STANDEN[b.stand]}: ${stroomVan(b)} KW`, b.stand === 2 ? 'amber' : 'groen');
-}
-// Bouwen (MK 0 -> 1) of upgraden (MK 1 -> 2 -> 3): meer stroom, maar ook meer brandstof.
-export const upgradeKosten = (b: Bron): Voorraad | null => (b.mk < MAX_MK && !b.loot ? b.bouw[b.mk] : null);
-export function upgradeBron(s: SpelStaat, b: Bron): void {
-  const e = energie(s);
-  if (b.loot && !b.mk) return log(e, `${b.naam}: ONLY FROM LOOT`, 'rood');
-  const k = upgradeKosten(b);
-  if (!k) return log(e, `${b.naam} IS ALREADY MK${MAX_MK}`);
-  if (!betaal(s.voorraad, k)) return log(e, `${b.naam} MK${b.mk + 1} NEEDS ${kostTekst(k, true)}`, 'rood');
-  b.mk++;
-  log(e, b.mk === 1 ? `${b.naam} BUILT! PULL THE LEVER TO SWITCH IT ON` : `${b.naam} NOW MK${b.mk}: ${stroomVan(b, 1)} KW NORMAL`, 'groen');
 }
 export function zetVerbruiker(s: SpelStaat, c: Verbruiker): void {
   c.aan = !c.aan;
@@ -233,7 +203,7 @@ export function omhoog(s: SpelStaat, c: Verbruiker): void {
   log(e, `PRIORITY: ${c.naam} BEFORE ${e.verbruikers[i].naam}`, 'cyaan');
 }
 
-// Het trucje van de muizen: elke tik het stroomnet bijwerken.
+// Het trucje: elke tik het stroomnet bijwerken.
 export function energieTrucje(getallen: EnergieGetallen, eenheden: EenheidSoort[]): Trucje {
   G = getallen;
   const muis = eenheden.find((x) => x.soort === 'muis');

@@ -330,26 +330,14 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
       vastStuk(k, ...r);
     };
 
-    // bronnen en fabricator
+    // het looprad: de spaken draaien sneller naarmate het meer levert
     for (const b of e.bronnen) {
-      if (b.renners) {
-        // looprad: de spaken draaien sneller naarmate hij meer levert
-        radHoek += sec * b.levert * 1.5;
-        // achter de muizen getekend, zodat je ze erin ziet rennen
-        const rb = V.bronnen[b.id];
-        vastAan(`bron-${b.id}`, `rad-${Math.floor(radHoek) % 3}`, rb, 2, b.mk > 0, 0, (rb.x + rb.y) * 10 - 5);
-        const st = vaste.get(`bron-${b.id}`);
-        if (st && st.naam !== `rad-${Math.floor(radHoek) % 3}`) beeld.wissel(st, `rad-${Math.floor(radHoek) % 3}`);
-        continue;
-      }
-      const naam = b.id === 'houtbrander' ? 'houtbrander' : b.id === 'dynamo' ? 'dynamo' : '';
-      if (naam) vastAan(`bron-${b.id}`, naam, V.bronnen[b.id], 2, b.mk > 0);
-      if (b.levert > 0 && Math.random() < sec * (b.stand === 2 ? 14 : 4)) {
-        // rook (en vonken als hij overladen is)
-        const c = midden(V.bronnen[b.id]);
-        const p = iso(c.x - 0.3, c.y - 0.3);
-        deeltjes.push({ x: p.x + (Math.random() - 0.5) * 6, y: p.y - (b.id === 'houtbrander' ? 150 : 110), vx: (Math.random() - 0.5) * 20, vy: -60 - Math.random() * 40, leeft: 1.2, kleur: b.stand === 2 ? 0xff6a1a : 0x3a3530, maat: PIXEL * 2 });
-      }
+      radHoek += sec * b.levert * 1.5;
+      // achter de ratten getekend, zodat je ze erin ziet rennen
+      const rb = V.bronnen[b.id];
+      vastAan(`bron-${b.id}`, `rad-${Math.floor(radHoek) % 3}`, rb, 2, true, 0, (rb.x + rb.y) * 10 - 5);
+      const st = vaste.get(`bron-${b.id}`);
+      if (st && st.naam !== `rad-${Math.floor(radHoek) % 3}`) beeld.wissel(st, `rad-${Math.floor(radHoek) % 3}`);
     }
     // gebouwen (winningsgebouwen vliegen eerst: die staan hieronder)
     for (const g of ind.gebouwen) {
@@ -359,8 +347,12 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
       const st = vaste.get(`g-${g.id}`)!;
       st.delen[0].tint = spriteVoor(soort).tint;
       voortgang(blok, g.af, soort.work, g.nodig, soort.cost);
+      if (soort.generator && !g.af && g.betaald && !g.geblokt && Math.random() < sec * 5) {
+        const c = midden(blok), p = iso(c.x - 0.3, c.y - 0.3);
+        deeltjes.push({ x: p.x + (Math.random() - 0.5) * 6, y: p.y - 120, vx: (Math.random() - 0.5) * 20, vy: -60 - Math.random() * 40, leeft: 1.2, kleur: 0x3a3530, maat: PIXEL * 2 });
+      }
       if (soort.aard === 'prod') {
-        if (!g.af && g.recept && !g.geblokt && Math.sin(t * 30) > 0) for (const d of st.delen) d.y -= PIXEL;
+        if (!g.af && g.recept && !g.geblokt && !soort.generator && Math.sin(t * 30) > 0) for (const d of st.delen) d.y -= PIXEL;
         lasten(g, soort.size);
       }
       if (g.id === gekozen) {
@@ -515,10 +507,15 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
       if (van) kabel(van, doel, id, krijgt > 0);
     };
     for (const b of makers(ind)) if (!b.vlieg && soortVan(b).kW > 0) voed(blokVan(b), b.id);
-    for (const b of e.bronnen) if (b.mk) {
+    for (const b of e.bronnen) {
       const c = midden(V.bronnen[b.id]);
       const p = iso(c.x, c.y);
       kabel({ x: p.x, y: p.y - 60 }, hub, 900 + b.id.length, b.levert > 0);
+    }
+    // generatoren: een kabel naar de machine, met stroompulsjes als ze stoken
+    for (const g of makers(ind)) if (soortVan(g).generator && !g.af) {
+      const c = midden(blokVan(g)), p = iso(c.x, c.y);
+      kabel({ x: p.x, y: p.y - 60 }, hub, 700 + g.id, g.betaald && !g.geblokt);
     }
 
     // stof en rook

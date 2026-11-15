@@ -83,7 +83,7 @@ export function maakHud(staat: () => SpelStaat, stroom: Dialoog): { werk(sec: nu
       ['R', 'turn a single belt tile'],
       ['Click a building', 'set it up: its recipe, or what a belt takes out of storage'],
     ];
-    const net: [string, string][] = [['1 2 3', 'power source on / off'], ['Shift + 1 2 3', 'dial: low, normal, overcharge'], ['4 5 6 7', 'consumer on / off'], ['F1', 'grid and heights'], ['F2', 'terrain editor (the clock stops)']];
+    const net: [string, string][] = [['1', 'wheel on / off'], ['Shift + 1', 'wheel dial: low, normal, overcharge'], ['4 5 6 7', 'consumer on / off'], ['F1', 'grid and heights'], ['F2', 'terrain editor (the clock stops)']];
     return `<h3>Rats and camera</h3><table>${besturing().map(rij).join('')}</table>
       <h3>Building in this world</h3><table>${bouw.map(rij).join('')}</table>
       <h3>Power and tools</h3><table>${net.map(rij).join('')}</table>`;

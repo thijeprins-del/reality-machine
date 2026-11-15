@@ -10,23 +10,14 @@ const DRAAGT = 2; // grondstof per keer sjouwen
 const GRAAF_SEC = 2.5; // zo lang graaft een muis voor één lading
 const HAND_DEEL = 0.15; // muizen graven met de hand alleen de bovenste 15% van elke tegel; de rest kan alleen een drill
 
-// Stroomnet van de muizen (src/ratten/energie.ts). Bronnen verbranden grondstof uit de opslag.
-// Draait om keuzes: wat zet je aan, en overlaad je nu (meer stroom) ten koste van straks (een tijd zwakker)?
+// Stroomnet (src/ratten/energie.ts). Het looprad hoort bij de machine; alle andere stroom komt van generatoren, en dat
+// zijn gebouwen uit de economie van de wereld (economies/*.json: een recept met "power").
+// Draait om keuzes: wat zet je aan, en overlaad je het rad nu (meer stroom) ten koste van straks (een tijd zwakker)?
 export const RATTEN_ENERGIE: EnergieGetallen = {
-  // stroom/verbruik per stand: LAAG, NORMAAL, OVERLADEN. mk = waarmee je begint (0 = nog niet gebouwd);
-  // bouw[i] = kosten om naar MK i+1 te gaan; loot = alleen uit loot te krijgen (nog niet in het spel).
+  // stroom per stand: LAAG, NORMAAL, OVERLADEN. renners = zoveel ratten moeten erin voor volle stroom.
   bronnen: [
-    // looprad: de eerste bron. Muizen rennen erin; geen brandstof, wel muizen die niet graven of bouwen.
-    { id: 'rad', naam: 'WHEEL', kort: 'WHEEL', renners: [3, 6, 10], kleur: '#ffd23f', stroom: [2, 4, 7], verbruik: [0, 0, 0],
-      mk: 1, bouw: [{}, { plaat: 6, balk: 3 }, { plaat: 14, kristal: 10 }] },
-    { id: 'houtbrander', naam: 'WOOD BURNER', kort: 'WOOD', brandstof: 'hout', kleur: '#ff5a2a', stroom: [3, 5, 8], verbruik: [0.06, 0.12, 0.25],
-      mk: 0, bouw: [{ plaat: 4, balk: 4 }, { plaat: 8, balk: 4 }, { plaat: 14, kristal: 10 }] },
-    { id: 'dynamo', naam: 'DYNAMO', kort: 'DYNAMO', brandstof: 'schroot', kleur: '#ff9a1f', stroom: [3, 5, 9], verbruik: [0.08, 0.15, 0.3],
-      mk: 0, bouw: [{ plaat: 5, balk: 2 }, { plaat: 10, balk: 3 }, { plaat: 18, kristal: 15 }] },
-    { id: 'reactor', naam: 'REACTOR', kort: 'REACTOR', brandstof: 'kristal', kleur: '#4ef2ff', stroom: [6, 10, 16], verbruik: [0.03, 0.06, 0.12],
-      mk: 0, loot: true, bouw: [{}, {}, {}] },
+    { id: 'rad', naam: 'WHEEL', kort: 'WHEEL', renners: [3, 6, 10], kleur: '#ffd23f', stroom: [2, 4, 7] },
   ],
-  mkMaal: { stroom: [1, 1.7, 2.5], verbruik: [1, 1.4, 1.9] }, // per MK
   overladen: { hitte: 8, af: 3, afKoeling: 9, zwakTot: 0.5 }, // hitte/s erbij bij overladen, eraf normaal en met koeling; bij 100 hitte levert hij nog maar 50%
   vraag: { machine: 4, koeling: 1, lampen: 2 }, // machine = wat het looprad op NORMAL geeft (Thije, 5 nov)
   lampenSneller: 0.6,

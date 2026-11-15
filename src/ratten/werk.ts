@@ -98,7 +98,7 @@ function stapWerk(s: SpelStaat, sec: number): void {
   for (const g of i.gebouwen) if (g.af && !g.vlieg) bouwplek.set(g.id, g);
   for (const [k, t] of i.banden) if (t.af) bouwplek.set(`b${k}`, t);
   const aantal = new Map<number | string, number>();
-  const rad = energie(s).bronnen.find((b) => b.renners);
+  const rad = energie(s).bronnen[0]; // het looprad
   let rennen = 0;
   const onderweg = new Map<string, number>(); // "doel:goed" -> hoeveel er al gehaald of gebracht wordt
   const gepland = new Map<Goed, number>(); // nog op te halen uit de opslag
@@ -188,7 +188,7 @@ function stapWerk(s: SpelStaat, sec: number): void {
       continue;
     }
     if (t.klus === 'ren') {
-      if (!rad || !rad.aan || !rad.mk) {
+      if (!rad || !rad.aan) {
         W.taken.delete(w.id);
         continue;
       }
@@ -374,7 +374,7 @@ function stapWerk(s: SpelStaat, sec: number): void {
   };
 
   // 0. rennen in het looprad: zonder stroom geen fabricator en geen boor
-  if (rad?.aan && rad.mk && rad.renners) {
+  if (rad?.aan) {
     const rb = vast(s).bronnen[rad.id], c = midden(rb);
     const teveel = (aantal.get('rad') ?? 0) - rad.renners[rad.stand];
     // stand lager gezet: wie te veel is, stapt uit

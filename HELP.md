@@ -42,10 +42,14 @@ Uitleg verschijnt als tooltip als je iets aanwijst. **Esc** of het kruisje sluit
 
 ## Stroom
 De knop **POWER** opent het stroompaneel. Elke knop doet iets; wijs iets aan voor uitleg.
-- **Bronnen**: je begint met een looprad (WHEEL) waar ratten in rennen: hoe hoger de stand, hoe meer ratten erin moeten.
-  De houtbrander bouw je met **+**. De dynamo (schroot) bouw je met **+**, de reactor (kristal) vind je alleen
-  als loot. Hendel = aan/uit (toetsen **1 2 3**), draaiknop = laag/normaal/overladen (**shift** + 1 2 3).
-- **Overladen** geeft veel extra stroom, maar de bron wordt heet en is daarna een tijdje zwakker. Dat mag gewoon.
+- **Looprad** (WHEEL): daarmee begin je. Ratten rennen erin: hoe hoger de stand, hoe meer ratten erin moeten. Hendel =
+  aan/uit (toets **1**), draaiknop = laag/normaal/overladen (**shift** + 1). Overladen geeft veel extra stroom, maar het
+  rad wordt heet en is daarna een tijdje zwakker. Dat mag gewoon.
+- **Generatoren** zijn gebouwen uit het bouwmenu: een brander die brandstof stookt en stroom geeft zolang hij brandt.
+  Welke brandstof hangt van de wereld af: **koolstof** (CARBON) of **biomassa** (BIOMASS). Elke wereld maakt die op haar
+  eigen manier, bijvoorbeeld houtsnippers uit de zagerij of versnipperde banden uit de pers. Breng de brandstof met een
+  band of laat de ratten sjouwen. Het paneel toont per soort hoeveel er staan, hoeveel er draaien en wat ze leveren.
+  Meer stroom nodig? Bouw er een brander bij.
 - **Verbruikers** (toetsen **4 5 6 7**) staan op voorrang: wat bovenaan staat krijgt eerst stroom. Met **^** zet je iets
   hoger. De machine moet volle stroom krijgen als de stream komt.
 

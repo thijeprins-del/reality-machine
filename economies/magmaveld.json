@@ -1,24 +1,29 @@
 {
   "id": "magmaveld",
   "name": "Foundry",
-  "startingResources": { "basalt": 40, "erts": 20, "plaat": 4, "balk": 2 },
+  "startingResources": { "basalt": 40, "erts": 20, "plaat": 4, "balk": 2, "koolstof": 10 },
   "settings": { "bufferSize": 6, "defaultStorage": 8, "warehouseStorage": 250 },
   "resources": [
     { "id": "erts", "name": "MAGMA ORE", "color": "#c8502a", "volume": 1, "sprite": "magma-erts", "onMap": true, "fields": { "count": 3, "tiles": [6, 10], "perTile": 180, "distance": [19, 26] } },
     { "id": "basalt", "name": "BASALT", "color": "#5a5462", "volume": 1, "onMap": true, "fields": { "count": 3, "tiles": [8, 12], "perTile": 200, "distance": [19, 26] } },
-    { "id": "schroot", "name": "SLAG", "color": "#6e5a52", "volume": 1, "sprite": "slak" },
+    { "id": "slak", "name": "SLAG", "color": "#6e5a52", "volume": 1, "sprite": "slak" },
+    { "id": "koolstof", "name": "CARBON", "color": "#3a3a40", "volume": 1 },
     { "id": "plaat", "name": "CAST PLATE", "color": "#9aa3ad", "volume": 1 },
     { "id": "balk", "name": "BASALT BEAM", "color": "#4c4854", "volume": 1, "sprite": "basalt-balk" }
   ],
   "recipes": [
     { "id": "mijn_erts", "name": "Mine magma ore", "time": 0.5, "inputs": {}, "outputs": { "erts": 1 } },
     { "id": "mijn_basalt", "name": "Break basalt", "time": 0.5, "inputs": {}, "outputs": { "basalt": 1 } },
-    { "id": "plaat", "name": "Cast plate", "time": 3, "inputs": { "erts": 2 }, "outputs": { "plaat": 2, "schroot": 1 } },
-    { "id": "balk", "name": "Cut basalt beam", "time": 4, "inputs": { "basalt": 3 }, "outputs": { "balk": 1 } }
+    { "id": "plaat", "name": "Cast plate", "time": 3, "inputs": { "erts": 2 }, "outputs": { "plaat": 2, "slak": 1 } },
+    { "id": "balk", "name": "Cut basalt beam", "time": 4, "inputs": { "basalt": 3 }, "outputs": { "balk": 1 } },
+    { "id": "koolstof_slak", "name": "Crush slag", "time": 3, "inputs": { "slak": 2 }, "outputs": { "koolstof": 1 } },
+    { "id": "koolstof_basalt", "name": "Crush basalt", "time": 4, "inputs": { "basalt": 3 }, "outputs": { "koolstof": 1 } },
+    { "id": "stook_koolstof", "name": "Burn carbon", "time": 6, "inputs": { "koolstof": 1 }, "power": 6 }
   ],
   "buildings": [
     { "id": "smederij", "name": "LAVA FORGE", "color": "#d8581c", "sprite": "smederij", "size": 2, "insideRing": true, "cost": { "basalt": 15 }, "work": 10, "kW": 0, "crew": 2, "storage": 8, "recipes": ["plaat"], "key": "F" },
-    { "id": "steenzaag", "name": "STONE CUTTER", "color": "#6a6474", "sprite": "steenzaag", "size": 2, "insideRing": true, "cost": { "basalt": 10 }, "work": 10, "kW": 2, "crew": 1, "storage": 8, "recipes": ["balk"], "key": "Z" },
+    { "id": "steenzaag", "name": "STONE CUTTER", "color": "#6a6474", "sprite": "steenzaag", "size": 2, "insideRing": true, "cost": { "basalt": 10 }, "work": 10, "kW": 2, "crew": 1, "storage": 8, "recipes": ["balk", "koolstof_slak", "koolstof_basalt"], "key": "Z" },
+    { "id": "koolstofbrander", "name": "CARBON BURNER", "color": "#ff9a1f", "sprite": "dynamo", "key": "G", "size": 2, "insideRing": true, "cost": { "plaat": 4, "balk": 3 }, "work": 10, "storage": 8, "recipes": ["stook_koolstof"] },
     { "id": "boor", "name": "ROCK DRILL", "color": "#7a5c48", "sprite": "boor", "key": "B", "size": 2, "onDeposit": true, "range": 3, "cost": { "plaat": 3, "balk": 1 }, "work": 8, "kW": 2, "storage": 12, "recipes": ["mijn_erts", "mijn_basalt"] },
     { "id": "band", "name": "BELT", "color": "#5b554b", "sprite": "band-leeg", "key": "L", "belt": true, "speed": 2, "kW": 0.05, "cost": { "plaat": 1 }, "work": 1.2 },
     { "id": "paal", "name": "POLE", "color": "#6a552d", "sprite": "mast", "key": "P", "pole": true, "link": 8, "reach": 5, "cost": { "balk": 1 }, "work": 3 },

@@ -19,11 +19,12 @@ export function uitlegVan(b: BouwSoort): string {
   if (b.aard === 'trash') return 'Destroys what a belt brings in.';
   if (b.aard === 'splitter') return 'A junction: belts run in and out, what comes in leaves in turns.';
   if (b.aard === 'merger') return 'A junction: several belts run in, one runs out.';
+  if (b.generator) return 'A generator: it burns fuel and gives power while it burns. Bring fuel by belt (arrows on the left) or by rats.';
   if (b.onDeposit) return `Place it next to a field of ${b.depRes.map((g) => naamVan(g).toLowerCase()).join(' or ')}. The machine throws it there. It digs out the whole field.`;
   return `Makes goods from a recipe. Bring its input by belt (arrows on the left) or by rats${b.recipes.length > 1 ? '; click it to pick a recipe' : ''}.`;
 }
 const soortNaam = (b: BouwSoort): string =>
-  b.aard === 'belt' || b.aard === 'splitter' || b.aard === 'merger' ? 'LOGISTICS' : b.aard === 'pole' ? 'POWER' : b.aard === 'sink' ? 'STORAGE' : b.aard === 'trash' ? 'WASTE' : b.onDeposit ? 'EXTRACTION' : 'PRODUCTION';
+  b.aard === 'belt' || b.aard === 'splitter' || b.aard === 'merger' ? 'LOGISTICS' : b.aard === 'pole' || b.generator ? 'POWER' : b.aard === 'sink' ? 'STORAGE' : b.aard === 'trash' ? 'WASTE' : b.onDeposit ? 'EXTRACTION' : 'PRODUCTION';
 export const knoppen = (): Knop[] => [
   ...bouwSoorten().map((b) => ({ id: b.id, naam: b.name, toets: b.key, uitleg: uitlegVan(b), soort: b })),
   { id: 'sloop', naam: 'DEMOLISH', toets: 'X', uitleg: 'Click or drag over what you want gone. You get the build cost back.' },
@@ -43,7 +44,7 @@ function stuks(v: Voorraad, heb?: Voorraad, keer = 1): string {
   return delen.join('') || '<span class="stuk gratis">FREE</span>';
 }
 const receptRegel = (r: ReceptSoort): string =>
-  `${leeg(r.inputs) ? '' : `${stuks(r.inputs)}<span class="pijl">&gt;</span>`}${stuks(r.outputs)}<span class="tijd">${r.time}s</span>`;
+  `${leeg(r.inputs) ? '' : `${stuks(r.inputs)}<span class="pijl">&gt;</span>`}${leeg(r.outputs) && r.power ? '' : stuks(r.outputs)}${r.power ? `<span class="kw">+${r.power} kW</span>` : ''}<span class="tijd">${r.time}s</span>`;
 
 export interface BouwmenuHaken {
   staat: () => SpelStaat;
@@ -114,7 +115,8 @@ export function maakBouwmenu(h: BouwmenuHaken): { werk(sec: number): void; zicht
     if (b.kW > 0) feiten.push(['POWER', `${b.kW} kW`]);
     if (b.crew > 0) feiten.push(['CREW', `${b.crew} rats`]);
     if (b.aard === 'sink') feiten.push(['STORAGE', `+${b.storage}`]);
-    if (b.aard === 'prod') feiten.push(['OUTPUT', `holds ${b.storage}`]);
+    if (b.aard === 'prod' && !b.generator) feiten.push(['OUTPUT', `holds ${b.storage}`]);
+    if (b.generator) feiten.push(['GIVES', `${Math.max(...b.recipes.map((id) => actieveEconomie().recepten.get(id)?.power ?? 0))} kW`]);
     if (b.aard === 'belt') feiten.push(['SPEED', `${b.speed} tiles/s`]);
     if (b.aard === 'pole') feiten.push(['REACH', `${b.reach} tiles`], ['LINK', `${b.link} tiles`]);
     if (b.onDeposit) feiten.push(['RANGE', `${b.range} tiles`]);
@@ -125,7 +127,7 @@ export function maakBouwmenu(h: BouwmenuHaken): { werk(sec: number): void; zicht
       <div class="feiten">${feiten.map(([a, w]) => `<span><i>${a}</i>${w}</span>`).join('')}</div>
       <div class="rij"><i>COST${b.aard === 'belt' ? ' PER TILE' : ''}</i><span class="lijst">${Object.entries(b.cost).filter(([, n]) => (n ?? 0) > 0).map(([g, n]) =>
         `<span class="stuk${(s.voorraad[g] ?? 0) < (n ?? 0) ? ' tekort' : ''}">${icoon(g)}${n}<small>have ${Math.floor(s.voorraad[g] ?? 0)}</small></span>`).join('') || '<span class="stuk gratis">FREE</span>'}</span></div>
-      ${recepten.length ? `<div class="rij"><i>${b.onDeposit ? 'DIGS' : recepten.length > 1 ? 'RECIPES' : 'RECIPE'}</i><span class="lijst kolom">${recepten.map((r) =>
+      ${recepten.length ? `<div class="rij"><i>${b.onDeposit ? 'DIGS' : recepten.length > 1 ? 'RECIPES' : b.generator ? 'BURNS' : 'RECIPE'}</i><span class="lijst kolom">${recepten.map((r) =>
         `<span class="recept" data-tip="${veilig(r.name)}">${receptRegel(r)}</span>`).join('')}</span></div>` : ''}`;
   }
 
@@ -148,9 +150,9 @@ export function maakBouwmenu(h: BouwmenuHaken): { werk(sec: number): void; zicht
       for (const x of g.buffer) telling[x] = (telling[x] ?? 0) + 1;
       standHtml = `<p class="${g.geblokt ? 'geblokt' : 'draait'}">${veilig(g.geblokt || (r ? r.name.toUpperCase() : 'IDLE'))}</p>
         <div class="balk"><i style="width:${Math.round(100 * Math.min(1, g.klok))}%"></i></div>
-        <div class="feiten"><span><i>OUTPUT</i>${Math.round(volumeVan(telling, (x) => goed(x).volume))}/${b.storage}</span>${b.crew ? `<span><i>RATS</i>${g.ploeg}/${b.crew}</span>` : ''}${b.kW ? `<span><i>POWER</i>${b.kW} kW</span>` : ''}</div>
+        <div class="feiten">${b.generator ? `<span><i>GIVES</i>${g.betaald && !g.geblokt ? r?.power ?? 0 : 0} kW</span>` : `<span><i>OUTPUT</i>${Math.round(volumeVan(telling, (x) => goed(x).volume))}/${b.storage}</span>`}${b.crew ? `<span><i>RATS</i>${g.ploeg}/${b.crew}</span>` : ''}${b.kW ? `<span><i>POWER</i>${b.kW} kW</span>` : ''}</div>
         ${r && !leeg(r.inputs) ? `<div class="rij"><i>IN (LEFT)</i><span class="lijst">${Object.keys(r.inputs).map((x) => `<span class="stuk">${icoon(x)}${Math.floor(g.invoer[x] ?? 0)}</span>`).join('')}</span></div>` : ''}
-        ${r ? `<div class="rij"><i>OUT (${b.onDeposit ? 'ANY SIDE' : 'RIGHT'})</i><span class="lijst">${Object.keys(r.outputs).map((x) => `<span class="stuk">${icoon(x)}${telling[x] ?? 0}</span>`).join('')}</span></div>` : ''}`;
+        ${r && !leeg(r.outputs) ? `<div class="rij"><i>OUT (${b.onDeposit ? 'ANY SIDE' : 'RIGHT'})</i><span class="lijst">${Object.keys(r.outputs).map((x) => `<span class="stuk">${icoon(x)}${telling[x] ?? 0}</span>`).join('')}</span></div>` : ''}`;
     } else vastHtml += `<p>${veilig(uitlegVan(b))}</p>`;
     return [vastHtml, standHtml];
   }

@@ -97,18 +97,22 @@ wereld. Het spel leest twee mappen met JSON-bestanden, zodat je kunt schaven zon
   economie het komt), alles buiten de ring wordt ingepakt. Het bouwmenu toont de gebouwen van de nieuwe wereld. De eerste
   keer in een economie krijg je haar startkapitaal erbij, één keer per run.
 - **Nog geen kunst?** Een gebouw of goed zonder eigen plaatje krijgt een bestaand plaatje in zijn kleur.
-- **Stroom** valt hierbuiten: de bronnen stoken `hout`, `schroot` en `kristal` (zie hieronder). In een wereld zonder
-  die goederen draait alleen het looprad; brandstof per economie staat op de later-lijst.
+- **Stroom** (15 nov): het looprad hoort bij de machine; alle andere stroom komt van **generatoren**, en dat zijn gewone
+  productiegebouwen met een recept dat stroom levert: `{ "inputs": { "biomassa": 1 }, "time": 5, "power": 5 }` geeft 5 kW
+  zolang het recept draait. Twee brandstoffen bestaan overal, `koolstof` en `biomassa`; elke economie heeft eigen
+  recepten om er een van te maken en één brander die haar stookt. Een nieuw soort generator is een regel in het bestand.
+  De oude vaste bronnen (houtbrander, dynamo, reactor) en de MK-upgrades zijn vervallen: meer stroom = meer generatoren.
+  Overladen bestaat alleen nog voor het looprad.
 - **De zes economieën** (één per wereldtype). Overal bouw je met dezelfde twee materialen, `plaat` en `balk`, maar
   hoe je eraan komt verschilt, en niet elke wereld heeft elke grondstof:
-  | wereld | economie | ligt er | plaat | balk | bijzonder |
-  |---|---|---|---|---|---|
-  | roestduin | `schroot` Junkyard | schroot, oude banden | 2 schroot → 2 | 3 schroot → 1 | geen hout; banden branden als `hout` |
-  | aarde | `aarde` Homestead | hout, steen, ijzererts | 2 erts + 1 hout → 2 | 2 hout → 1 | geen schroot; magazijn kost steen |
-  | gifwoud | `gifwoud` Rotwood Grove | rothout, hars, sporen | 2 hout + 1 hars → 2 | 2 hout → 1 | geen metaal; sporen branden als `kristal` |
-  | magmaveld | `magmaveld` Foundry | magma-erts, basalt | 2 erts → 2 (+ 1 slak) | 3 basalt → 1 | smederij vraagt geen stroom; slak brandt als `schroot` |
-  | kristaltoendra | `kristaltoendra` Crystal Tundra | kristal, ijs, één wrak | 2 kristal → 1 | 4 ijs + 1 kristal → 1, of 3 wrak → 1 | geen hout |
-  | zoutzee | `zoutzee` Salt Flats | zout, kelp, wat drijfhout | 3 zout + 1 kelp → 2 | 4 kelp → 1, of 2 drijfhout → 1 | bijna geen hout |
+  | wereld | economie | ligt er | plaat | balk | brandstof | bijzonder |
+  |---|---|---|---|---|---|---|
+  | roestduin | `schroot` Junkyard | schroot, oude banden | 2 schroot → 2 | 3 schroot → 1 | koolstof: 2 banden → 2 | geen hout |
+  | aarde | `aarde` Homestead | hout, steen, ijzererts | 2 erts + 1 hout → 2 | 2 hout → 1 | biomassa: 1 hout → 2 | geen schroot; magazijn kost steen |
+  | gifwoud | `gifwoud` Rotwood Grove | rothout, hars, sporen | 2 hout + 1 hars → 2 | 2 hout → 1 | biomassa: 1 hout → 2, of 2 sporen → 4 | geen metaal |
+  | magmaveld | `magmaveld` Foundry | magma-erts, basalt | 2 erts → 2 (+ 1 slak) | 3 basalt → 1 | koolstof: 2 slak → 1, of 3 basalt → 1 | smederij vraagt geen stroom |
+  | kristaltoendra | `kristaltoendra` Crystal Tundra | kristal, ijs, één wrak | 2 kristal → 1 | 4 ijs + 1 kristal → 1, of 3 wrak → 1 | koolstof: 2 kristal → 1 | geen hout |
+  | zoutzee | `zoutzee` Salt Flats | zout, kelp, wat drijfhout | 3 zout + 1 kelp → 2 | 4 kelp → 1, of 2 drijfhout → 1 | biomassa: 1 kelp → 2 | bijna geen hout |
   Banden, palen, magazijnen, splitter en merger kosten overal plaat en balk, dus wat je meeneemt blijft bruikbaar.
   De viseconomie uit de sandbox was een voorbeeld en zit niet in het spel (wel nog in `tools/economy.html`).
 
@@ -137,9 +141,8 @@ pixelart, maar de letters worden scherp getekend met een echt lettertype (`src/r
 Energie gaat om keuzes, niet om alles overeind houden. Er is geen zekering en geen storing meer.
 - **Looprad (WHEEL, 5 nov):** de eerste bron is een gigantisch hamsterrad. Geen brandstof: muizen rennen erin (3/6/10
   muizen voor laag/normaal/overladen, 2/4/7 kW). Te weinig renners = minder stroom. Muizen die rennen graven en bouwen niet.
-- Bronnen verbranden grondstof uit de opslag (in beeld: WOOD BURNER, DYNAMO, REACTOR): houtbrander (hout, 2/4/7 kW per stand laag/normaal/overladen), dynamo
-  (schroot, 3/5/9), reactor (kristal, 6/10/16). Je begint met het looprad. Houtbrander (4 platen + 4 balken) en dynamo (5 platen + 2 balken) moet je
-  eerst bouwen; de reactor komt alleen uit loot. Per MK meer stroom (x1, 1,7, 2,5) en meer brandstof.
+- Bronnen: het looprad (2/4/7 kW per stand laag/normaal/overladen; 3, 6 of 10 ratten) en de generatoren uit de economie
+  (zie "Eén soort, een economie per wereld"). De houtbrander, dynamo, reactor en de MK-upgrades zijn vervallen (15 nov).
 - **Overladen** mag altijd: veel stroom, maar de bron wordt heet. Daarna is hij tijdelijk zwakker (tot 50% bij volle
   hitte) tot hij is afgekoeld. Koeling laat sneller afkoelen.
 - Verbruikers staan op volgorde van voorrang: machine (4 kW, precies wat het looprad op normaal geeft), industrie (fabricator, boren, banden), lampen (2 kW,

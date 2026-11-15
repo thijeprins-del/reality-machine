@@ -5,12 +5,10 @@ import type { SpelStaat } from '../kern/spel';
 import type { WereldBeeld } from '../kern/wereldbeeld';
 import { maakBouwen } from './bouwen';
 import { klein, knop as balkKnop, maakDialoog, toonTip } from '../kern/scherm';
-import { goed } from '../kern/economie';
 import { RATTEN_ENERGIE } from '../data/ratten';
-import { draaiKnop, energie, MAX_MK, omhoog, STANDEN, stroomVan, upgradeBron, upgradeKosten, verbruikVan, zetBron, zetVerbruiker, zwakte, type Bron, type EnergieStaat } from './energie';
-import { industrie, industrieVraag, makers, soortVan } from './industrie';
+import { draaiKnop, energie, omhoog, STANDEN, stroomVan, zetBron, zetVerbruiker, zwakte, type Bron, type EnergieStaat } from './energie';
+import { generatoren, industrie, industrieVraag, makers, soortVan } from './industrie';
 import { maakHud } from './hud';
-import { kanBetalen, kostTekst, naamVan } from './kosten';
 import { tekenRegels, type Regel } from './letters';
 
 const kw = (n: number) => (Math.abs(n % 1) > 0.05 ? n.toFixed(1) : String(Math.round(n)));
@@ -177,15 +175,15 @@ export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(
     R(x - 2, y + Math.round(h - 2 - (h - 2) * 0.85), 2, 1, KL.rood);
   }
 
+  // Het looprad: hendel, draaiknop, hitte en hoeveel ratten erin rennen.
   function bron(s: SpelStaat, b: Bron, cx: number, cy: number, knipper: boolean): void {
-    stil = !b.mk;
     verzonken(cx, cy, 54, 88, '#101111');
     txt(b.kort, cx + 3, cy + 3, KL.label);
     const over = b.stand === 2 && b.levert > 0;
     const lamp = over ? (knipper ? KL.amber : '#402000') : b.levert > 0 ? KL.groen : '#1d1f1e';
     if (b.levert > 0) G(cx + 46, cy + 3, 5, 5, lamp);
     else R(cx + 46, cy + 3, 5, 5, lamp);
-    hit(cx + 2, cy + 1, 30, 9, null, b.renners ? `${b.naam}: RATS RUN IN IT. MORE RATS, MORE POWER. NO FUEL` : `${b.naam}: TURNS ${naamVan(b.brandstof!)} FROM STOCK INTO POWER`);
+    hit(cx + 2, cy + 1, 40, 9, null, `${b.naam}: RATS RUN IN IT. MORE RATS, MORE POWER. NO FUEL`);
     hendel(cx + 3, cy + 11, b.aan, b.kleur, false);
     hit(cx + 3, cy + 11, 14, 32, () => zetBron(s, b), `LEVER: ${b.naam} ON/OFF (KEY ${b.toets})`);
     knop(cx + 28, cy + 25, b.stand, b.stand === 2 ? KL.amber : b.kleur);
@@ -193,52 +191,39 @@ export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(
     hitteBalk(cx + 45, cy + 11, 6, 50, b.hitte);
     txt(String(Math.round(b.hitte)).padStart(3, ' '), cx + 40, cy + 64, b.hitte > 60 ? KL.amber : KL.label);
     hit(cx + 42, cy + 11, 11, 58, null, `HEAT FROM OVERCHARGE: NOW ${Math.round(zwakte(b) * 100)}% STRENGTH. COOLS DOWN BY ITSELF`);
-    // upgradeknop naast de naam: + = er kan een MK bij
-    const up = upgradeKosten(b);
-    const kan = !!up && kanBetalen(s.voorraad, up);
-    verzonken(cx + 34, cy + 1, 9, 9, '#070707');
-    stil = false;
-    if (up) txt('+', cx + 37, cy + 3, kan ? KL.geel : KL.dim, 1, kan);
-    else txt(String(b.mk), cx + 37, cy + 3, KL.groen, 1, true);
-    stil = !b.mk;
-    hit(cx + 34, cy + 1, 9, 9, () => upgradeBron(s, b), up ? `UPGRADE TO MK${b.mk + 1}: ${kostTekst(up, true)}. MORE POWER, MORE FUEL` : `${b.naam} IS MK${MAX_MK}, THE MAXIMUM`);
     verzonken(cx + 3, cy + 46, 36, 15, '#050806');
     const lev = kw(b.levert);
     txt(b.levert > 0 ? `+${lev}` : '--', cx + 6, cy + 49, b.levert > 0 ? (over ? KL.amber : KL.groen) : '#173014', lev.length > 2 ? 1 : 2, b.levert > 0);
     hit(cx + 3, cy + 46, 36, 15, null, `${b.naam} NOW GIVES ${lev} KW. ${STANDEN.map((n, i) => `${n[0]} ${kw(stroomVan(b, i as 0 | 1 | 2))}`).join(' ')}`);
-    if (b.renners) {
-      // looprad: hoeveel muizen erin rennen tegen hoeveel er nodig zijn
-      const nodig = b.renners[b.stand];
-      R(cx + 3, cy + 65, 4, 4, '#d8cfc0');
-      txt(`${b.rennen}/${nodig}`, cx + 9, cy + 65, !b.aan ? KL.dim : b.rennen >= nodig ? KL.groen : KL.amber);
-      hit(cx + 2, cy + 63, 36, 8, null, `RATS IN THE WHEEL: ${b.rennen} OF ${nodig}. LOW ${b.renners[0]}, NORMAL ${b.renners[1]}, OVERCHARGE ${b.renners[2]}`);
-    } else {
-      R(cx + 3, cy + 65, 4, 4, goed(b.brandstof!).color);
-      txt(`-${verbruikVan(b).toFixed(2).replace(/^0/, '')}/S`, cx + 9, cy + 65, b.aan ? KL.amber : KL.dim);
-    }
+    const nodig = b.renners[b.stand];
+    R(cx + 3, cy + 65, 4, 4, '#d8cfc0');
+    txt(`${b.rennen}/${nodig}`, cx + 9, cy + 65, !b.aan ? KL.dim : b.rennen >= nodig ? KL.groen : KL.amber);
+    hit(cx + 2, cy + 63, 36, 8, null, `RATS IN THE WHEEL: ${b.rennen} OF ${nodig}. LOW ${b.renners[0]}, NORMAL ${b.renners[1]}, OVERCHARGE ${b.renners[2]}`);
     const zwak = b.hitte > 3 && b.stand !== 2;
     const status = !b.aan ? 'OFF' : over ? 'OVER!' : zwak ? `WEAK${Math.round(zwakte(b) * 100)}` : 'RUNNING';
     txt(status, cx + 3, cy + 77, !b.aan ? KL.dim : over ? KL.amber : zwak ? KL.geel : KL.groen, 1, b.aan);
-    if (b.mk) txt(`MK${b.mk}`, cx + 39, cy + 77, KL.stencil);
-    else {
-      // nog niet gebouwd: een lege plek met een bouwknop (of alleen uit loot)
-      R(cx + 1, cy + 10, 52, 77, 'rgba(8,9,9,.88)');
-      stil = false;
-      if (b.loot) {
-        txt('ONLY', cx + 19, cy + 30, KL.dim);
-        txt('FROM LOOT', cx + 9, cy + 38, KL.magenta, 1, true);
-        hit(cx + 1, cy + 10, 52, 77, null, `${b.naam}: ONLY FROM LOOT`);
-        return;
-      }
-      const k = b.bouw[0];
-      const kan2 = kanBetalen(s.voorraad, k);
-      txt('NOT', cx + 21, cy + 24, KL.dim);
-      txt('BUILT', cx + 17, cy + 31, KL.dim);
-      verzonken(cx + 7, cy + 44, 40, 13, '#070707');
-      txt('BUILD', cx + 17, cy + 48, kan2 ? KL.geel : KL.dim, 1, kan2);
-      txt(kostTekst(k), cx + 27 - kostTekst(k).length * 2, cy + 64, kan2 ? KL.amber : KL.dim);
-      hit(cx + 1, cy + 10, 52, 77, () => upgradeBron(s, b), `BUILD ${b.naam}: ${kostTekst(k, true)}. BURNS ${naamVan(b.brandstof ?? '')}`);
+  }
+  // De generatoren die je gebouwd hebt, per soort: hoeveel er staan, hoeveel er draaien en wat ze samen leveren.
+  function tekenGeneratoren(s: SpelStaat, x0: number, y0: number, w: number, h: number): void {
+    verzonken(x0, y0, w, h, '#101111');
+    txt('GENERATORS', x0 + 3, y0 + 3, KL.label);
+    const lijst = generatoren(s);
+    if (!lijst.length) {
+      ['NONE BUILT YET.', 'BUILD A BURNER', 'FROM THE BUILD', 'MENU AND FEED', 'IT FUEL.'].forEach((r, i) => txt(r, x0 + 4, y0 + 16 + i * 8, KL.dim));
+      hit(x0, y0, w, h, null, 'GENERATORS ARE BUILDINGS: PLACE A BURNER FROM THE BUILD MENU AND BRING IT FUEL BY BELT OR BY RATS');
+      return;
     }
+    lijst.slice(0, 6).forEach((r, i) => {
+      const y = y0 + 13 + i * 12;
+      const aan = r.draait > 0;
+      if (aan) G(x0 + 3, y + 1, 4, 4, r.draait === r.aantal ? KL.groen : KL.amber);
+      else R(x0 + 3, y + 1, 4, 4, '#501010');
+      txt(r.soort.name.slice(0, 16), x0 + 9, y, aan ? '#e8e4d4' : KL.label);
+      txt(`${r.draait}/${r.aantal}`, x0 + 9, y + 6, r.draait === r.aantal ? KL.groen : KL.amber);
+      const t2 = `+${kw(r.kw)}KW`;
+      txt(t2, x0 + w - 4 - t2.length * 4, y + 6, aan ? KL.groen : KL.dim, 1, aan);
+      hit(x0, y - 1, w, 12, null, `${r.soort.name}: ${r.draait} OF ${r.aantal} RUNNING, ${kw(r.kw)} KW${r.waarom ? `. NOT RUNNING: ${r.waarom}` : ''}`);
+    });
   }
 
   function teken(s: SpelStaat, e: EnergieStaat): void {
@@ -250,8 +235,9 @@ export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(
     const knipper = Math.floor(tijd * 4) % 2 === 0;
 
     // BRONNEN
-    // hooguit drie kaarten; een bron die alleen uit loot komt en er nog niet is, staat er niet bij
-    e.bronnen.filter((b) => b.mk || !b.loot).slice(0, 3).forEach((b, i) => bron(s, b, 8 + i * 58, 14, knipper));
+    // het looprad links, daarnaast de generatoren die je hebt
+    bron(s, e.bronnen[0], 8, 14, knipper);
+    tekenGeneratoren(s, 66, 14, 112, 88);
 
     // STROOMNET
     const nx = 190, ny = 15;

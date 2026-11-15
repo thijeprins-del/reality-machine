@@ -1,6 +1,7 @@
 // Industrie van de pack rats: alles wat je neerzet. Wat er te bouwen valt, wat het kost en wat het doet staat in de
 // economie van de wereld (economies/*.json, kern/economie.ts); dit bestand kent alleen de soorten gedrag:
-//   prod      maakt iets volgens een recept (fabricator); met "onDeposit" staat hij bij een veld en wint hij dat veld (boor)
+//   prod      maakt iets volgens een recept (fabricator); met "onDeposit" staat hij bij een veld en wint hij dat veld (boor);
+//             levert zijn recept stroom ("power"), dan is het een generator (brander)
 //   sink      magazijn: neemt alles aan en geeft de opslag meer ruimte
 //   trash     vernietigt wat een band erin brengt
 //   splitter / merger   kruispunt op de banden: wat erin loopt gaat om de beurt de banden op die ervan weg lopen
@@ -114,12 +115,7 @@ export function vast(s: SpelStaat): { erf: Blok; bronnen: Record<string, Blok> }
   const m = s.kaart.machine, o = s.kaart.opslag;
   return {
     erf: { x: o.x + o.breed, y: o.y, breed: 2, diep: 2 },
-    bronnen: {
-      rad: { x: m.x - 3, y: m.y + 1, breed: 2, diep: 2 },
-      dynamo: { x: m.x - 3, y: m.y - 2, breed: 2, diep: 2 },
-      houtbrander: { x: m.x + 1, y: m.y - 3, breed: 2, diep: 2 },
-      reactor: { x: m.x + 4, y: m.y - 3, breed: 2, diep: 2 },
-    },
+    bronnen: { rad: { x: m.x - 3, y: m.y + 1, breed: 2, diep: 2 } }, // het looprad hoort bij de machine
   };
 }
 export const blokVan = (g: { eco: string; soort: string; x: number; y: number }): Blok => {
@@ -182,6 +178,27 @@ export function industrieVraag(s: SpelStaat): number {
   for (const b of i.banden.values()) if (!b.af) kw += soortVan(b).kW;
   for (const g of makers(i)) if (klaar(g) && (g.recept || soortVan(g).onDeposit) && gevoed(s, blokVan(g))) kw += soortVan(g).kW;
   return Math.round(kw * 10) / 10;
+}
+// ---- generatoren: gebouwen met een recept dat stroom levert ----
+// Een generator levert het vermogen van zijn recept zolang dat draait (brandstof erin, niet stilgezet).
+const levert = (g: Gebouw): number => (klaar(g) && g.betaald && !g.geblokt ? receptVan(g)?.power ?? 0 : 0);
+export const generatorStroom = (s: SpelStaat): number => makers(industrie(s)).reduce((n, g) => n + levert(g), 0);
+// Voor het stroompaneel: per soort generator hoeveel er staan, hoeveel er draaien en wat ze samen leveren.
+export interface GeneratorRegel { soort: BouwSoort; aantal: number; draait: number; kw: number; waarom: string }
+export function generatoren(s: SpelStaat): GeneratorRegel[] {
+  const uit = new Map<string, GeneratorRegel>();
+  for (const g of makers(industrie(s))) {
+    const soort = soortVan(g);
+    if (!soort.generator) continue;
+    let r = uit.get(`${g.eco}/${g.soort}`);
+    if (!r) uit.set(`${g.eco}/${g.soort}`, (r = { soort, aantal: 0, draait: 0, kw: 0, waarom: '' }));
+    r.aantal++;
+    const kw = levert(g);
+    if (kw > 0) r.draait++;
+    else r.waarom ||= g.af ? 'BEING BUILT' : g.geblokt || 'STOPPED';
+    r.kw += kw;
+  }
+  return [...uit.values()];
 }
 const kracht = (s: SpelStaat) => verbruiker(s, 'industrie').krijgt;
 
@@ -421,6 +438,7 @@ function stapMakers(s: SpelStaat, sec: number): void {
       }
       for (let j = 0; j < stuks; j++) g.buffer.push(x);
     }
+    if (r.power > 0 && betaal(g.invoer, r.inputs)) g.betaald = true; // een generator stookt door, zonder dip tussen twee stukken
   }
 }
 
@@ -542,7 +560,7 @@ export function poortenVan(soort: BouwSoort, recept: ReceptSoort | undefined, x:
   const ingangen: [number, number, Richting][] = [...rij.map((d): [number, number, Richting] => [x + d, y + m, 'N']), ...rij.map((d): [number, number, Richting] => [x - 1, y + m - 1 - d, 'O'])];
   const uitgangen: [number, number, Richting][] = [...rij.map((d): [number, number, Richting] => [x + m, y + m - 1 - d, 'O']), ...rij.map((d): [number, number, Richting] => [x + m - 1 - d, y - 1, 'N'])];
   if (!recept || invoer.length) ingangen.forEach(([px, py, richting], k) => uit.push({ x: px, y: py, richting, in: true, goed: invoer.length ? invoer[k % invoer.length] : null }));
-  uitgangen.forEach(([px, py, richting], k) => uit.push({ x: px, y: py, richting, in: false, goed: producten.length ? producten[k % producten.length] : null }));
+  if (!recept || producten.length) uitgangen.forEach(([px, py, richting], k) => uit.push({ x: px, y: py, richting, in: false, goed: producten.length ? producten[k % producten.length] : null }));
   return uit;
 }
 export const poorten = (g: Gebouw): Poort[] => poortenVan(soortVan(g), receptVan(g), g.x, g.y);

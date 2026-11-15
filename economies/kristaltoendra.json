@@ -1,12 +1,13 @@
 {
   "id": "kristaltoendra",
   "name": "Crystal Tundra",
-  "startingResources": { "kristal": 40, "ijs": 30, "plaat": 4, "balk": 2 },
+  "startingResources": { "kristal": 40, "ijs": 30, "plaat": 4, "balk": 2, "koolstof": 10 },
   "settings": { "bufferSize": 6, "defaultStorage": 8, "warehouseStorage": 250 },
   "resources": [
     { "id": "kristal", "name": "CRYSTAL", "color": "#4ef2ff", "volume": 1, "sprite": "kristal", "glows": true, "onMap": true, "fields": { "count": 4, "tiles": [5, 8], "perTile": 120, "distance": [19, 26] } },
     { "id": "ijs", "name": "ICE", "color": "#bfe6f2", "volume": 1, "onMap": true, "fields": { "count": 3, "tiles": [8, 12], "perTile": 200, "distance": [19, 26] } },
     { "id": "schroot", "name": "FROZEN WRECK", "color": "#8f9aa0", "volume": 1, "sprite": "wrak", "onMap": true, "fields": { "count": 1, "tiles": [4, 6], "perTile": 100, "distance": [24, 28] } },
+    { "id": "koolstof", "name": "CARBON", "color": "#3a3a40", "volume": 1 },
     { "id": "plaat", "name": "CRYSTAL PANE", "color": "#8fd8e8", "volume": 1, "sprite": "kristal-plaat" },
     { "id": "balk", "name": "FROST BEAM", "color": "#a8cfdc", "volume": 1, "sprite": "ijs-balk" }
   ],
@@ -16,11 +17,14 @@
     { "id": "mijn_schroot", "name": "Salvage wreck", "time": 0.5, "inputs": {}, "outputs": { "schroot": 1 } },
     { "id": "plaat", "name": "Cut crystal pane", "time": 4, "inputs": { "kristal": 2 }, "outputs": { "plaat": 1 } },
     { "id": "balk_ijs", "name": "Freeze frost beam", "time": 4, "inputs": { "ijs": 4, "kristal": 1 }, "outputs": { "balk": 1 } },
-    { "id": "balk_wrak", "name": "Salvage beam", "time": 3, "inputs": { "schroot": 3 }, "outputs": { "balk": 1 } }
+    { "id": "balk_wrak", "name": "Salvage beam", "time": 3, "inputs": { "schroot": 3 }, "outputs": { "balk": 1 } },
+    { "id": "koolstof", "name": "Crack crystal", "time": 3, "inputs": { "kristal": 2 }, "outputs": { "koolstof": 1 } },
+    { "id": "stook_koolstof", "name": "Burn carbon", "time": 6, "inputs": { "koolstof": 1 }, "power": 6 }
   ],
   "buildings": [
-    { "id": "slijper", "name": "CRYSTAL CUTTER", "color": "#3aa8b8", "sprite": "slijper", "size": 2, "insideRing": true, "cost": { "kristal": 15 }, "work": 10, "kW": 2, "crew": 2, "storage": 8, "recipes": ["plaat"], "key": "F" },
+    { "id": "slijper", "name": "CRYSTAL CUTTER", "color": "#3aa8b8", "sprite": "slijper", "size": 2, "insideRing": true, "cost": { "kristal": 15 }, "work": 10, "kW": 2, "crew": 2, "storage": 8, "recipes": ["plaat", "koolstof"], "key": "F" },
     { "id": "vriezer", "name": "FREEZER", "color": "#7fb6cf", "sprite": "vriezer", "size": 2, "insideRing": true, "cost": { "ijs": 20, "kristal": 5 }, "work": 10, "kW": 2, "crew": 2, "storage": 8, "recipes": ["balk_ijs", "balk_wrak"], "key": "Z" },
+    { "id": "koolstofbrander", "name": "CARBON BURNER", "color": "#ff9a1f", "sprite": "dynamo", "key": "G", "size": 2, "insideRing": true, "cost": { "plaat": 4, "balk": 3 }, "work": 10, "storage": 8, "recipes": ["stook_koolstof"] },
     { "id": "boor", "name": "ICE DRILL", "color": "#7a5c48", "sprite": "boor", "key": "B", "size": 2, "onDeposit": true, "range": 3, "cost": { "plaat": 3, "balk": 1 }, "work": 8, "kW": 2, "storage": 12, "recipes": ["mijn_kristal", "mijn_ijs", "mijn_schroot"] },
     { "id": "band", "name": "BELT", "color": "#5b554b", "sprite": "band-leeg", "key": "L", "belt": true, "speed": 2, "kW": 0.05, "cost": { "plaat": 1 }, "work": 1.2 },
     { "id": "paal", "name": "POLE", "color": "#6a552d", "sprite": "mast", "key": "P", "pole": true, "link": 8, "reach": 5, "cost": { "balk": 1 }, "work": 3 },

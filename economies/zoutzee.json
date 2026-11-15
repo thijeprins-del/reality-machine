@@ -1,12 +1,13 @@
 {
   "id": "zoutzee",
   "name": "Salt Flats",
-  "startingResources": { "zout": 40, "kelp": 30, "plaat": 4, "balk": 2 },
+  "startingResources": { "zout": 40, "kelp": 30, "plaat": 4, "balk": 2, "biomassa": 10 },
   "settings": { "bufferSize": 6, "defaultStorage": 8, "warehouseStorage": 250 },
   "resources": [
     { "id": "zout", "name": "SALT", "color": "#f2e6ec", "volume": 1, "onMap": true, "fields": { "count": 4, "tiles": [8, 12], "perTile": 200, "distance": [19, 26] } },
     { "id": "kelp", "name": "KELP", "color": "#4d7a3a", "volume": 1, "onMap": true, "fields": { "count": 3, "tiles": [6, 10], "perTile": 150, "distance": [19, 27] } },
     { "id": "hout", "name": "DRIFTWOOD", "color": "#c2a98a", "volume": 1, "sprite": "drijfhout", "onMap": true, "fields": { "count": 1, "tiles": [4, 6], "perTile": 100, "distance": [23, 28] } },
+    { "id": "biomassa", "name": "BIOMASS", "color": "#7a9a3a", "volume": 1 },
     { "id": "plaat", "name": "SALT BRICK", "color": "#e0c8d2", "volume": 1, "sprite": "zout-plaat" },
     { "id": "balk", "name": "KELP BEAM", "color": "#6b8f3a", "volume": 1, "sprite": "kelp-balk" }
   ],
@@ -16,11 +17,14 @@
     { "id": "mijn_hout", "name": "Collect driftwood", "time": 0.5, "inputs": {}, "outputs": { "hout": 1 } },
     { "id": "plaat", "name": "Fire salt brick", "time": 4, "inputs": { "zout": 3, "kelp": 1 }, "outputs": { "plaat": 2 } },
     { "id": "balk_kelp", "name": "Weave kelp beam", "time": 4, "inputs": { "kelp": 4 }, "outputs": { "balk": 1 } },
-    { "id": "balk_hout", "name": "Saw driftwood", "time": 3, "inputs": { "hout": 2 }, "outputs": { "balk": 1 } }
+    { "id": "balk_hout", "name": "Saw driftwood", "time": 3, "inputs": { "hout": 2 }, "outputs": { "balk": 1 } },
+    { "id": "biomassa", "name": "Dry kelp", "time": 2, "inputs": { "kelp": 1 }, "outputs": { "biomassa": 2 } },
+    { "id": "stook_biomassa", "name": "Burn biomass", "time": 5, "inputs": { "biomassa": 1 }, "power": 5 }
   ],
   "buildings": [
     { "id": "zoutoven", "name": "SALT KILN", "color": "#c98aa5", "sprite": "zoutoven", "size": 2, "insideRing": true, "cost": { "zout": 20 }, "work": 10, "kW": 2, "crew": 2, "storage": 8, "recipes": ["plaat"], "key": "F" },
-    { "id": "vlechterij", "name": "WEAVERY", "color": "#5c7a35", "sprite": "vlechterij", "size": 2, "insideRing": true, "cost": { "kelp": 15, "zout": 5 }, "work": 10, "kW": 2, "crew": 2, "storage": 8, "recipes": ["balk_kelp", "balk_hout"], "key": "Z" },
+    { "id": "vlechterij", "name": "WEAVERY", "color": "#5c7a35", "sprite": "vlechterij", "size": 2, "insideRing": true, "cost": { "kelp": 15, "zout": 5 }, "work": 10, "kW": 2, "crew": 2, "storage": 8, "recipes": ["balk_kelp", "balk_hout", "biomassa"], "key": "Z" },
+    { "id": "biomassabrander", "name": "BIOMASS BURNER", "color": "#ff5a2a", "sprite": "houtbrander", "key": "G", "size": 2, "insideRing": true, "cost": { "plaat": 4, "balk": 4 }, "work": 10, "storage": 8, "recipes": ["stook_biomassa"] },
     { "id": "boor", "name": "HARVESTER", "color": "#7a5c48", "sprite": "oogster", "key": "B", "size": 2, "onDeposit": true, "range": 3, "cost": { "plaat": 3, "balk": 1 }, "work": 8, "kW": 2, "storage": 12, "recipes": ["mijn_zout", "mijn_kelp", "mijn_hout"] },
     { "id": "band", "name": "BELT", "color": "#5b554b", "sprite": "band-leeg", "key": "L", "belt": true, "speed": 2, "kW": 0.05, "cost": { "plaat": 1 }, "work": 1.2 },
     { "id": "paal", "name": "POLE", "color": "#6a552d", "sprite": "mast", "key": "P", "pole": true, "link": 8, "reach": 5, "cost": { "balk": 1 }, "work": 3 },

@@ -32,6 +32,7 @@ export interface ReceptSoort {
   time: number; // seconden
   inputs: Voorraad; // leeg = winning (mijn, steengroeve)
   outputs: Voorraad;
+  power: number; // kW die het gebouw levert zolang dit recept draait (0 = geen generator)
 }
 // Het gedrag van een gebouw. Nieuw gedrag vraagt code; een nieuw gebouw met bestaand gedrag alleen een regel in het bestand.
 export type Aard = 'prod' | 'sink' | 'trash' | 'splitter' | 'merger' | 'belt' | 'pole';
@@ -52,6 +53,7 @@ export interface BouwSoort {
   kW: number;
   crew: number; // ratten voor volle snelheid (0 = draait vanzelf)
   insideRing: boolean; // mag alleen binnen de ring
+  generator: boolean; // een van zijn recepten levert stroom ("power"): een brander, een turbine
   onDeposit: boolean; // moet bij een veld staan en draait het recept dat dat veld geeft
   depRes: string[]; // welke grondstoffen op de kaart dit gebouw kan winnen
   range: number; // 'onDeposit': zo ver om zijn voet graaft hij
@@ -135,10 +137,12 @@ export function leesEconomie(bron: unknown): { fouten: string[]; economie?: Econ
         if (!(Number.isInteger(v) && (v as number) > 0)) fouten.push(`Recipe "${c.id}": amount of "${k}" must be a whole number ≥ 1`);
       }
     }
-    if (isObj(outs) && !Object.keys(outs).length) fouten.push(`Recipe "${c.id}" has no outputs`);
+    const power = c.power ?? 0;
+    if (!(typeof power === 'number' && power >= 0)) fouten.push(`Recipe "${c.id}": "power" must be kW ≥ 0`);
+    if (isObj(outs) && !Object.keys(outs).length && !(typeof power === 'number' && power > 0)) fouten.push(`Recipe "${c.id}" has no outputs and no power`);
     const t = c.time ?? 1;
     if (!(typeof t === 'number' && t > 0)) fouten.push(`Recipe "${c.id}": "time" must be seconds > 0`);
-    C.set(c.id, { id: c.id, name: typeof c.name === 'string' && c.name ? c.name : c.id, time: t as number, inputs: (isObj(ins) ? ins : {}) as Voorraad, outputs: (isObj(outs) ? outs : {}) as Voorraad });
+    C.set(c.id, { id: c.id, name: typeof c.name === 'string' && c.name ? c.name : c.id, time: t as number, inputs: (isObj(ins) ? ins : {}) as Voorraad, outputs: (isObj(outs) ? outs : {}) as Voorraad, power: typeof power === 'number' && power > 0 ? power : 0 });
   });
 
   const s = isObj(bron.settings) ? bron.settings : {};
@@ -190,6 +194,7 @@ export function leesEconomie(bron: unknown): { fouten: string[]; economie?: Econ
       sprite: typeof b.sprite === 'string' ? b.sprite : undefined, key: typeof b.key === 'string' ? b.key.toUpperCase().slice(0, 1) : '', aard, recipes: aard === 'prod' ? (rs as string[]) : [], cost,
       work: pos(b.work, 4), size: (size === 1 ? 1 : 2), storage, speed: speed as number, ports: ports as number,
       kW: Math.max(0, getal(b.kW, 0)), crew: Math.max(0, getal(b.crew, 0)), insideRing: !!b.insideRing, onDeposit: !!b.onDeposit,
+      generator: aard === 'prod' && (rs as string[]).some((r) => (C.get(r)?.power ?? 0) > 0),
       depRes: [...depRes], range: pos(b.range, 3), link: pos(b.link, 8), reach: pos(b.reach, 5),
     });
   });
