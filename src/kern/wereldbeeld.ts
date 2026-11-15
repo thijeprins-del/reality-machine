@@ -1,5 +1,5 @@
 // Tekent de spelstaat: grond, grondstoffen, gebouwen en eenheden, met een gloedlaag voor het neon.
-// De factie levert de plaatjes (FactieBeeld); de kern weet niet welke factie het is.
+// De factie levert de plaatjes (SoortBeeld); de kern weet niet welke factie het is.
 import { Assets, BlurFilter, ColorMatrixFilter, Container, Graphics, Matrix, Rectangle, Sprite, Texture } from 'pixi.js';
 import { naarScherm, TEGEL_B, TEGEL_H } from './iso';
 import { dimensieKleur, DIMENSIE_DUUR_SEC, hoogteTint, HOOGTE_MIN, HOOGTE_PX, SCHIJF_HOOGTE, SPRONG_SEC, THUIS, type DimensieWereld } from '../data/dimensies';
@@ -11,7 +11,7 @@ import type { SpelStaat } from './spel';
 import { hoeken, hoogteOp, knikLinksRechts, TEGEL_LAND, tegelOnder, TEGEL_WATER } from './terrein';
 import { TerreinBewerker } from './terreinbewerker';
 import { hash01 } from './toeval';
-import type { FactieBeeld, SpriteInfo } from './types';
+import type { SoortBeeld, SpriteInfo } from './types';
 import { CEL_B, CEL_H, CEL_X, CEL_Y, celLand, celSchuim, celWand, celWater, KOLOMMEN, SCHUIM_BEELDEN, TEGELSETS, VARIANTEN, WAND_B, WAND_H, WAND_KOLOMMEN, WAND_VARIANTEN, WAND_Y, WATER_BEELDEN, WATER_VARIANTEN, type TegelSet } from './tegels';
 import { WERELD_SPRITES } from './wereld-sprites';
 
@@ -72,7 +72,7 @@ export class WereldBeeld {
 
   constructor(
     private staat: SpelStaat,
-    private beeld: FactieBeeld,
+    private beeld: SoortBeeld,
   ) {
     this.sprites = { ...wereldSprites(), ...beeld.sprites };
   }

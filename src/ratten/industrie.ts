@@ -1,6 +1,6 @@
 // Industrie van de muizen: fabricators die onderdelen maken (platen, balken), en wat je daarmee neerzet: boren (die de
 // machine naast grondstoffen gooit), lompe lopende banden, palen met kabels en een stapel per grondstof.
-// Puur regels, geen tekenen en geen Math.random. Getallen in src/data/muizen.ts (MUIZEN_INDUSTRIE).
+// Puur regels, geen tekenen en geen Math.random. Getallen in src/data/ratten.ts (RATTEN_INDUSTRIE).
 //
 // - Bouwen kost onderdelen; muizen halen ze uit de opslag en brengen ze naar de bouwplek, pas dan bouwen ze.
 //   Een fabricator krijgt zijn grondstof ook gebracht (muizen of een band die erin loopt).
@@ -225,7 +225,7 @@ export interface Oordeel {
 }
 // Neerzetten kan altijd; muizen brengen de spullen zodra ze in de opslag liggen.
 const kostOk = (s: SpelStaat, d: Bouwsel): Oordeel | null =>
-  kanBetalen(s.voorraad, G.bouw[d]) ? null : { ok: true, reden: `NOT IN STOCK YET: ${kostTekst(G.bouw[d], true)}. MICE BRING IT LATER` };
+  kanBetalen(s.voorraad, G.bouw[d]) ? null : { ok: true, reden: `NOT IN STOCK YET: ${kostTekst(G.bouw[d], true)}. RATS BRING IT LATER` };
 
 export function kanZetten(s: SpelStaat, d: Bouwsel, x: number, y: number, goed?: Goed): Oordeel {
   const i = industrie(s);
@@ -264,7 +264,7 @@ export function zet(s: SpelStaat, d: Bouwsel, x: number, y: number, goed: Goed =
   const nodig = { ...G.bouw[d] };
   if (d === 'boor') {
     i.boren.push({ id, x, y, af: G.boor.werk, nodig, vlieg: G.boor.vliegSec, klok: 0, buffer: [], graaft: false, uitvoer: 0 });
-    log(e, `DRILL THROWN! MICE BRING ${kostTekst(nodig, true)} AND BUILD IT`, 'groen');
+    log(e, `DRILL THROWN! RATS BRING ${kostTekst(nodig, true)} AND BUILD IT`, 'groen');
   } else if (d === 'fabricator') {
     i.fabrieken.push({ id, x, y, af: G.fabricator.werk, nodig, buffer: [], uitvoer: 0, recept: null, invoer: {}, klok: 0, betaald: false, ploeg: 0, geblokt: '' });
     log(e, 'FABRICATOR SITE PLACED. CLICK IT TO PICK A RECIPE', 'groen');
@@ -306,7 +306,7 @@ export function legBand(s: SpelStaat, pad: { x: number; y: number; naar: Richtin
       const [vx, vy] = RICHTINGEN[buur.naar];
       if (!i.banden.has(tegel(buur.x + vx, buur.y + vy)) && !inOpslag(s, buur.x + vx, buur.y + vy)) buur.naar = r;
     }
-  if (nieuw) log(e, `${nieuw} BELT TILES PLACED. MICE ARE LAYING THEM`, 'groen');
+  if (nieuw) log(e, `${nieuw} BELT TILES PLACED. RATS ARE LAYING THEM`, 'groen');
   return nieuw;
 }
 
@@ -409,7 +409,7 @@ function stapFabrieken(s: SpelStaat, sec: number): void {
       continue;
     }
     if (!f.ploeg) {
-      f.geblokt = 'WAITING FOR MICE';
+      f.geblokt = 'WAITING FOR RATS';
       continue;
     }
     f.geblokt = '';

@@ -5,7 +5,7 @@ import type { WereldBeeld } from '../kern/wereldbeeld';
 import { maakBouwen } from './bouwen';
 import { klein, knop as balkKnop } from '../kern/scherm';
 import type { Grondstof } from '../kern/types';
-import { MUIZEN_ENERGIE } from '../data/muizen';
+import { RATTEN_ENERGIE } from '../data/ratten';
 import { draaiKnop, energie, MAX_MK, omhoog, STANDEN, stroomVan, upgradeBron, upgradeKosten, verbruikVan, zetBron, zetVerbruiker, zwakte, type Bron, type EnergieStaat } from './energie';
 import { industrie, industrieVraag, opslagMax } from './industrie';
 import { werk } from './werk';
@@ -20,7 +20,7 @@ const OMTREK: [number, number][] = [[0, 0], [184, 0], [244, 60], [476, 60], [484
 const MOD: Record<string, [number, number, number, number, string]> = {
   bronnen: [4, 6, 178, 98, 'POWER SOURCES'],
   voorraad: [4, 108, 178, 44, 'STOCK'],
-  muizen: [4, 156, 178, 52, 'MICE'],
+  muizen: [4, 156, 178, 52, 'RATS'],
   net: [186, 64, 142, 100, 'POWER GRID'],
   verbruik: [332, 64, 148, 100, 'CONSUMERS'],
   log: [186, 168, 294, 40, 'LOG'],
@@ -59,7 +59,7 @@ interface Hit { x: number; y: number; w: number; h: number; doe: (() => void) | 
 export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(sec: number): void } {
   const pv = doek(PW, PH);
   pv.id = 'paneel';
-  pv.setAttribute('aria-label', 'Mouse control panel: power sources, stock, mice, power grid, consumers and log');
+  pv.setAttribute('aria-label', 'Rat control panel: power sources, stock, rats, power grid, consumers and log');
   Object.assign(pv.style, { position: 'fixed', left: '0', bottom: '0', zIndex: '5', pointerEvents: 'none', display: 'block' });
   document.body.appendChild(pv);
   const pvc = pv.getContext('2d')!;
@@ -214,7 +214,7 @@ export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(
     const lamp = over ? (knipper ? KL.amber : '#402000') : b.levert > 0 ? KL.groen : '#1d1f1e';
     if (b.levert > 0) G(cx + 46, cy + 3, 5, 5, lamp);
     else R(cx + 46, cy + 3, 5, 5, lamp);
-    hit(cx + 2, cy + 1, 30, 9, null, b.renners ? `${b.naam}: MICE RUN IN IT. MORE MICE, MORE POWER. NO FUEL` : `${b.naam}: TURNS ${naamVan(b.brandstof!)} FROM STOCK INTO POWER`);
+    hit(cx + 2, cy + 1, 30, 9, null, b.renners ? `${b.naam}: RATS RUN IN IT. MORE RATS, MORE POWER. NO FUEL` : `${b.naam}: TURNS ${naamVan(b.brandstof!)} FROM STOCK INTO POWER`);
     hendel(cx + 3, cy + 11, b.aan, b.kleur, false);
     hit(cx + 3, cy + 11, 14, 32, () => zetBron(s, b), `LEVER: ${b.naam} ON/OFF (KEY ${b.toets})`);
     knop(cx + 28, cy + 25, b.stand, b.stand === 2 ? KL.amber : b.kleur);
@@ -240,7 +240,7 @@ export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(
       const nodig = b.renners[b.stand];
       R(cx + 3, cy + 65, 4, 4, '#d8cfc0');
       txt(`${b.rennen}/${nodig}`, cx + 9, cy + 65, !b.aan ? KL.dim : b.rennen >= nodig ? KL.groen : KL.amber);
-      hit(cx + 2, cy + 63, 36, 8, null, `MICE IN THE WHEEL: ${b.rennen} OF ${nodig}. LOW ${b.renners[0]}, NORMAL ${b.renners[1]}, OVERCHARGE ${b.renners[2]}`);
+      hit(cx + 2, cy + 63, 36, 8, null, `RATS IN THE WHEEL: ${b.rennen} OF ${nodig}. LOW ${b.renners[0]}, NORMAL ${b.renners[1]}, OVERCHARGE ${b.renners[2]}`);
     } else {
       R(cx + 3, cy + 65, 4, 4, GRONDSTOFKLEUR[b.brandstof!]);
       txt(`-${verbruikVan(b).toFixed(2).replace(/^0/, '')}/S`, cx + 9, cy + 65, b.aan ? KL.amber : KL.dim);
@@ -301,7 +301,7 @@ export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(
       hit(8, y - 1, 170, 10, null, w >= max ? `${naamVan(g)} FULL! BUILD A STOCKPILE FOR ${naamVan(g)}` : `${naamVan(g)} IN STOCK, MAX ${max}. MORE = A STOCKPILE FOR ${naamVan(g)}`);
     });
 
-    // MUIZEN: wat ze uit zichzelf aan het doen zijn
+    // RATTEN: wat ze uit zichzelf aan het doen zijn
     const tel = werk(s).telling;
     const rijen: [string, number, string, string][] = [
       ['BUILDING', tel.bouw, KL.geel, 'FINISHING BUILD SITES. COMES FIRST'],
@@ -411,8 +411,8 @@ export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(
         hulp = 'COOLING: HOT SOURCES RECOVER FASTER';
       } else if (c.id === 'lampen') {
         kleur = KL.geel;
-        info = c.krijgt > 0 ? `MINING +${Math.round(MUIZEN_ENERGIE.lampenSneller * c.krijgt * 100)}%` : c.aan ? 'NO POWER' : 'OFF';
-        hulp = 'WORK LAMPS: MICE MINE FASTER';
+        info = c.krijgt > 0 ? `MINING +${Math.round(RATTEN_ENERGIE.lampenSneller * c.krijgt * 100)}%` : c.aan ? 'NO POWER' : 'OFF';
+        hulp = 'WORK LAMPS: RATS MINE FASTER';
       } else {
         const ind = industrie(s);
         kleur = KL.groen;
@@ -554,7 +554,7 @@ export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(
       kPaneel.classList.toggle('aan', paneel);
       kBouw?.classList.toggle('aan', bouw);
     };
-    kPaneel = balkKnop('PANEL', 'power, stock and mice', () => zet(!open, false));
+    kPaneel = balkKnop('PANEL', 'power, stock and rats', () => zet(!open, false));
     if (bouwen) kBouw = balkKnop('BUILD', 'build menu', () => zet(false, !kBouw!.classList.contains('aan')));
   }
   return {

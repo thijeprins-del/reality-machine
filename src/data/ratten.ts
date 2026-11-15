@@ -1,8 +1,8 @@
-// Getallen van de muizen (Thije). Zie DESIGN.md, "Muizen".
-import type { Factie } from '../kern/types';
-import { energieTrucje, type EnergieGetallen } from '../muizen/energie';
-import { industrieTrucje, type IndustrieGetallen } from '../muizen/industrie';
-import { werkTrucje } from '../muizen/werk';
+// Getallen van de pack rats. Zie DESIGN.md.
+import type { Soort } from '../kern/types';
+import { energieTrucje, type EnergieGetallen } from '../ratten/energie';
+import { industrieTrucje, type IndustrieGetallen } from '../ratten/industrie';
+import { werkTrucje } from '../ratten/werk';
 
 // --- Balansknoppen ---
 const AANTAL_MUIZEN = 60; // je krijgt er nooit meer bij
@@ -11,9 +11,9 @@ const GRAAF_SEC = 2.5; // zo lang graaft een muis voor één lading
 const BOOR_SEC = 0.5; // zo lang doet een boor over één brok bij volle stroom (een muis haalt ~0,07 per s, een boor 2 per s)
 const HAND_DEEL = 0.15; // muizen graven met de hand alleen de bovenste 15% van elke tegel; de rest kan alleen een drill
 
-// Stroomnet van de muizen (src/muizen/energie.ts). Bronnen verbranden grondstof uit de opslag.
+// Stroomnet van de muizen (src/ratten/energie.ts). Bronnen verbranden grondstof uit de opslag.
 // Draait om keuzes: wat zet je aan, en overlaad je nu (meer stroom) ten koste van straks (een tijd zwakker)?
-export const MUIZEN_ENERGIE: EnergieGetallen = {
+export const RATTEN_ENERGIE: EnergieGetallen = {
   // stroom/verbruik per stand: LAAG, NORMAAL, OVERLADEN. mk = waarmee je begint (0 = nog niet gebouwd);
   // bouw[i] = kosten om naar MK i+1 te gaan; loot = alleen uit loot te krijgen (nog niet in het spel).
   bronnen: [
@@ -33,10 +33,10 @@ export const MUIZEN_ENERGIE: EnergieGetallen = {
   lampenSneller: 0.6,
 };
 
-// Industrie van de muizen (src/muizen/industrie.ts en werk.ts): fabricators, boren, banden, palen, stapels.
+// Industrie van de muizen (src/ratten/industrie.ts en werk.ts): fabricators, boren, banden, palen, stapels.
 // werk = muis-seconden bouwen op de plek. bouw = wat het neerzetten kost uit de opslag (grondstof en onderdelen).
 // Onderdelen maak je in een fabricator: klik erop en kies een recept. Wat eruit komt gaat naar de opslag.
-export const MUIZEN_INDUSTRIE: IndustrieGetallen = {
+export const RATTEN_INDUSTRIE: IndustrieGetallen = {
   boor: { kW: 2, sec: BOOR_SEC, buffer: 12, bereik: 3, vliegSec: 1.3, werk: 8 },
   band: { kW: 0.05, tegelsPerSec: 2, werk: 1.2 },
   paal: { link: 8, bereik: 5, werk: 3 }, // palen verbinden tot 8 tegels, geven stroom tot 5 tegels
@@ -59,23 +59,14 @@ export const MUIZEN_INDUSTRIE: IndustrieGetallen = {
   ploegBouw: 3, // zoveel muizen tegelijk op één bouwplek
 };
 
-export const MUIZEN: Factie = {
-  id: 'muizen',
-  naam: 'Mice',
+export const RATTEN: Soort = {
+  naam: 'Pack Rats',
   startMachine: { energie: 0, maxEnergie: 100, heelheid: 100, maxHeelheid: 100 },
   startVoorraad: { schroot: 40, hout: 40, kristal: 0, plaat: 4, balk: 2 },
-  streamKosten: {}, // nog te bepalen (K4, K6)
-  gebouwen: [
-    { soort: 'machine', naam: 'Reality machine', hp: 1000, kosten: {}, breed: 4, diep: 4 },
-    { soort: 'opslag', naam: 'Stock', hp: 200, kosten: {}, breed: 2, diep: 2 },
-  ],
-  recepten: [],
-  band: { naam: 'Mouse belt', tegelsPerSec: MUIZEN_INDUSTRIE.band.tegelsPerSec, kosten: MUIZEN_INDUSTRIE.bouw.band },
-  startRecepten: [],
   eenheden: [
     {
       soort: 'muis',
-      naam: 'Mouse',
+      naam: 'Pack Rat',
       hp: 3,
       schade: 0,
       bereik: 0,
@@ -89,10 +80,10 @@ export const MUIZEN: Factie = {
   loot: [],
   trucje: { naam: 'Stroomnet' }, // wordt hieronder het echte trucje
 };
-const stroomnet = energieTrucje(MUIZEN_ENERGIE, MUIZEN.eenheden);
-const industrie = industrieTrucje(MUIZEN_INDUSTRIE);
-const werk = werkTrucje(MUIZEN.eenheden, HAND_DEEL);
-MUIZEN.trucje = {
+const stroomnet = energieTrucje(RATTEN_ENERGIE, RATTEN.eenheden);
+const industrie = industrieTrucje(RATTEN_INDUSTRIE);
+const werk = werkTrucje(RATTEN.eenheden, HAND_DEEL);
+RATTEN.trucje = {
   naam: 'Stroomnet',
   opTik: (s, sec) => {
     werk.opTik?.(s, sec); // muizen kiezen zelf werk

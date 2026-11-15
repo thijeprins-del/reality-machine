@@ -10,7 +10,7 @@ try {
   const page = await browser.newPage();
   page.on('pageerror', (e) => fouten.push(String(e)));
   page.on('console', (m) => m.type() === 'error' && fouten.push(m.text()));
-  await page.goto('http://localhost:4317/?seed=123&factie=muizen');
+  await page.goto('http://localhost:4317/?seed=123');
   await page.waitForFunction(() => window.SPEL !== undefined, null, { timeout: 15000 });
   const staat = await page.evaluate(() => {
     const s = window.SPEL.staat;
@@ -31,7 +31,7 @@ try {
   // Een hele run met gratis stroom: 8 shiften plus finale moeten uitkomen op een gewonnen run (de machine blijft heel).
   const run = await browser.newPage();
   run.on('pageerror', (e) => fouten.push(String(e)));
-  await run.goto('http://localhost:4317/?seed=7&factie=muizen&power=free');
+  await run.goto('http://localhost:4317/?seed=7&power=free');
   await run.waitForFunction(() => window.SPEL !== undefined, null, { timeout: 15000 });
   const eind = await run.evaluate(() => {
     const s = window.SPEL.staat, types = [];

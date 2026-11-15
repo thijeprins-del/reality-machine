@@ -7,7 +7,7 @@ import { FINALE, FINALE_TYPE, FINALE_WRATH, KERN_DIMENSIES, type Uitkomst } from
 import { nieuwLand, rolDimensie, stapLand, typeUitTekst, type LandStaat } from '../land/wrath';
 import type { Archetype } from './types';
 import { hash01 } from './toeval';
-import type { Factie, FactieId, Machine, Voorraad } from './types';
+import type { Soort, Machine, Voorraad } from './types';
 import { maakWerkers, stapWerkers, type Werker } from './werkers';
 
 // Spelregels zonder tekenen. Toeval voor regels altijd via de seed (`toeval`), nooit Math.random.
@@ -20,7 +20,6 @@ export interface SpelStaat {
   gemist: number; // zo vaak kwam de stream terwijl de machine geen volle stroom had
   start?: Start; // waarmee dit spel begon
   klokStil?: boolean; // testgereedschap: de tijd in deze dimensie loopt niet door, dus er komt geen stream
-  factie: FactieId;
   kaart: Kaart;
   machine: Machine;
   voorraad: Voorraad; // wat er in de opslag ligt
@@ -47,7 +46,7 @@ function gerold(seed: number, nummer: number, type?: Archetype) {
   return d;
 }
 
-export function nieuwSpel(seed: number, f: Factie, start: Start = {}): SpelStaat {
+export function nieuwSpel(seed: number, f: Soort, start: Start = {}): SpelStaat {
   const s = { toeval: seed >>> 0 };
   const eerste = Math.max(1, Math.floor(start.shift ?? 1));
   // De kaart en de kleuren volgen het klimaat van de gerolde dimensie; het type uit de URL geldt alleen voor de eerste.
@@ -66,7 +65,6 @@ export function nieuwSpel(seed: number, f: Factie, start: Start = {}): SpelStaat
     dimensie: eerste,
     gemist: 0,
     onderweg: SPRONG_SEC, // het spel begint in het niets en landt dan in de eerste wereld
-    factie: f.id,
     kaart,
     machine: { ...f.startMachine },
     voorraad: { ...f.startVoorraad },
@@ -84,7 +82,7 @@ export function verlies(s: SpelStaat, reden: string): void {
   if (!s.uitkomst) s.uitkomst = { gewonnen: false, reden };
 }
 
-export function stap(s: SpelStaat, f: Factie, sec: number): void {
+export function stap(s: SpelStaat, f: Soort, sec: number): void {
   if (s.uitkomst) return; // de run is voorbij
   if (s.onderweg > 0) {
     // in het niets: niemand loopt, de klok staat stil, alleen het trucje (stroomnet) draait
@@ -108,7 +106,7 @@ export function stap(s: SpelStaat, f: Factie, sec: number): void {
 }
 
 // De stream: alles binnen de gele ring springt naar de volgende dimensie. Daar liggen nieuwe grondstoffen.
-export function stream(s: SpelStaat, f?: Factie): void {
+export function stream(s: SpelStaat, f?: Soort): void {
   s.dimensie += 1;
   s.tijd = 0;
   s.onderweg = SPRONG_SEC;

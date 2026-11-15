@@ -21,7 +21,7 @@ try {
     const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
     const fouten = [];
     page.on('pageerror', (e) => fouten.push(String(e)));
-    await page.goto(`http://localhost:4318/?seed=123&factie=muizen&kaart=${maat}`);
+    await page.goto(`http://localhost:4318/?seed=123&kaart=${maat}`);
     await page.waitForFunction(() => window.SPEL && window.SPEL.staat.onderweg === 0, null, { timeout: 60000 });
     // Rustig kijken (de FPS- en logicacijfers komen van voor de stream), dan een stream: hoe lang duurt een nieuwe wereld.
     await page.waitForTimeout(3000);

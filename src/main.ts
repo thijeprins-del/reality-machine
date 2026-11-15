@@ -1,19 +1,18 @@
 import { Application } from 'pixi.js';
 import { dimensieKleur } from './data/dimensies';
-import { MUIZEN } from './data/muizen';
+import { RATTEN } from './data/ratten';
 import { maakBesturing } from './kern/besturing';
 import { versieTekst } from './kern/omgeving';
 import { beeldKlaar, markeer, maakOverlay, rapport, zetExtra } from './kern/prestatie';
-import { kiesFactie, maakBalk } from './kern/scherm';
+import { maakBalk } from './kern/scherm';
 import { nieuwSpel, restTijd, seedUitAdres, startUitAdres, stap, stream, type SpelStaat } from './kern/spel';
 import { FINALE, RUN_SHIFTS } from './data/run';
 import { WRATH_MAX, WRATH_STADIA } from './data/wrath';
 import { landSprites } from './land/beeld';
 import { geefWrath, overval, stadium, stadiumNummer } from './land/wrath';
-import type { Factie, FactieBeeld, FactieId } from './kern/types';
 import { stuur } from './kern/werkers';
 import { WereldBeeld } from './kern/wereldbeeld';
-import { muizenBeeld } from './muizen/beeld';
+import { rattenBeeld } from './ratten/beeld';
 
 declare global {
   interface Window {
@@ -32,13 +31,7 @@ declare global {
   }
 }
 
-// Speelbare facties. De otters komen erbij zodra Lieuwe src/data/otters.ts en src/otters/ heeft.
-// `paneel`: eigen bediening van een factie over de wereld (muizen: het stroomnet). Elke factie mag iets anders hebben.
-// Het paneel krijgt ook het wereldbeeld, zodat een factie eigen dingen in de wereld kan tekenen en neerzetten.
-type Paneel = (staat: () => SpelStaat, beeld: WereldBeeld) => { werk(sec: number): void };
-const FACTIES: Partial<Record<FactieId, { data: Factie; beeld: () => FactieBeeld; paneel?: () => Promise<Paneel> }>> = {
-  muizen: { data: MUIZEN, beeld: muizenBeeld, paneel: async () => (await import('./muizen/paneel')).maakPaneel },
-};
+// Er is één soort: de pack rats. Het spel begint meteen (in het niets, op weg naar de eerste wereld).
 
 async function start(): Promise<void> {
   window.PERF = { rapport };
@@ -49,33 +42,24 @@ async function start(): Promise<void> {
   document.getElementById('versie')!.textContent = versieTekst();
 
   const adres = new URLSearchParams(location.search);
-  // Visuele proto's per factie: ?proto=muizen
-  if (adres.get('proto') === 'muizen') {
-    const { toonMuizenProto } = await import('./muizen/proto');
+  // Visuele proto: ?proto=ratten
+  if (adres.get('proto') === 'ratten') {
+    const { toonMuizenProto } = await import('./ratten/proto');
     await toonMuizenProto(app);
     return;
   }
 
-  // ?factie=muizen slaat het menu over (handig voor de rooktest)
-  let id = adres.get('factie') as FactieId | null;
-  if (!id || !FACTIES[id])
-    id = await kiesFactie([
-      { id: 'muizen', naam: 'Mice', regel: 'Hundreds of mice, gigantic machines.', speelbaar: !!FACTIES.muizen },
-      { id: 'otters', naam: 'Otters', regel: FACTIES.otters ? 'Lieuwe' : 'Still being made (Lieuwe).', speelbaar: !!FACTIES.otters },
-    ]);
-  const factie = FACTIES[id]!;
-
   const start = startUitAdres();
-  let staat = nieuwSpel(seedUitAdres(), factie.data, start);
+  let staat = nieuwSpel(seedUitAdres(), RATTEN, start);
   window.SPEL = {
     get staat() {
       return staat;
     },
-    stap: (sec) => stap(staat, factie.data, sec),
+    stap: (sec) => stap(staat, RATTEN, sec),
     zaai: (seed) => {
-      staat = nieuwSpel(seed, factie.data, start);
+      staat = nieuwSpel(seed, RATTEN, start);
     },
-    stream: () => stream(staat, factie.data),
+    stream: () => stream(staat, RATTEN),
     wrath: (n) => geefWrath(staat, n),
     overval: (n = 3) => overval(staat, n),
     terrein: () => beeld.bewerker.alsJson(),
@@ -83,7 +67,7 @@ async function start(): Promise<void> {
     stuur: (ids, kol, rij) => stuur(staat, ids === 'alle' ? staat.werkers.map((w) => w.id) : ids, kol, rij),
   };
 
-  const fb = factie.beeld();
+  const fb = rattenBeeld();
   const beeld = new WereldBeeld(staat, { ...fb, sprites: { ...fb.sprites, ...landSprites() } });
   await beeld.laad();
   markeer('world ready');
@@ -94,7 +78,7 @@ async function start(): Promise<void> {
   );
   let eind: HTMLElement | null = null;
   const balk = maakBalk();
-  const paneel = factie.paneel ? (await factie.paneel())(() => staat, beeld) : null;
+  const paneel = (await import('./ratten/paneel')).maakPaneel(() => staat, beeld);
 
   markeer('ui ready');
   maakOverlay();
@@ -102,10 +86,10 @@ async function start(): Promise<void> {
   app.ticker.add((t) => {
     const t0 = performance.now();
     const sec = Math.min(0.1, t.deltaMS / 1000);
-    stap(staat, factie.data, sec);
+    stap(staat, RATTEN, sec);
     besturing.werk(sec);
     beeld.werk(sec, besturing.selectie);
-    paneel?.werk(sec);
+    paneel.werk(sec);
     const rest = Math.ceil(restTijd(staat));
     const v = staat.voorraad;
     const bezig = staat.werkers.filter((w) => w.taak !== 'rust').length;
@@ -117,7 +101,7 @@ async function start(): Promise<void> {
       wrathRegel(staat),
       `Machine: power ${Math.floor((100 * staat.machine.energie) / staat.machine.maxEnergie)}% · integrity ${Math.floor(staat.machine.heelheid)}%${rest <= 60 && staat.onderweg <= 0 && !staat.start?.gratisStroom && (staat.machine.energie < staat.machine.maxEnergie || staat.machine.heelheid < 50) ? ' · <b style="color:#ff3030">NOT READY FOR THE STREAM: you lose if it comes now</b>' : ' (needs 100% power and 50% integrity at the stream)'}`,
       `Stock: scrap ${Math.floor(v.schroot ?? 0)} · wood ${Math.floor(v.hout ?? 0)} · crystal ${Math.floor(v.kristal ?? 0)}`,
-      `${factie.data.naam}: ${staat.werkers.length} (${bezig} working) · selected ${besturing.selectie.size}`,
+      `${RATTEN.naam}: ${staat.werkers.length} (${bezig} working) · selected ${besturing.selectie.size}`,
     ]);
     if (staat.uitkomst && !eind) eind = toonEinde(staat);
     markeer('first frame');

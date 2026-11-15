@@ -22,7 +22,7 @@ import { KL } from './paneel';
 
 declare global {
   interface Window {
-    MUIZEN: {
+    RATTEN: {
       industrie: () => ReturnType<typeof industrie>;
       zoekBoorplek: (goed: string) => [number, number] | null;
       zet: (d: Bouwsel, x: number, y: number, goed?: Goed) => boolean;
@@ -212,7 +212,7 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
         const bx = 6 + n * (pw + 4), m = vakken.length;
         knopVlak(bx, y, pw, 12, st.prio === n, wijst === m);
         txt(naam, bx + 3, y + 4, st.prio === n ? KL.groen : '#e8e4d4', pw - 5);
-        vak(bx, y, pw, 12, () => stapelPrio(s, st, n as 0 | 1 | 2), n === 2 ? 'HIGH: MICE BRING HERE FIRST AND IT FILLS FIRST' : n === 0 ? 'LOW: FILLS LAST' : 'NORMAL: FILLS AFTER THE MAIN STOCK');
+        vak(bx, y, pw, 12, () => stapelPrio(s, st, n as 0 | 1 | 2), n === 2 ? 'HIGH: RATS BRING HERE FIRST AND IT FILLS FIRST' : n === 0 ? 'LOW: FILLS LAST' : 'NORMAL: FILLS AFTER THE MAIN STOCK');
       });
       y += 14;
     } else if (f) {
@@ -224,7 +224,7 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
       R(10, y, SW - 20, 4, '#050505');
       R(10, y, Math.round((SW - 20) * f.klok), 4, KL.cyaan);
       y += 7;
-      txt(`OUTPUT ${f.buffer.length}/${G.fabricator.buffer}  MICE ${f.ploeg}/${G.fabricator.ploeg}`, 10, y, KL.label, SW - 20);
+      txt(`OUTPUT ${f.buffer.length}/${G.fabricator.buffer}  RATS ${f.ploeg}/${G.fabricator.ploeg}`, 10, y, KL.label, SW - 20);
       y += 8;
       txt(f.af ? `NEEDS ${kostTekst(f.nodig, true)}` : `INPUT ${kostTekst(f.invoer, true).replace('FREE', 'NONE')}`, 10, y, KL.label, SW - 20);
       y += 10;
@@ -236,7 +236,7 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
           txt(naamVan(d), 10, y + 4, f.recept === d ? KL.groen : '#e8e4d4');
           txt(`${kostTekst(r.in, true)} > ${r.uit}`, 50, y + 4, kostKleur(s, r.in), SW - 58);
         } else txt('STOP', 10, y + 4, f.recept === null ? KL.groen : '#e8e4d4');
-        vak(6, y, SW - 10, 12, () => kiesRecept(s, f, d), d ? `MAKE ${naamVan(d)}. OUTPUT GOES TO THE STOCK BY BELT OR BY MICE` : 'STOP THIS FABRICATOR');
+        vak(6, y, SW - 10, 12, () => kiesRecept(s, f, d), d ? `MAKE ${naamVan(d)}. OUTPUT GOES TO THE STOCK BY BELT OR BY RATS` : 'STOP THIS FABRICATOR');
         y += 14;
       }
     } else {
@@ -379,7 +379,7 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
   });
 
   // Testhaak voor de console en de rooktest
-  window.MUIZEN = {
+  window.RATTEN = {
     industrie: () => industrie(staat()),
     zoekBoorplek: (goed) => {
       const s = staat();

@@ -1,5 +1,5 @@
 // Tekenscript voor de muizen-sprites. Draai: node scripts/pixel/muizen.mjs
-// Schrijft PNG's naar assets/muizen/ (plus <naam>-gloed.png voor neon) en de ankers naar src/muizen/sprites.ts.
+// Schrijft PNG's naar assets/muizen/ (plus <naam>-gloed.png voor neon) en de ankers naar src/ratten/sprites.ts.
 // Stijl: grauwe, duistere industrie. Muizen klein en pluizig (en vuil); hun machines gigantisch, hoekig en semi-3D.
 // Bruin, staal en legergroen, roest, olie, veel te veel kabels. Neon is het enige felle, en dat gloeit echt.
 import { Doek, ruis } from './pixel.mjs';
@@ -109,32 +109,46 @@ const MUIS_KAART = [
   '.mLLmt',
   '..p.p.',
 ];
+// PACK RAT: de rat die over het eiland loopt. Groter en grauwer dan de muisjes in de voertuigen: lang lijf, lange
+// spitse snuit met een roze neus, rond oor, neonbril (gloeit groen) en een kale staart die achter hem aan sleept.
+// Kijkt naar rechts. De sprites heten nog 'muis' (zo kent de code de eenheid).
+const RAT_KAART = [
+  '..........oo....',
+  '.........opo....',
+  '...ddddd.oLL....',
+  '..dLLLLLdLLgLL..',
+  '.dLLLLLLLLLLLLLn',
+  '.dLLLLLLLLhhhh..',
+  '.tLLLLLLLhh.....',
+  'tt.mm...mm......',
+];
 function tekenMuis(naam, variant) {
-  const d = new Doek(11, 10);
+  const d = new Doek(19, 11);
   const v = T.vacht;
-  const kleur = { o: v[3], L: v[4], h: v[5], m: v[3], n: K.neus, t: K.neus, p: K.oorBinnen ?? K.neus, g: v[4] };
-  const ox = 1, oy = 1;
-  MUIS_KAART.forEach((regel, y) => [...regel].forEach((c, x) => { if (c !== '.') d.zet(ox + x, oy + y, kleur[c]); }));
+  const kleur = { o: v[2], L: v[2], d: v[1], h: v[4], m: v[1], n: K.neus, t: K.neus, p: K.oorBinnen, g: v[3] };
+  const ox = 2, oy = 2;
+  RAT_KAART.forEach((regel, y) => {
+    if (regel.length !== 16) throw new Error('RAT_KAART: regel ' + y + ' is niet 16 breed');
+    [...regel].forEach((c, x) => { if (c !== '.') d.zet(ox + x, oy + y, kleur[c]); });
+  });
   if (variant === 'monteur') {
-    // te grote moersleutel
-    d.lijn(ox + 5, oy + 6, ox + 8, oy + 3, T.staal[6]);
-    d.zet(ox + 9, oy + 2, T.staal[5]); d.zet(ox + 8, oy + 2, T.staal[5]);
+    // te grote moersleutel, schuin over de rug
+    d.lijn(ox + 2, oy + 1, ox + 6, oy, T.staal[6]);
+    d.zet(ox + 7, oy - 1, T.staal[5]); d.zet(ox + 7, oy + 1, T.staal[5]);
   }
-  // met lading: een bundeltje op de rug (links, want de muis kijkt naar rechts)
+  // met lading: een bundel op de rug
   const lading = {
     schroot: [T.staal[5], T.staal[3], T.roest[4], T.staal[6]],
     hout: [T.bruin[6], T.bruin[4], T.bruin[3], T.bruin[7]],
     kristal: [T.glas[4], T.glas[3], T.glas[5], T.glas[5]],
   }[variant];
   if (lading) {
-    for (let j = 0; j < 3; j++) for (let i = 0; i < 2; i++) d.zet(ox - 1 + i, oy + 3 + j, lading[(i + j) % 3]);
-    d.zet(ox, oy + 2, lading[3]);
-    if (variant === 'kristal') d.licht(ox - 1, oy + 3, N.magenta);
+    for (let j = 0; j < 3; j++) for (let i = 0; i < 4; i++) d.zet(ox + 3 + i, oy - 1 + j, lading[(i + j) % 3]);
+    d.zet(ox + 4, oy - 2, lading[3]); d.zet(ox + 5, oy - 2, lading[3]);
+    if (variant === 'kristal') d.licht(ox + 3, oy - 1, N.magenta);
   }
-  // geen buitenlijn: net als de piloten, simpel en zacht
-  d.licht(ox + 2, oy + 2, N.gif);
-  d.licht(ox + 4, oy + 2, N.gif);
-  bewaar(naam, d, ox + 3, oy + 7, 0);
+  d.licht(ox + 11, oy + 3, N.gif);
+  bewaar(naam, d, ox + 6, oy + 7, 0);
 }
 
 
@@ -885,7 +899,7 @@ const regels = Object.entries(ankers).map(
     `  '${n}': { w: ${a.w}, h: ${a.h}, ankerX: ${a.ankerX}, ankerY: ${a.ankerY}, tegels: ${a.tegels}, gloed: ${a.gloed} },`,
 );
 writeFileSync(
-  join(wortel, 'src', 'muizen', 'sprites.ts'),
+  join(wortel, 'src', 'ratten', 'sprites.ts'),
   `// Gegenereerd door scripts/pixel/muizen.mjs. Niet met de hand aanpassen.\n` +
     `// anker = pixel in de sprite die op de achterhoek van de tegel valt (voor muizen: de voeten).\n` +
     `// gloed = er is een <naam>-gloed.png met alleen de neonpixels, voor de gloedlaag.\n` +

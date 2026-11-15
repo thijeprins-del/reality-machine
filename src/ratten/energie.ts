@@ -4,7 +4,7 @@
 // - Overladen geeft flink meer stroom, maar de bron wordt heet. Een hete bron levert daarna een tijd minder
 //   (bij 100 hitte nog maar de helft, en dan springt hij terug naar NORMAAL). Niets gaat stuk.
 // - Verbruikers staan op volgorde: bij een tekort krijgen de bovensten eerst, de onderste valt uit.
-// Puur regels, geen tekenen en geen Math.random. Getallen in src/data/muizen.ts (MUIZEN_ENERGIE).
+// Puur regels, geen tekenen en geen Math.random. Getallen in src/data/ratten.ts (RATTEN_ENERGIE).
 import type { EenheidSoort, Grondstof, Trucje, Voorraad } from '../kern/types';
 import type { SpelStaat } from '../kern/spel';
 import { industrieVraag } from './industrie';
@@ -92,7 +92,7 @@ export function energie(s: SpelStaat): EnergieStaat {
       trend: { schroot: 0, hout: 0, kristal: 0 },
       trendT: 0,
       vorige: { schroot: v.schroot ?? 0, hout: v.hout ?? 0, kristal: v.kristal ?? 0 },
-      log: [{ tekst: 'MICE ARE RUNNING IN THE WHEEL. CHOOSE WHAT GETS POWER', kleur: 'groen' }],
+      log: [{ tekst: 'RATS ARE RUNNING IN THE WHEEL. CHOOSE WHAT GETS POWER', kleur: 'groen' }],
       gemist: s.gemist,
     };
     STATEN.set(s, e);

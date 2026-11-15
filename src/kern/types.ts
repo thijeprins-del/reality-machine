@@ -1,8 +1,5 @@
-// Het contract tussen kern en facties. De kern kent alleen deze types, nooit muizen- of ottercode.
-// Nieuw veld nodig? Kleine aparte PR op dit bestand, de ander kijkt mee. Zie DESIGN.md, "Samenwerking facties".
+// Het contract tussen de kern en de soort die je speelt (de pack rats, src/ratten/). De kern kent alleen deze types.
 import type { SpelStaat } from './spel';
-
-export type FactieId = 'muizen' | 'otters';
 
 // Goederen. Ruwe grondstoffen (uit dimensies) zijn voor beide facties dezelfde; tussenproducten en eindproducten
 // mag elke factie zelf verzinnen (gewoon een string, bv. 'tandwiel' of 'dambalk'). Goederen reizen over lopende banden.
@@ -94,17 +91,12 @@ export interface Trucje {
   opStream?: (s: SpelStaat) => void;
 }
 
-// Alles wat een factie aan de kern geeft. Getallen staan in src/data/<factie>.ts.
-export interface Factie {
-  id: FactieId;
+// Alles wat de soort aan de kern geeft. Getallen staan in src/data/ratten.ts. Gebouwen, recepten en startkapitaal
+// gaan naar de economie van een wereld (economies/), niet naar de soort.
+export interface Soort {
   naam: string;
   startMachine: Machine;
   startVoorraad: Voorraad;
-  streamKosten: Voorraad; // wat de machine per stream verbruikt: het eind van de lange keten
-  gebouwen: GebouwSoort[];
-  recepten: Recept[];
-  band: BandSoort;
-  startRecepten: string[]; // recept-id's die je vanaf het begin kent; de rest komt uit loot
   eenheden: EenheidSoort[];
   startEenheden: Partial<Record<string, number>>; // soort -> aantal bij de start (bv. honderden muizen)
   vondsten: VondstSoort[];
@@ -114,7 +106,6 @@ export interface Factie {
 
 // Dingen op het veld.
 export interface Eenheid {
-  factie: FactieId;
   soort: string;
   hp: number;
   x: number;
@@ -122,7 +113,6 @@ export interface Eenheid {
 }
 
 export interface Gebouw {
-  factie: FactieId;
   soort: string;
   hp: number;
   x: number;
@@ -150,7 +140,7 @@ export interface SpriteInfo {
   tegels: number; // 0 = eenheid, anders breedte in tegels
 }
 
-export interface FactieBeeld {
+export interface SoortBeeld {
   sprites: Record<string, SpriteInfo>;
   lading?: Partial<Record<Grondstof, string>>; // sprite van een eenheid die deze grondstof draagt
 }
