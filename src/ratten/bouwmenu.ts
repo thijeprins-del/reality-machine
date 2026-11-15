@@ -1,4 +1,4 @@
-// Het bouwmenu rechts: een kaart per gebouw van deze wereld (plaatje, naam, sneltoets, kosten), daaronder alles over het
+// Het bouwmenu rechts: een kaart per gebouw van deze wereld (plaatje, naam, kosten), daaronder alles over het
 // gebouw dat je aanwijst of gekozen hebt (wat het doet, kosten tegen wat je hebt, stroom, ploeg, recepten met iconen),
 // en het gebouw dat je in de wereld hebt aangeklikt (stand, recept kiezen, wat een band uit een magazijn trekt).
 // In de kop staat welke economie geldt en uit welk bestand ze komt (handig bij het schaven aan economies/*.json).
@@ -11,23 +11,23 @@ import { gebouwPlaatje, goedIcoon } from './beeld';
 import { bouwSoorten, industrie, kiesRecept, opslagMax, opslagVol, receptenVan, receptVan, soortVan, zetUit, type Gebouw, type Oordeel } from './industrie';
 import { kanBetalen, naamVan } from './kosten';
 
-export interface Knop { id: string; naam: string; toets: string; uitleg: string; soort?: BouwSoort }
+export interface Knop { id: string; naam: string; uitleg: string; soort?: BouwSoort }
 export function uitlegVan(b: BouwSoort): string {
-  if (b.aard === 'belt') return 'Drag from an arrow on the right of a building to storage, or to an arrow on the left of another. R turns a single tile.';
+  if (b.aard === 'belt') return 'Drag from an output arrow of a building to storage, or to an input arrow (the ones with a bar) of another. R turns a single tile.';
   if (b.aard === 'pole') return 'Carries power. Cables run from pole to pole.';
   if (b.aard === 'sink') return 'Storage for anything. Click it to let a belt next to it take goods out.';
   if (b.aard === 'trash') return 'Destroys what a belt brings in.';
   if (b.aard === 'splitter') return 'A junction: belts run in and out, what comes in leaves in turns.';
   if (b.aard === 'merger') return 'A junction: several belts run in, one runs out.';
-  if (b.generator) return 'A generator: it burns fuel and gives power while it burns. Bring fuel by belt (arrows on the left) or by rats.';
+  if (b.generator) return 'A generator: it burns fuel and gives power while it burns. Bring fuel by belt (to an input arrow) or by rats. R turns its arrows.';
   if (b.onDeposit) return `Place it next to a field of ${b.depRes.map((g) => naamVan(g).toLowerCase()).join(' or ')}. The machine throws it there. It digs out the whole field.`;
-  return `Makes goods from a recipe. Bring its input by belt (arrows on the left) or by rats${b.recipes.length > 1 ? '; click it to pick a recipe' : ''}.`;
+  return `Makes goods from a recipe. Bring its input by belt (to an input arrow, the ones with a bar) or by rats${b.recipes.length > 1 ? '; click it to pick a recipe' : ''}. R turns its arrows.`;
 }
 const soortNaam = (b: BouwSoort): string =>
   b.aard === 'belt' || b.aard === 'splitter' || b.aard === 'merger' ? 'LOGISTICS' : b.aard === 'pole' || b.generator ? 'POWER' : b.aard === 'sink' ? 'STORAGE' : b.aard === 'trash' ? 'WASTE' : b.onDeposit ? 'EXTRACTION' : 'PRODUCTION';
 export const knoppen = (): Knop[] => [
-  ...bouwSoorten().map((b) => ({ id: b.id, naam: b.name, toets: b.key, uitleg: uitlegVan(b), soort: b })),
-  { id: 'sloop', naam: 'DEMOLISH', toets: 'X', uitleg: 'Click or drag over what you want gone. You get the build cost back.' },
+  ...bouwSoorten().map((b) => ({ id: b.id, naam: b.name, uitleg: uitlegVan(b), soort: b })),
+  { id: 'sloop', naam: 'DEMOLISH', uitleg: 'Click or drag over what you want gone. You get the build cost back. Key: X.' },
 ];
 
 const veilig = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -96,7 +96,7 @@ export function maakBouwmenu(h: BouwmenuHaken): { werk(sec: number): void; zicht
       const b = k.soort, plaatje = b ? gebouwPlaatje(b) : undefined;
       const duur = b && !kanBetalen(s.voorraad, b.cost);
       return `<button class="kaart${h.modus() === k.id ? ' aan' : ''}${duur ? ' duur' : ''}${b ? '' : ' sloop'}" data-kies="${k.id}">
-        ${k.toets ? `<span class="toets">${k.toets}</span>` : ''}
+        ${b ? '' : '<span class="toets">X</span>'}
         <span class="beeld">${plaatje ? `<img src="${plaatje}" alt="">` : b ? `<i style="background:${b.color}"></i>` : '<b>X</b>'}</span>
         <span class="naam">${veilig(k.naam)}</span>
         <span class="kost">${b ? stuks(b.cost, s.voorraad) + (b.aard === 'belt' ? '<span class="per">/tile</span>' : '') : '<span class="stuk gratis">COST BACK</span>'}</span>
@@ -151,9 +151,10 @@ export function maakBouwmenu(h: BouwmenuHaken): { werk(sec: number): void; zicht
       standHtml = `<p class="${g.geblokt ? 'geblokt' : 'draait'}">${veilig(g.geblokt || (r ? r.name.toUpperCase() : 'IDLE'))}</p>
         <div class="balk"><i style="width:${Math.round(100 * Math.min(1, g.klok))}%"></i></div>
         <div class="feiten">${b.generator ? `<span><i>GIVES</i>${g.betaald && !g.geblokt ? r?.power ?? 0 : 0} kW</span>` : `<span><i>OUTPUT</i>${Math.round(volumeVan(telling, (x) => goed(x).volume))}/${b.storage}</span>`}${b.crew ? `<span><i>RATS</i>${g.ploeg}/${b.crew}</span>` : ''}${b.kW ? `<span><i>POWER</i>${b.kW} kW</span>` : ''}</div>
-        ${r && !leeg(r.inputs) ? `<div class="rij"><i>IN (LEFT)</i><span class="lijst">${Object.keys(r.inputs).map((x) => `<span class="stuk">${icoon(x)}${Math.floor(g.invoer[x] ?? 0)}</span>`).join('')}</span></div>` : ''}
-        ${r && !leeg(r.outputs) ? `<div class="rij"><i>OUT (${b.onDeposit ? 'ANY SIDE' : 'RIGHT'})</i><span class="lijst">${Object.keys(r.outputs).map((x) => `<span class="stuk">${icoon(x)}${telling[x] ?? 0}</span>`).join('')}</span></div>` : ''}`;
+        ${r && !leeg(r.inputs) ? `<div class="rij"><i>IN</i><span class="lijst">${Object.keys(r.inputs).map((x) => `<span class="stuk">${icoon(x)}${Math.floor(g.invoer[x] ?? 0)}</span>`).join('')}</span></div>` : ''}
+        ${r && !leeg(r.outputs) ? `<div class="rij"><i>OUT</i><span class="lijst">${Object.keys(r.outputs).map((x) => `<span class="stuk">${icoon(x)}${telling[x] ?? 0}</span>`).join('')}</span></div>` : ''}`;
     } else vastHtml += `<p>${veilig(uitlegVan(b))}</p>`;
+    if (b.aard === 'prod' && !b.onDeposit) vastHtml += '<p class="tip">R turns its arrows: where belts go in and come out.</p>';
     return [vastHtml, standHtml];
   }
 

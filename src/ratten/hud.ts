@@ -10,7 +10,7 @@ import type { SpelStaat } from '../kern/spel';
 import type { Goed, Voorraad } from '../kern/types';
 import { goedIcoon } from './beeld';
 import { energie } from './energie';
-import { bouwSoorten, opslagMax, opslagVol } from './industrie';
+import { opslagMax, opslagVol } from './industrie';
 import { werk } from './werk';
 
 const kw = (n: number) => (Math.abs(n % 1) > 0.05 ? n.toFixed(1) : String(Math.round(n)));
@@ -78,14 +78,15 @@ export function maakHud(staat: () => SpelStaat, stroom: Dialoog): { werk(sec: nu
   function besturingHtml(): string {
     const rij = ([a, b]: [string, string]) => `<tr><th>${veilig(a)}</th><td>${veilig(b)}</td></tr>`;
     const bouw: [string, string][] = [
-      ...bouwSoorten().filter((b) => b.key).map((b): [string, string] => [b.key, `build: ${b.name.toLowerCase()}`]),
+      ['Click a card', 'pick a building from the build menu, then click the ground'],
+      ['R', 'turn the arrows of a building (where belts go in and out): while placing it, or after clicking it. With a belt: turn a single tile'],
       ['X', 'demolish (click or drag); you get the cost back'],
-      ['R', 'turn a single belt tile'],
       ['Click a building', 'set it up: its recipe, or what a belt takes out of storage'],
+      ['Right click / Esc', 'stop building'],
     ];
     const net: [string, string][] = [['1', 'wheel on / off'], ['Shift + 1', 'wheel dial: low, normal, overcharge'], ['4 5 6 7', 'consumer on / off'], ['F1', 'grid and heights'], ['F2', 'terrain editor (the clock stops)']];
     return `<h3>Rats and camera</h3><table>${besturing().map(rij).join('')}</table>
-      <h3>Building in this world</h3><table>${bouw.map(rij).join('')}</table>
+      <h3>Building</h3><table>${bouw.map(rij).join('')}</table>
       <h3>Power and tools</h3><table>${net.map(rij).join('')}</table>`;
   }
 

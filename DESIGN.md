@@ -79,14 +79,14 @@ wereld. Het spel leest twee mappen met JSON-bestanden, zodat je kunt schaven zon
   - `buildings`: wat je kunt bouwen. Het gedrag komt uit de soort: productie (met `recipes`), winning (`onDeposit`: staat
     bij een veld en draait het recept dat dat veld geeft), magazijn (`sink`), vernietiger (`trash`), `splitter`,
     `merger`, band (`belt`) en paal (`pole`). Verder kosten, bouwtijd (`work`), maat (`size` 1 of 2), stroom (`kW`),
-    ploeg (`crew`), `insideRing`, `sprite` en sneltoets (`key`). Nieuw gedrag vraagt code; een nieuw gebouw niet.
+    ploeg (`crew`), `insideRing` en `sprite`. Nieuw gedrag vraagt code; een nieuw gebouw niet.
   - `startingResources`: het startkapitaal. `settings.warehouseStorage`: het volume van het magazijn waarmee je begint.
 - **Lezen en controleren**: `src/kern/economie.ts` en `src/kern/wereldtypes.ts`, bij het laden van het spel. Een fout
   (onbekend recept, onbekende tegelset) laat `npm test` falen met de melding. Een nieuw bestand moet ook in de lijst in
   `economies/index.ts` of `worldtypes/index.ts`.
 - **Een goed is zijn id.** Naam, kleur en plaatje horen bij de economie. Twee economieën mogen hetzelfde id anders
   aankleden ("water" hier, "Murky water" daar): elk recept dat `water` vraagt neemt beide. Alleen `volume` moet gelijk zijn.
-- **Aansluitpunten** (`poortenVan` in `src/ratten/industrie.ts`), zoals in de sandbox: invoer links, uitvoer rechts. In
+- **Aansluitpunten** (`poortenVan` in `src/ratten/industrie.ts`), zoals in de sandbox: eerst invoer links, uitvoer rechts; met R draai je ze een kwartslag (`draai` op het gebouw). In
   beeld is links de zuid- en de westkant van het gebouw, rechts de oost- en de noordkant. Elk goed van het recept krijgt om
   de beurt een tegel: een band levert alleen af op de ingang van zijn goed, en een band die op een uitgang begint draagt
   alleen dat product. Een winningsgebouw geeft af aan alle kanten (het staat tegen zijn veld). De punten staan altijd in

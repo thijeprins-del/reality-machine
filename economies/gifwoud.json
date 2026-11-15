@@ -22,15 +22,15 @@
     { "id": "stook_biomassa", "name": "Burn biomass", "time": 5, "inputs": { "biomassa": 1 }, "power": 5 }
   ],
   "buildings": [
-    { "id": "zagerij", "name": "SAWMILL", "color": "#9a6b34", "sprite": "zagerij-2", "size": 2, "insideRing": true, "cost": { "hout": 15 }, "work": 10, "kW": 2, "crew": 2, "storage": 8, "recipes": ["balk", "biomassa"], "key": "Z" },
-    { "id": "harspers", "name": "RESIN PRESS", "color": "#c99a1e", "sprite": "harspers", "size": 2, "insideRing": true, "cost": { "hout": 10, "hars": 5 }, "work": 10, "kW": 2, "crew": 2, "storage": 8, "recipes": ["plaat", "sporenkoek"], "key": "F" },
-    { "id": "biomassabrander", "name": "BIOMASS BURNER", "color": "#ff5a2a", "sprite": "houtbrander", "key": "G", "size": 2, "insideRing": true, "cost": { "plaat": 4, "balk": 4 }, "work": 10, "storage": 8, "recipes": ["stook_biomassa"] },
-    { "id": "boor", "name": "HARVESTER", "color": "#7a5c48", "sprite": "oogster", "key": "B", "size": 2, "onDeposit": true, "range": 3, "cost": { "plaat": 3, "balk": 1 }, "work": 8, "kW": 2, "storage": 12, "recipes": ["mijn_hout", "mijn_hars", "mijn_sporen"] },
-    { "id": "band", "name": "BELT", "color": "#5b554b", "sprite": "band-leeg", "key": "L", "belt": true, "speed": 2, "kW": 0.05, "cost": { "plaat": 1 }, "work": 1.2 },
-    { "id": "paal", "name": "POLE", "color": "#6a552d", "sprite": "mast", "key": "P", "pole": true, "link": 8, "reach": 5, "cost": { "balk": 1 }, "work": 3 },
-    { "id": "stapel", "name": "WAREHOUSE", "color": "#55606b", "sprite": "stapel", "key": "O", "sink": true, "storage": 150, "size": 2, "insideRing": true, "cost": { "balk": 4 }, "work": 6 },
-    { "id": "kist", "name": "SMALL STORE", "color": "#55606b", "sprite": "stapel-1", "key": "K", "sink": true, "storage": 40, "size": 1, "insideRing": true, "cost": { "balk": 1 }, "work": 2 },
-    { "id": "splitter", "name": "SPLITTER", "color": "#4d6478", "sprite": "splitter", "key": "T", "splitter": true, "ports": 3, "size": 1, "cost": { "plaat": 2 }, "work": 2 },
-    { "id": "merger", "name": "MERGER", "color": "#6a5a80", "sprite": "merger", "key": "M", "merger": true, "ports": 3, "size": 1, "cost": { "plaat": 2 }, "work": 2 }
+    { "id": "zagerij", "name": "SAWMILL", "color": "#9a6b34", "sprite": "zagerij-2", "size": 2, "insideRing": true, "cost": { "hout": 15 }, "work": 10, "kW": 2, "crew": 2, "storage": 8, "recipes": ["balk", "biomassa"] },
+    { "id": "harspers", "name": "RESIN PRESS", "color": "#c99a1e", "sprite": "harspers", "size": 2, "insideRing": true, "cost": { "hout": 10, "hars": 5 }, "work": 10, "kW": 2, "crew": 2, "storage": 8, "recipes": ["plaat", "sporenkoek"] },
+    { "id": "biomassabrander", "name": "BIOMASS BURNER", "color": "#ff5a2a", "sprite": "houtbrander", "size": 2, "insideRing": true, "cost": { "plaat": 4, "balk": 4 }, "work": 10, "storage": 8, "recipes": ["stook_biomassa"] },
+    { "id": "boor", "name": "HARVESTER", "color": "#7a5c48", "sprite": "oogster", "size": 2, "onDeposit": true, "range": 3, "cost": { "plaat": 3, "balk": 1 }, "work": 8, "kW": 2, "storage": 12, "recipes": ["mijn_hout", "mijn_hars", "mijn_sporen"] },
+    { "id": "band", "name": "BELT", "color": "#5b554b", "sprite": "band-leeg", "belt": true, "speed": 2, "kW": 0.05, "cost": { "plaat": 1 }, "work": 1.2 },
+    { "id": "paal", "name": "POLE", "color": "#6a552d", "sprite": "mast", "pole": true, "link": 8, "reach": 5, "cost": { "balk": 1 }, "work": 3 },
+    { "id": "stapel", "name": "WAREHOUSE", "color": "#55606b", "sprite": "stapel", "sink": true, "storage": 150, "size": 2, "insideRing": true, "cost": { "balk": 4 }, "work": 6 },
+    { "id": "kist", "name": "SMALL STORE", "color": "#55606b", "sprite": "stapel-1", "sink": true, "storage": 40, "size": 1, "insideRing": true, "cost": { "balk": 1 }, "work": 2 },
+    { "id": "splitter", "name": "SPLITTER", "color": "#4d6478", "sprite": "splitter", "splitter": true, "ports": 3, "size": 1, "cost": { "plaat": 2 }, "work": 2 },
+    { "id": "merger", "name": "MERGER", "color": "#6a5a80", "sprite": "merger", "merger": true, "ports": 3, "size": 1, "cost": { "plaat": 2 }, "work": 2 }
   ]
 }

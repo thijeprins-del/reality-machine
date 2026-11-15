@@ -55,27 +55,27 @@ De knop **POWER** opent het stroompaneel. Elke knop doet iets; wijs iets aan voo
 
 ## Bouwen
 Rechts zit het bouwmenu (BUILD). In de kop staat de economie van deze wereld en het bestand waar ze uit komt. Elk gebouw
-is een kaart met zijn plaatje, naam, sneltoets (het gele vakje) en kosten: groen = je hebt genoeg, rood = te weinig.
+is een kaart met zijn plaatje, naam en kosten: groen = je hebt genoeg, rood = te weinig.
 Wijs een kaart aan en eronder staat alles over dat gebouw: wat het doet, maat, bouwtijd, stroom, ploeg, de kosten tegen
 wat je hebt, en zijn recepten met iconen. Klik op een gebouw in de wereld en het menu toont zijn stand en zijn knoppen. Wat er te bouwen valt verschilt per wereld; dit zijn de soorten:
-- **Productiegebouw** (in de schrootwereld de **F Fabricator**): binnen de ring. Heeft het meer recepten, klik erop en
+- **Productiegebouw** (in de schrootwereld de pers): binnen de ring. Heeft het meer recepten, klik erop en
   kies rechts wat het maakt (of STOP). Het krijgt zijn invoer van een band die erin loopt of van ratten, en wat het maakt
   gaat op een band die tegen zijn voet begint, of ratten brengen het naar het magazijn. Sommige vragen stroom en een ploeg.
-  **Aansluitpunten**: rond elk productiegebouw liggen pijlen in de kleur van het goed. Links (de twee kanten links in
-  beeld) zitten de ingangen, met een streep achter de pijl: daar moet een band het gebouw in lopen, en hij levert alleen
-  af op de pijl van zijn eigen goed. Rechts zitten de uitgangen: een band die daar begint neemt dat product mee. Heeft een
-  recept twee grondstoffen of twee producten, dan heeft elk zijn eigen pijl. Kies je een band of klik je het gebouw aan,
-  dan lichten de tegels op; het menu rechts noemt wat er in en uit gaat (IN LEFT, OUT RIGHT). Ratten mogen overal bij.
-- **Winningsgebouw** (**B Boor**, DRILL; in de zoutzee het dok, de kelpkwekerij en de zoutpan): klik naast een veld van
+  **Aansluitpunten**: rond elk productiegebouw liggen pijlen in de kleur van het goed. Ingangen hebben een streep achter
+  de pijl: daar moet een band het gebouw in lopen, en hij levert alleen af op de pijl van zijn eigen goed. Op een uitgang
+  begin je een band, die dan dat product meeneemt. Eerst liggen de ingangen links en de uitgangen rechts; met **R** draai
+  je de pijlen een kwartslag (het gebouw zelf blijft staan). Dat kan terwijl je het gebouw neerzet en later, nadat je het
+  hebt aangeklikt. Kies je een band of klik je het gebouw aan, dan lichten de tegels op. Ratten mogen overal bij.
+- **Winningsgebouw** (de boor of de oogster; in de zoutzee het dok, de kelpkwekerij en de zoutpan): klik naast een veld van
   de goede grondstof. De machine gooit het erheen. Het haalt het veld leeg, ook het deel waar ratten niet bij kunnen.
-- **L Band** (BELT): sleep van een gebouw naar het magazijn of een ander gebouw. **R** draait een losse tegel.
-- **P Paal** (POLE): brengt stroom verder. Kabels lopen van paal naar paal; een rode paal hangt nergens aan.
+- **Band** (BELT): sleep van een gebouw naar het magazijn of een ander gebouw. **R** draait een losse tegel.
+- **Paal** (POLE): brengt stroom verder. Kabels lopen van paal naar paal; een rode paal hangt nergens aan.
   Rond de machine is er stroom zonder paal (de groene cirkel als je een gebouw kiest dat stroom vraagt).
-- **Magazijn** (in de schrootwereld **O Stapel** en **K Kleine stapel**): meer opslag, voor alles. Binnen de ring.
+- **Magazijn** (WAREHOUSE en SMALL STORE): meer opslag, voor alles. Binnen de ring.
   Klik erop en kies een goed: een band ernaast die er niet in loopt, trekt dat goed eruit.
 - **Splitter** en **Merger**: een kruispunt van één tegel. Banden lopen erin en eruit; wat erin komt gaat om de beurt de
   banden op die ervan weg lopen. **Incinerator**: vernietigt wat een band erin brengt.
-- **X Slopen** (DEMOLISH): klik of sleep. Je krijgt de kosten terug.
+- **Slopen** (DEMOLISH, toets **X**): klik of sleep. Je krijgt de kosten terug.
 - **De opslag is één voorraad**: alles deelt dezelfde ruimte (STORAGE in het bouwmenu), en grote goederen nemen meer
   plek in. Vol? Bouw een magazijn, of verbruik wat je hebt. Ratten graven een grondstof met de hand maar tot haar deel.
 - Je kunt alles neerzetten, ook als het er nog niet is: ratten brengen de spullen uit de opslag zodra ze er liggen.

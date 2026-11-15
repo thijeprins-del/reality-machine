@@ -14,10 +14,10 @@ import { PIXEL, type Stuk, type WereldBeeld } from '../kern/wereldbeeld';
 import { energie, verbruiker } from './energie';
 import {
   aangesloten, bereikVan, blokVan, bouwSoorten, gebouwOp, getallen, goederen, industrie, kanBandOp, kanZetten, kiesRecept, legBand,
-  magazijnen, makers, midden, palen as allePalen, poorten, poortenVan, RICHTINGEN, sloop, soortVan, tegel, vast, zet,
+  magazijnen, makers, midden, palen as allePalen, draaiPoorten, poorten, poortenVan, RICHTINGEN, sloop, soortVan, tegel, vast, zet,
   type Gebouw, type Oordeel, type Poort,
 } from './industrie';
-import { maakBouwmenu, knoppen } from './bouwmenu';
+import { maakBouwmenu } from './bouwmenu';
 import { kanBetalen, kostTekst } from './kosten';
 import { werk } from './werk';
 
@@ -45,6 +45,7 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
   const canvas = document.body.querySelector('canvas') as HTMLCanvasElement; // het spel zelf (eerste canvas)
   let modus: Modus = null;
   let draai: Richting = 'O'; // richting van een losse bandtegel (R draait)
+  let bouwDraai = 0; // hoe de aansluitpunten staan van het gebouw dat je neerzet (R draait een kwartslag)
   let muis: { kol: number; rij: number } | null = null;
   let sleep: { kol: number; rij: number } | null = null;
   let melding: Oordeel | null = null;
@@ -135,7 +136,7 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
     if (soort?.aard === 'belt') legBand(s, pad({ kol, rij }, eind ?? { kol, rij }));
     else if (modus === 'sloop') for (const p of pad({ kol, rij }, eind ?? { kol, rij })) sloop(s, p.x, p.y);
     else if (soort) {
-      const g = zet(s, soort, kol, rij);
+      const g = zet(s, soort, kol, rij, bouwDraai);
       if (g && !kanBetalen(s.voorraad, soort.cost)) modus = null;
       if (g && soort.aard === 'prod' && !g.recept && !soort.onDeposit) {
         gekozen = g.id; // meer recepten: meteen kiezen
@@ -197,13 +198,21 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
   window.addEventListener('keydown', (e) => {
     if (e.repeat) return;
     const t = e.key.toUpperCase();
-    const k = t.length === 1 ? knoppen().find((x) => x.toets === t) : undefined;
-    if (k && !e.shiftKey && !e.ctrlKey && !e.metaKey) kies(k.id);
+    if (t === 'X' && !e.shiftKey && !e.ctrlKey && !e.metaKey) kies('sloop');
     if (t === 'ESCAPE') {
       kies(null);
       gekozen = null;
     }
-    if (t === 'R' && modusSoort()?.aard === 'belt') draai = ({ O: 'Z', Z: 'W', W: 'N', N: 'O' } as const)[draai];
+    // R draait: een losse bandtegel, de aansluitpunten van het gebouw dat je neerzet, of die van het gebouw dat je aanklikte
+    if (t === 'R' && !e.ctrlKey && !e.metaKey) {
+      const soort = modusSoort();
+      if (soort?.aard === 'belt') draai = ({ O: 'Z', Z: 'W', W: 'N', N: 'O' } as const)[draai];
+      else if (soort) bouwDraai = (bouwDraai + 1) % 4;
+      else {
+        const g = industrie(staat()).gebouwen.find((x) => x.id === gekozen);
+        if (g) draaiPoorten(staat(), g);
+      }
+    }
   });
 
   // Testhaak voor de console en de rooktest
@@ -607,7 +616,7 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
         for (const a of bereikVan(s, soort, kol, rij)) geest.poly(ruitPad(a.x, a.y)).fill({ color: hex(goed(a.goed).color), alpha: 0.3 });
       }
       if (soort.aard === 'pole') cirkel(kol, rij, soort.reach, kleur);
-      tekenPoorten(geest, poortenVan(soort, soort.recipes.length === 1 ? actieveEconomie().recepten.get(soort.recipes[0]) : undefined, kol, rij), true);
+      tekenPoorten(geest, poortenVan(soort, soort.recipes.length === 1 ? actieveEconomie().recepten.get(soort.recipes[0]) : undefined, kol, rij, bouwDraai), true);
       return;
     }
     const p = pad(sleep ?? muis, muis);

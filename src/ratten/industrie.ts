@@ -12,8 +12,8 @@
 // - Neerzetten maakt een bouwplek. Ratten halen de bouwspullen uit de opslag, brengen ze en bouwen het af (werk.ts).
 // - Een productiegebouw krijgt zijn invoer gebracht (ratten, of een band die erin loopt) en legt wat het maakt voor zijn
 //   voet. Daar gaat het een band op die tegen de voet begint, of ratten sjouwen het naar de opslag.
-// - Aansluitpunten (`poorten`): een productiegebouw neemt banden aan op zijn linkerkanten (in beeld: zuid en west) en
-//   geeft af op zijn rechterkanten (oost en noord). Elk punt hoort bij één goed van het recept: een band levert alleen af
+// - Aansluitpunten (`poorten`): een productiegebouw neemt banden aan op twee kanten naast elkaar en geeft af op de twee
+//   andere (eerst: in links, uit rechts). Met R draai je de punten een kwartslag; het gebouw zelf draait niet. Elk punt hoort bij één goed van het recept: een band levert alleen af
 //   op het punt van zijn goed, en een band die op een uitgang begint draagt alleen dat product.
 // - Gebouwen met stroomvraag draaien alleen binnen bereik van de machine of van een aangesloten paal.
 // - Een gebouw onthoudt uit welke economie het komt: na een sprong naar een andere wereld blijft het staan en werken.
@@ -55,6 +55,7 @@ export interface Gebouw {
   vlieg: number; // seconden nog in de lucht (gegooid door de machine); 0 = staat
   graaft: boolean; // onDeposit: is nu aan het winnen (voor het beeld)
   uit: Goed | null; // sink: welk goed een band ernaast eruit trekt (instelbaar: klik erop)
+  draai: number; // prod: zoveel kwartslagen (0..3) zijn de aansluitpunten met de klok mee gedraaid
 }
 export interface MBand extends Band {
   eco: string;
@@ -266,7 +267,7 @@ export function kanZetten(s: SpelStaat, soort: BouwSoort, x: number, y: number):
 }
 
 // Zet een bouwplek neer voor een gebouw uit de economie van deze wereld (`wat` = de soort of haar id).
-export function zet(s: SpelStaat, wat: BouwSoort | string, x: number, y: number): Gebouw | null {
+export function zet(s: SpelStaat, wat: BouwSoort | string, x: number, y: number, draai = 0): Gebouw | null {
   const soort = typeof wat === 'string' ? actieveEconomie().gebouwen.get(wat) : wat;
   const e = energie(s);
   if (!soort || soort.aard === 'belt') return null;
@@ -281,7 +282,7 @@ export function zet(s: SpelStaat, wat: BouwSoort | string, x: number, y: number)
     // één recept: dat draait hij meteen; meer recepten: klik erop en kies
     recept: soort.aard === 'prod' && !soort.onDeposit && soort.recipes.length === 1 ? soort.recipes[0] : null,
     invoer: {}, betaald: false, klok: 0, ploeg: 0, geblokt: '', buffer: [], uitvoer: 0,
-    vlieg: soort.onDeposit ? G.vliegSec : 0, graaft: false, uit: null,
+    vlieg: soort.onDeposit ? G.vliegSec : 0, graaft: false, uit: null, draai: ((draai % 4) + 4) % 4,
   };
   i.gebouwen.push(g);
   if (soort.onDeposit) log(e, `${soort.name} THROWN! RATS BRING ${kostTekst(g.nodig, true)} AND BUILD IT`, 'groen');
@@ -543,10 +544,11 @@ export interface Poort {
   goed: Goed | null;
 }
 // De aansluitpunten van een gebouw van deze soort op (x, y) met dit recept. Net als in de sandbox: invoer links, uitvoer
-// rechts. In beeld is links de zuid- en de westkant, rechts de oost- en de noordkant; de voorste tegels komen eerst.
-// Elk goed van het recept krijgt om de beurt een tegel, dus met één goed mag de band op elke tegel van die kant.
+// rechts. In beeld is links de zuid- en de westkant, rechts de oost- en de noordkant. `draai` schuift de kanten zoveel
+// kwartslagen met de klok mee door (noord, oost, zuid, west), zodat je de punten kunt leggen waar je banden lopen.
+// Elk goed van het recept krijgt om de beurt een tegel, dus met één goed mag de band op elke tegel van die kanten.
 // Een winningsgebouw staat tegen zijn veld aan en geeft daarom af aan alle kanten.
-export function poortenVan(soort: BouwSoort, recept: ReceptSoort | undefined, x: number, y: number): Poort[] {
+export function poortenVan(soort: BouwSoort, recept: ReceptSoort | undefined, x: number, y: number, draai = 0): Poort[] {
   const uit: Poort[] = [];
   if (soort.aard !== 'prod') return uit;
   const m = soort.size;
@@ -556,14 +558,28 @@ export function poortenVan(soort: BouwSoort, recept: ReceptSoort | undefined, x:
     return uit;
   }
   const rij = [...Array(m).keys()];
+  // de tegels langs één kant, en hoe een band er loopt: het gebouw in, of ervan weg
+  const KANTEN: { tegels: [number, number][]; erin: Richting; eruit: Richting }[] = [
+    { tegels: rij.map((d): [number, number] => [x + m - 1 - d, y - 1]), erin: 'Z', eruit: 'N' }, // noord
+    { tegels: rij.map((d): [number, number] => [x + m, y + m - 1 - d]), erin: 'W', eruit: 'O' }, // oost
+    { tegels: rij.map((d): [number, number] => [x + d, y + m]), erin: 'N', eruit: 'Z' }, // zuid
+    { tegels: rij.map((d): [number, number] => [x - 1, y + m - 1 - d]), erin: 'O', eruit: 'W' }, // west
+  ];
+  const kant = (n: number) => KANTEN[(((n + draai) % 4) + 4) % 4];
   const invoer = recept ? Object.keys(recept.inputs) : [], producten = recept ? Object.keys(recept.outputs) : [];
-  const ingangen: [number, number, Richting][] = [...rij.map((d): [number, number, Richting] => [x + d, y + m, 'N']), ...rij.map((d): [number, number, Richting] => [x - 1, y + m - 1 - d, 'O'])];
-  const uitgangen: [number, number, Richting][] = [...rij.map((d): [number, number, Richting] => [x + m, y + m - 1 - d, 'O']), ...rij.map((d): [number, number, Richting] => [x + m - 1 - d, y - 1, 'N'])];
+  const ingangen = [kant(2), kant(3)].flatMap((k) => k.tegels.map(([px, py]): [number, number, Richting] => [px, py, k.erin])); // zuid, west
+  const uitgangen = [kant(1), kant(0)].flatMap((k) => k.tegels.map(([px, py]): [number, number, Richting] => [px, py, k.eruit])); // oost, noord
   if (!recept || invoer.length) ingangen.forEach(([px, py, richting], k) => uit.push({ x: px, y: py, richting, in: true, goed: invoer.length ? invoer[k % invoer.length] : null }));
   if (!recept || producten.length) uitgangen.forEach(([px, py, richting], k) => uit.push({ x: px, y: py, richting, in: false, goed: producten.length ? producten[k % producten.length] : null }));
   return uit;
 }
-export const poorten = (g: Gebouw): Poort[] => poortenVan(soortVan(g), receptVan(g), g.x, g.y);
+// De aansluitpunten een kwartslag verder (R).
+export function draaiPoorten(s: SpelStaat, g: Gebouw): void {
+  if (soortVan(g).aard !== 'prod' || soortVan(g).onDeposit) return;
+  g.draai = (g.draai + 1) % 4;
+  log(energie(s), `${soortVan(g).name}: ARROWS TURNED`, 'cyaan');
+}
+export const poorten = (g: Gebouw): Poort[] => poortenVan(soortVan(g), receptVan(g), g.x, g.y, g.draai);
 // De tegels waar dit gebouw zijn uitvoer op een band legt: zijn uitgangen, of (kruispunten) elke tegel eromheen.
 const afgifte = (g: Gebouw): { x: number; y: number; goed: Goed | null }[] =>
   soortVan(g).aard === 'prod' ? poorten(g).filter((p) => !p.in) : randVan(blokVan(g)).map(([x, y]) => ({ x, y, goed: null }));
