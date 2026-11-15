@@ -3,6 +3,7 @@ import { binnenRing, maakKaart, type Kaart } from './kaart';
 import { werkMist, type Kijker } from './mist';
 import { meet } from './prestatie';
 import { HEEL_MIN_STREAM } from '../data/wrath';
+import { FINALE, FINALE_TYPE, FINALE_WRATH, KERN_DIMENSIES, type Uitkomst } from '../data/run';
 import { nieuwLand, rolDimensie, stapLand, typeUitTekst, type LandStaat } from '../land/wrath';
 import type { Archetype } from './types';
 import { hash01 } from './toeval';
@@ -24,6 +25,7 @@ export interface SpelStaat {
   machine: Machine;
   voorraad: Voorraad; // wat er in de opslag ligt
   werkers: Werker[];
+  uitkomst?: Uitkomst; // gezet als de run voorbij is: gewonnen (finale gehaald) of verloren
   land: LandStaat; // de gerolde dimensie, Wrath en de overvallers (src/land/wrath.ts)
 }
 
@@ -32,10 +34,13 @@ export interface Start {
   type?: Archetype; // type van de eerste dimensie
   wrath?: number; // Wrath bij de eerste landing
   shift?: number; // begin in deze dimensie in plaats van de eerste
+  gratisStroom?: boolean; // ?power=free: de machine telt altijd als opgeladen (om de hele run te kunnen testen)
 }
 
 const dimCache = new Map<string, ReturnType<typeof rolDimensie>>();
 function gerold(seed: number, nummer: number, type?: Archetype) {
+  // De run: de drie kerndimensies staan vast, de finale ook; de rest rolt de generator.
+  type ??= nummer === FINALE ? FINALE_TYPE : KERN_DIMENSIES[nummer - 1];
   const sleutel = `${seed}:${nummer}:${type ?? ''}`;
   let d = dimCache.get(sleutel);
   if (!d) dimCache.set(sleutel, (d = rolDimensie(seed, nummer, type)));
@@ -68,12 +73,19 @@ export function nieuwSpel(seed: number, f: Factie, start: Start = {}): SpelStaat
     werkers,
     land: undefined as unknown as LandStaat,
   };
-  st.land = nieuwLand(st, gerold(seed, eerste, start.type), start.wrath);
+  st.land = nieuwLand(st, gerold(seed, eerste, start.type), start.wrath ?? (eerste === FINALE ? FINALE_WRATH : undefined));
   st.start = start;
   return st;
 }
 
+const klaarVoorStream = (s: SpelStaat): boolean => (s.start?.gratisStroom || s.machine.energie >= s.machine.maxEnergie) && s.machine.heelheid >= HEEL_MIN_STREAM;
+
+export function verlies(s: SpelStaat, reden: string): void {
+  if (!s.uitkomst) s.uitkomst = { gewonnen: false, reden };
+}
+
 export function stap(s: SpelStaat, f: Factie, sec: number): void {
+  if (s.uitkomst) return; // de run is voorbij
   if (s.onderweg > 0) {
     // in het niets: niemand loopt, de klok staat stil, alleen het trucje (stroomnet) draait
     s.onderweg = Math.max(0, s.onderweg - sec);
@@ -84,13 +96,14 @@ export function stap(s: SpelStaat, f: Factie, sec: number): void {
   werkMist(s.kaart.mist, sec, () => kijkers(s));
   f.trucje.opTik?.(s, sec);
   stapLand(s, sec);
+  if (s.machine.heelheid <= 0) { verlies(s, 'The reality machine was torn apart by the land.'); return; }
   if (!s.klokStil) s.tijd += sec;
   while (s.tijd >= DIMENSIE_DUUR_SEC) {
     s.tijd -= DIMENSIE_DUUR_SEC;
-    // Alleen met volle stroom op dat moment springt de schijf mee. Anders mis je hem en blijf je hier
-    // (voorlopig vergevingsgezind: volgens het ontwerp verlies je dan).
-    if (s.machine.energie >= s.machine.maxEnergie && s.machine.heelheid >= HEEL_MIN_STREAM) stream(s, f);
-    else s.gemist += 1;
+    // Alleen met volle stroom en genoeg heelheid op dat moment haal je de stream; anders is de run voorbij.
+    if (!klaarVoorStream(s)) { s.gemist += 1; verlies(s, `The stream came at dimension ${s.dimensie} and the machine was not ready (power ${Math.floor(s.machine.energie)}/${s.machine.maxEnergie}, integrity ${Math.floor(s.machine.heelheid)}).`); return; }
+    if (s.dimensie >= FINALE) { s.uitkomst = { gewonnen: true, reden: 'The last stream carried your disc out of the Hostile Land.' }; return; }
+    stream(s, f);
   }
 }
 
@@ -100,9 +113,10 @@ export function stream(s: SpelStaat, f?: Factie): void {
   s.tijd = 0;
   s.onderweg = SPRONG_SEC;
   verhuis(s);
-  s.land = nieuwLand(s, gerold(s.seed, s.dimensie)); // de landing zet het beginpunt van Wrath
+  s.land = nieuwLand(s, gerold(s.seed, s.dimensie), s.dimensie === FINALE ? FINALE_WRATH : undefined); // de landing zet het beginpunt van Wrath
   f?.trucje.opStream?.(s);
 }
+
 
 function verhuis(s: SpelStaat): void {
   const oud = s.kaart.machine;
@@ -159,6 +173,7 @@ export function startUitAdres(): Start {
   if (type) start.type = type;
   const w = p.get('wrath'), sh = p.get('shift');
   if (w !== null && Number.isFinite(Number(w))) start.wrath = Number(w);
+  if (p.get('power') === 'free') start.gratisStroom = true;
   if (sh !== null && Number.isFinite(Number(sh))) start.shift = Number(sh);
   return start;
 }
