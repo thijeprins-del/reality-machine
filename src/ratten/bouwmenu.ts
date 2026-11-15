@@ -199,7 +199,7 @@ export function maakBouwmenu(h: BouwmenuHaken): { werk(sec: number): void; zicht
       const vol = opslagVol(s), max = opslagMax(s);
       zet(kop, `<b>BUILD</b><span class="eco" data-tip="The economy of this world: what lies here and what you can build">${veilig(eco.name)}</span>
         <span class="bestand" data-tip="The file this economy comes from">economies/${veilig(eco.id)}.json</span>
-        <span class="packs" data-tip="Research packs: made in the tinkering workshop, spent here to unlock buildings and recipes. They vaporize in the stream">${icoon(ONDERZOEK)}${Math.floor(s.voorraad[ONDERZOEK] ?? 0)}</span>
+        <span class="packs" data-tip="Research packs: made in the laboratory, spent here to unlock buildings and recipes. They vaporize in the stream">${icoon(ONDERZOEK)}${Math.floor(s.voorraad[ONDERZOEK] ?? 0)}</span>
         <span class="opslag${vol >= max - 1 ? ' vol' : ''}" data-tip="Storage used: everything shares one stock">STORAGE ${Math.round(vol)}/${Math.round(max)}</span>`);
       zet(kaarten, kaartenHtml(s));
       const m = h.melding();

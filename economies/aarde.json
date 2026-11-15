@@ -25,7 +25,7 @@
     { "id": "zagerij", "name": "SAWMILL", "color": "#9a6b34", "sprite": "zagerij", "size": 2, "insideRing": true, "cost": { "hout": 12, "steen": 6 }, "work": 10, "kW": 2, "crew": 2, "storage": 8, "recipes": ["balk", "biomassa"] },
     { "id": "smelter", "name": "SMELTER", "color": "#c8642d", "sprite": "smelter", "size": 2, "insideRing": true, "cost": { "steen": 15, "hout": 5 }, "work": 10, "kW": 3, "crew": 2, "storage": 8, "recipes": ["plaat"] },
     { "id": "biomassabrander", "name": "BIOMASS BURNER", "color": "#ff5a2a", "sprite": "houtbrander", "size": 2, "insideRing": true, "cost": { "plaat": 4, "balk": 4 }, "work": 10, "storage": 8, "recipes": ["stook_biomassa"] },
-    { "id": "werkplaats", "name": "TINKERING WORKSHOP", "color": "#3aa8b8", "sprite": "werkplaats", "workshop": true, "size": 2, "insideRing": true, "cost": { "hout": 15 }, "work": 10, "kW": 1, "crew": 1, "storage": 8 },
+    { "id": "werkplaats", "name": "LABORATORY", "color": "#3aa8b8", "sprite": "werkplaats", "workshop": true, "size": 2, "insideRing": true, "cost": { "hout": 15 }, "work": 10, "kW": 1, "crew": 1, "storage": 8 },
     { "id": "boor", "name": "HARVESTER", "color": "#7a5c48", "sprite": "oogster", "size": 2, "onDeposit": true, "range": 3, "cost": { "plaat": 3, "balk": 1 }, "work": 8, "kW": 2, "storage": 12, "recipes": ["mijn_hout", "mijn_steen", "mijn_erts"] },
     { "id": "band", "name": "BELT", "color": "#5b554b", "sprite": "band-leeg", "belt": true, "speed": 2, "kW": 0.05, "cost": { "plaat": 1 }, "work": 1.2 },
     { "id": "paal", "name": "POLE", "color": "#6a552d", "sprite": "mast", "pole": true, "link": 8, "reach": 5, "cost": { "balk": 1 }, "work": 3 },

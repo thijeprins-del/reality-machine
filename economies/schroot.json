@@ -22,7 +22,7 @@
   "buildings": [
     { "id": "fabricator", "name": "SCRAP PRESS", "color": "#c8642d", "sprite": "pers", "size": 2, "insideRing": true, "cost": { "schroot": 20 }, "work": 10, "kW": 2, "crew": 2, "storage": 8, "recipes": ["plaat", "balk", "koolstof"] },
     { "id": "koolstofbrander", "name": "CARBON BURNER", "color": "#ff9a1f", "sprite": "dynamo", "size": 2, "insideRing": true, "cost": { "plaat": 4, "balk": 3 }, "work": 10, "storage": 8, "recipes": ["stook_koolstof"] },
-    { "id": "werkplaats", "name": "TINKERING WORKSHOP", "color": "#3aa8b8", "sprite": "werkplaats", "workshop": true, "size": 2, "insideRing": true, "cost": { "schroot": 15 }, "work": 10, "kW": 1, "crew": 1, "storage": 8 },
+    { "id": "werkplaats", "name": "LABORATORY", "color": "#3aa8b8", "sprite": "werkplaats", "workshop": true, "size": 2, "insideRing": true, "cost": { "schroot": 15 }, "work": 10, "kW": 1, "crew": 1, "storage": 8 },
     { "id": "boor", "name": "SCRAP DIGGER", "color": "#7a5c48", "sprite": "boor", "size": 2, "onDeposit": true, "range": 3, "cost": { "plaat": 3, "balk": 1 }, "work": 8, "kW": 2, "storage": 12, "recipes": ["mijn_schroot", "mijn_banden"] },
     { "id": "band", "name": "BELT", "color": "#5b554b", "sprite": "band-leeg", "belt": true, "speed": 2, "kW": 0.05, "cost": { "plaat": 1 }, "work": 1.2 },
     { "id": "paal", "name": "POLE", "color": "#6a552d", "sprite": "mast", "pole": true, "link": 8, "reach": 5, "cost": { "balk": 1 }, "work": 3 },

@@ -235,8 +235,8 @@ export function leesEconomie(bron: unknown): { fouten: string[]; economie?: Econ
 
   // Elke economie heeft een werkplaats, research packs en iets om te onderzoeken: anders kom je nooit voorbij tier 1.
   if (!R.has(ONDERZOEK)) fouten.push(`there is no resource "${ONDERZOEK}" (the research pack)`);
-  if (![...B.values()].some((b) => b.workshop)) fouten.push('there is no building with "workshop": true (each economy needs a tinkering workshop)');
-  if (![...R.values()].some((g) => g.research)) fouten.push('no resource has "research", so the workshop has nothing to study');
+  if (![...B.values()].some((b) => b.workshop)) fouten.push('there is no building with "workshop": true (each economy needs a laboratory)');
+  if (![...R.values()].some((g) => g.research)) fouten.push('no resource has "research", so the laboratory has nothing to study');
   if (!fouten.length) {
     const alle = [...B.values()];
     for (const c of C.values()) if (!alle.some((b) => b.recipes.includes(c.id))) waarschuwingen.push(`Recipe "${c.id}" isn't available in any building`);

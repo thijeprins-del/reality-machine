@@ -126,7 +126,7 @@ export function koopOordeel(s: SpelStaat, eco: Economie, wat: Slot): Oordeel {
   if (vorige > 1 && ![...eco.gebouwen.values(), ...eco.recepten.values()].some((x) => x.tier === vorige && isVrij(s, eco.id, x)))
     return { ok: false, reden: `UNLOCK SOMETHING OF TIER ${vorige} FIRST` };
   const heb = Math.floor(s.voorraad[ONDERZOEK] ?? 0);
-  if (heb < wat.unlock) return { ok: false, reden: `NEEDS ${wat.unlock} ${naamVan(ONDERZOEK)}S, YOU HAVE ${heb}. MAKE THEM IN THE WORKSHOP` };
+  if (heb < wat.unlock) return { ok: false, reden: `NEEDS ${wat.unlock} ${naamVan(ONDERZOEK)}S, YOU HAVE ${heb}. MAKE THEM IN THE LABORATORY` };
   return { ok: true, reden: `UNLOCK FOR ${wat.unlock} ${naamVan(ONDERZOEK)}S` };
 }
 export function koop(s: SpelStaat, eco: Economie, wat: Slot): boolean {
