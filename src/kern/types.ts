@@ -95,7 +95,6 @@ export interface Trucje {
 export interface Soort {
   naam: string;
   startMachine: Machine;
-  startVoorraad: Voorraad;
   eenheden: EenheidSoort[];
   startEenheden: Partial<Record<string, number>>; // soort -> aantal bij de start (bv. honderden muizen)
   vondsten: VondstSoort[];

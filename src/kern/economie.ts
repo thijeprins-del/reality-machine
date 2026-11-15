@@ -40,6 +40,7 @@ export interface BouwSoort {
   name: string;
   color: string;
   sprite?: string;
+  key: string; // sneltoets in het bouwmenu ('' = geen)
   aard: Aard;
   recipes: string[]; // alleen 'prod'
   cost: Voorraad;
@@ -186,13 +187,26 @@ export function leesEconomie(bron: unknown): { fouten: string[]; economie?: Econ
     }
     B.set(b.id, {
       id: b.id, name: typeof b.name === 'string' && b.name ? b.name : b.id.toUpperCase(), color: kleur(b.color, '#666666'),
-      sprite: typeof b.sprite === 'string' ? b.sprite : undefined, aard, recipes: aard === 'prod' ? (rs as string[]) : [], cost,
+      sprite: typeof b.sprite === 'string' ? b.sprite : undefined, key: typeof b.key === 'string' ? b.key.toUpperCase().slice(0, 1) : '', aard, recipes: aard === 'prod' ? (rs as string[]) : [], cost,
       work: pos(b.work, 4), size: (size === 1 ? 1 : 2), storage, speed: speed as number, ports: ports as number,
       kW: Math.max(0, getal(b.kW, 0)), crew: Math.max(0, getal(b.crew, 0)), insideRing: !!b.insideRing, onDeposit: !!b.onDeposit,
       depRes: [...depRes], range: pos(b.range, 3), link: pos(b.link, 8), reach: pos(b.reach, 5),
     });
   });
 
+  // Sneltoetsen: wat het bestand geeft ("key"), anders de eerste vrije letter van de naam. WASD, R en X zijn bezet.
+  {
+    const bezet = new Set('WASDRX');
+    for (const b of B.values()) {
+      if (b.key && (bezet.has(b.key) || !/^[A-Z]$/.test(b.key))) { waarschuwingen.push(`Building "${b.id}": key "${b.key}" is taken or not a letter — picked another`); b.key = ''; }
+      if (b.key) bezet.add(b.key);
+    }
+    for (const b of B.values()) {
+      if (b.key) continue;
+      b.key = [...b.name.toUpperCase()].find((l) => /[A-Z]/.test(l) && !bezet.has(l)) ?? '';
+      if (b.key) bezet.add(b.key);
+    }
+  }
   if (!fouten.length) {
     const alle = [...B.values()];
     for (const c of C.values()) if (!alle.some((b) => b.recipes.includes(c.id))) waarschuwingen.push(`Recipe "${c.id}" isn't available in any building`);

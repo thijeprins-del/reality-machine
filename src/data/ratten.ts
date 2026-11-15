@@ -8,7 +8,6 @@ import { werkTrucje } from '../ratten/werk';
 const AANTAL_MUIZEN = 60; // je krijgt er nooit meer bij
 const DRAAGT = 2; // grondstof per keer sjouwen
 const GRAAF_SEC = 2.5; // zo lang graaft een muis voor één lading
-const BOOR_SEC = 0.5; // zo lang doet een boor over één brok bij volle stroom (een muis haalt ~0,07 per s, een boor 2 per s)
 const HAND_DEEL = 0.15; // muizen graven met de hand alleen de bovenste 15% van elke tegel; de rest kan alleen een drill
 
 // Stroomnet van de muizen (src/ratten/energie.ts). Bronnen verbranden grondstof uit de opslag.
@@ -33,36 +32,20 @@ export const RATTEN_ENERGIE: EnergieGetallen = {
   lampenSneller: 0.6,
 };
 
-// Industrie van de muizen (src/ratten/industrie.ts en werk.ts): fabricators, boren, banden, palen, stapels.
-// werk = muis-seconden bouwen op de plek. bouw = wat het neerzetten kost uit de opslag (grondstof en onderdelen).
-// Onderdelen maak je in een fabricator: klik erop en kies een recept. Wat eruit komt gaat naar de opslag.
+// Industrie (src/ratten/industrie.ts en werk.ts). Welke gebouwen er zijn, wat ze kosten en wat ze maken staat in de
+// economie van een wereld (economies/*.json); hier alleen wat voor elke economie geldt.
 export const RATTEN_INDUSTRIE: IndustrieGetallen = {
-  boor: { kW: 2, sec: BOOR_SEC, buffer: 12, bereik: 3, vliegSec: 1.3, werk: 8 },
-  band: { kW: 0.05, tegelsPerSec: 2, werk: 1.2 },
-  paal: { link: 8, bereik: 5, werk: 3 }, // palen verbinden tot 8 tegels, geven stroom tot 5 tegels
-  stapel: { extra: 150, werk: 6, klein: { extra: 40, werk: 2 } }, // 2x2, en klein = 1 tegel
-  fabricator: { kW: 2, ploeg: 2, buffer: 6, werk: 10 }, // ploeg = muizen voor volle snelheid
-  bouw: {
-    fabricator: { schroot: 15, hout: 10 },
-    boor: { plaat: 3, balk: 1 },
-    band: { plaat: 1 }, // per tegel
-    paal: { balk: 1 },
-    stapel: { balk: 4 },
-    kist: { balk: 1 },
-  },
-  recepten: {
-    plaat: { in: { schroot: 2 }, uit: 2, sec: 3 },
-    balk: { in: { hout: 2 }, uit: 1, sec: 3 },
-  },
-  opslagMax: 50, // per goed in de opslag zelf; meer grondstof = een stapel per grondstof
+  vliegSec: 1.3, // zo lang vliegt een winningsgebouw van de machine naar zijn veld
   hoop: 15, // zoveel is één hoop in beeld
-  ploegBouw: 3, // zoveel muizen tegelijk op één bouwplek
+  ploegBouw: 3, // zoveel ratten tegelijk op één bouwplek
+  machineBereik: 7, // zo ver om de machine is er stroom zonder paal
+  invoerKeer: 3, // een gebouw wil invoer hebben liggen voor zoveel keer zijn recept
+  kruispunt: 4, // zoveel stuks houdt een splitter of merger vast
 };
 
 export const RATTEN: Soort = {
   naam: 'Pack Rats',
   startMachine: { energie: 0, maxEnergie: 100, heelheid: 100, maxHeelheid: 100 },
-  startVoorraad: { schroot: 40, hout: 40, kristal: 0, plaat: 4, balk: 2 },
   eenheden: [
     {
       soort: 'muis',

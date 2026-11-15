@@ -670,6 +670,11 @@ export class WereldBeeld {
     this.texturen.set(naam, tex);
   }
 
+  // Is er een plaatje met deze naam? (Voor gebouwen en goederen uit een economie die nog geen eigen kunst hebben.)
+  heeft(naam: string): boolean {
+    return !!this.sprites[naam];
+  }
+
   // Even schudden (bv. als er iets zwaars neerploft).
   schudden(n: number): void {
     this.schud = Math.max(this.schud, n);

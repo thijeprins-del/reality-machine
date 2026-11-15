@@ -69,7 +69,7 @@ export function nieuwSpel(seed: number, f: Soort, start: Start = {}): SpelStaat 
     onderweg: SPRONG_SEC, // het spel begint in het niets en landt dan in de eerste wereld
     kaart,
     machine: { ...f.startMachine },
-    voorraad: { ...f.startVoorraad },
+    voorraad: { ...economieVan(eerste).start }, // het startkapitaal van de economie van de eerste wereld
     werkers,
     land: undefined as unknown as LandStaat,
   };

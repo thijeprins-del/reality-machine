@@ -7,7 +7,7 @@ import { klein, knop as balkKnop } from '../kern/scherm';
 import { goed } from '../kern/economie';
 import { RATTEN_ENERGIE } from '../data/ratten';
 import { draaiKnop, energie, MAX_MK, omhoog, STANDEN, stroomVan, upgradeBron, upgradeKosten, verbruikVan, zetBron, zetVerbruiker, zwakte, type Bron, type EnergieStaat } from './energie';
-import { grondstoffen, industrie, industrieVraag, opslagMax } from './industrie';
+import { grondstoffen, industrie, industrieVraag, makers, opslagMax, opslagVol, ruimteVoor, soortVan } from './industrie';
 import { werk } from './werk';
 import { kanBetalen, kostTekst, naamVan } from './kosten';
 import { tekenRegels, type Regel } from './letters';
@@ -289,7 +289,7 @@ export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(
       else R(10, y + 1, 5, 5, goed(g).color);
       txt(naamVan(g), 18, y + 1, KL.label);
       const w = Math.floor(s.voorraad[g] ?? 0);
-      const max = opslagMax(s, g);
+      const max = Math.max(1, w + ruimteVoor(s, g)); // wat er nu hooguit van kan liggen: de opslag is gedeeld
       txt(String(w).padStart(3, '0'), 50, y + 1, w < 4 ? (knipper ? KL.rood : '#501010') : w >= max ? (knipper ? KL.rood : KL.amber) : '#ffe08a', 1, true);
       txt(`/${max}`, 62, y + 1, KL.dim);
       // vulmeter
@@ -297,7 +297,7 @@ export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(
       G(80, y + 6, Math.round((26 * Math.min(w, max)) / max), 1, w >= max ? KL.rood : goed(g).color);
       const tr = e.trend[g] ?? 0;
       txt(`${tr >= 0 ? '+' : ''}${tr.toFixed(2)}/S`, 110, y + 1, tr > 0.01 ? KL.groen : tr < -0.01 ? KL.rood : KL.dim);
-      hit(8, y - 1, 170, 10, null, w >= max ? `${naamVan(g)} FULL! BUILD A STOCKPILE FOR ${naamVan(g)}` : `${naamVan(g)} IN STOCK, MAX ${max}. MORE = A STOCKPILE FOR ${naamVan(g)}`);
+      hit(8, y - 1, 170, 10, null, w >= max ? `STORAGE FULL! BUILD MORE STORAGE` : `${naamVan(g)} IN STOCK. STORAGE ${Math.round(opslagVol(s))} OF ${Math.round(opslagMax(s))} USED`);
     });
 
     // RATTEN: wat ze uit zichzelf aan het doen zijn
@@ -416,7 +416,7 @@ export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(
         const ind = industrie(s);
         kleur = KL.groen;
         const pct = c.aan && c.krijgt < 0.999 ? ` ${Math.round(c.krijgt * 100)}%` : '';
-        info = `${ind.fabrieken.filter((b) => !b.af).length} FAB ${ind.boren.filter((b) => !b.af).length} DRILL ${[...ind.banden.values()].filter((b) => !b.af).length} BELT${pct}`;
+        info = `${makers(ind).filter((b) => !b.af && !soortVan(b).onDeposit).length} FAB ${makers(ind).filter((b) => !b.af && soortVan(b).onDeposit).length} DRILL ${[...ind.banden.values()].filter((b) => !b.af).length} BELT${pct}`;
         hulp = `INDUSTRY: FABRICATORS, DRILLS AND BELTS (${kw(industrieVraag(s))} KW)`;
       }
       verzonken(x0 + 72, y0 + 10, 54, 5, '#050505');
