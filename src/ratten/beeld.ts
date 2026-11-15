@@ -8,9 +8,11 @@ const bestanden = import.meta.glob('../../assets/muizen/*.png', { eager: true, q
   string
 >;
 
-// Hoopjes van goederen (assets/goederen/hoop-<sprite>.png, 28 x 24): de hopen in de opslag en de iconen in de balk.
+// Plaatjes van goederen (assets/goederen/): hoop-<sprite> (28 x 24) voor de hopen in de opslag en de iconen in de balk,
+// last-<sprite> (18 x 18) voor het brokje op een band en bij de voet van een gebouw. De velden laadt kern/wereldbeeld.ts.
 const goederen = import.meta.glob('../../assets/goederen/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 const HOOP = { w: 28, h: 24, ankerX: 14, ankerY: 19, tegels: 0, gloed: false };
+const LAST = { w: 18, h: 18, ankerX: 9, ankerY: 15, tegels: 0, gloed: false };
 
 const url = (naam: string) => Object.entries(bestanden).find(([k]) => k.endsWith(`/${naam}.png`))?.[1];
 const goedUrl = (naam: string) => Object.entries(goederen).find(([k]) => k.endsWith(`/${naam}.png`))?.[1];
@@ -27,7 +29,8 @@ export function rattenBeeld(): SoortBeeld {
   }
   for (const pad of Object.keys(goederen)) {
     const naam = pad.slice(pad.lastIndexOf('/') + 1, -4);
-    sprites[naam] = { ...HOOP, url: goederen[pad] };
+    if (naam.startsWith('hoop-')) sprites[naam] = { ...HOOP, url: goederen[pad] };
+    if (naam.startsWith('last-')) sprites[naam] = { ...LAST, url: goederen[pad] };
   }
   // Een rat met een bundel op de rug: voor elk goed waarvan er zo'n plaatje is (muis-<sprite>), anders de gewone rat.
   const lading: Record<string, string> = {};

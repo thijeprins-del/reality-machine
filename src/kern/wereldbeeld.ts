@@ -25,6 +25,9 @@ const wereldBestanden = import.meta.glob('../../assets/wereld/*.png', { eager: t
   string,
   string
 >;
+// Velden van grondstoffen uit assets/goederen/veld-<sprite>-<n>.png: zelfde maat en anker als de velden in assets/wereld.
+const veldBestanden = import.meta.glob('../../assets/goederen/veld-*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
+const VELD = { w: 40, h: 56, ankerX: 20, ankerY: 34, tegels: 1 };
 const wereldUrl = (naam: string) => Object.entries(wereldBestanden).find(([k]) => k.endsWith(`/${naam}.png`))?.[1];
 
 function wereldSprites(): Record<string, SpriteInfo> {
@@ -33,6 +36,7 @@ function wereldSprites(): Record<string, SpriteInfo> {
     const u = wereldUrl(naam);
     if (u) uit[naam] = { ...m, url: u, gloedUrl: m.gloed ? wereldUrl(`${naam}-gloed`) : undefined };
   }
+  for (const [pad, u] of Object.entries(veldBestanden)) uit[pad.slice(pad.lastIndexOf('/veld-') + 6, -4)] = { ...VELD, url: u };
   return uit;
 }
 
@@ -167,7 +171,9 @@ export class WereldBeeld {
       // van het goed (of het plaatje van zijn id in die kleur: drijfhout is hout): zo is een nieuwe economie speelbaar
       // voordat er kunst is.
       const soort = goed(a.goed);
-      const eigen = `${soort.sprite ?? a.goed}-${a.variant + 1}`;
+      // (is er maar één plaatje van, dan krijgen beide varianten dat: het spiegelen hieronder geeft al afwisseling)
+      const basis = soort.sprite ?? a.goed;
+      const eigen = this.sprites[`${basis}-${a.variant + 1}`] ? `${basis}-${a.variant + 1}` : `${basis}-1`;
       const st = this.maak(this.sprites[eigen] ? eigen : this.sprites[`${a.goed}-${a.variant + 1}`] ? `${a.goed}-${a.variant + 1}` : `schroot-${a.variant + 1}`);
       if (!this.sprites[eigen]) st.delen[0].tint = soort.color;
       this.zetAfzetting(st, a);

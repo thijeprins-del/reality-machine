@@ -42,8 +42,8 @@ De otters zijn vervallen (O1, O2): er is één soort, de pack rats, en elke were
 - Bruggen en sorteerders voor banden
 - Brandstof voor de stroombronnen per economie (nu stoken ze alleen hout, schroot en kristal)
 - De grondstoffen die de generator rolt (`aanbod`: metaal, hout, water, steen) koppelen aan `onMap` in de economie
-- Plaatjes: de hoopjes van alle goederen staan in `assets/goederen/` (PixelLab, 10 generaties). Nog te maken: het brokje op
-  de band en bij de voet van een gebouw (`last-`), de velden op de kaart, en de nieuwe gebouwen; lopende rat met lading voor elk goed
+- Plaatjes: elk goed heeft een hoopje, een brokje en (als het op de kaart ligt) een veld in `assets/goederen/` (PixelLab,
+  30 generaties). Nog te maken: de rat met een lading op de rug voor elk goed, en de nieuwe gebouwen;
 - Voorrang en een filter per magazijn (de stapel per goed met prioriteit is vervallen)
 - Boten of veerponten over water
 - Online tweespeler, meer dan twee facties, opslaan midden in een run, verhaal
