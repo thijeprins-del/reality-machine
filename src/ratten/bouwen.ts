@@ -41,6 +41,29 @@ declare global {
 type Modus = string | null;
 const hex = (k: string) => parseInt(k.slice(1), 16);
 
+// ---- bochten in een band ----
+// Een band gaat de bocht om als er een band dwars in loopt en er geen band recht achter ligt. `van` = de kant van de
+// tegel waar het goed binnenkomt, `richting` = hoe het dan beweegt.
+const TEGENOVER: Record<Richting, Richting> = { O: 'W', W: 'O', N: 'Z', Z: 'N' };
+function bochtVan(banden: Map<number, { x: number; y: number; naar: Richting }>, b: { x: number; y: number; naar: Richting }): { van: Richting; richting: Richting } | null {
+  let dwars: Richting | null = null;
+  for (const d of ['O', 'W', 'N', 'Z'] as Richting[]) {
+    const [dx, dy] = RICHTINGEN[d];
+    if (banden.get(tegel(b.x - dx, b.y - dy))?.naar !== d) continue; // de buur aan die kant loopt niet hierheen
+    if (d === b.naar) return null; // er ligt een band recht achter: gewoon rechtdoor
+    if (d !== TEGENOVER[b.naar]) dwars ??= d;
+  }
+  return dwars ? { van: TEGENOVER[dwars], richting: dwars } : null;
+}
+// Welk hoekstuk bij welke bocht hoort: sleutel = de kant waar het binnenkomt + de kant waar het weggaat. De stukken
+// verbinden twee randen van de tegel, dus heen en terug is hetzelfde stuk. Links is het rechterstuk gespiegeld.
+const HOEKSTUK: Record<string, { naam: string; spiegel: 1 | -1 }> = {
+  WN: { naam: 'band-hoek-boven', spiegel: 1 }, NW: { naam: 'band-hoek-boven', spiegel: 1 },
+  OZ: { naam: 'band-hoek-onder', spiegel: 1 }, ZO: { naam: 'band-hoek-onder', spiegel: 1 },
+  ON: { naam: 'band-hoek-rechts', spiegel: 1 }, NO: { naam: 'band-hoek-rechts', spiegel: 1 },
+  ZW: { naam: 'band-hoek-rechts', spiegel: -1 }, WZ: { naam: 'band-hoek-rechts', spiegel: -1 },
+};
+
 export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(sec: number): void; zicht(aan: boolean): void } {
   const canvas = document.body.querySelector('canvas') as HTMLCanvasElement; // het spel zelf (eerste canvas)
   let modus: Modus = null;
@@ -419,17 +442,23 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
         r = { st: beeld.maak(spriteVoor(soortVan(b)).naam), last: null };
         banden.set(k, r);
       }
+      // Gaat de band hier de bocht om, dan ligt er een hoekstuk: zo hoeft niemand zelf hoeken te leggen.
+      const basis = spriteVoor(soortVan(b));
+      const bocht = bochtVan(ind.banden, b);
+      const hoek = bocht && basis.naam === 'band-leeg' ? HOEKSTUK[bocht.van + b.naar] : undefined;
       const kol = b.naar === 'O' || b.naar === 'W';
-      zetStuk(r.st, b.x, b.y, 1, kol ? 1 : -1, (b.x + b.y) * 10 - 5);
+      if (r.st.naam !== (hoek?.naam ?? basis.naam)) beeld.wissel(r.st, hoek?.naam ?? basis.naam);
+      zetStuk(r.st, b.x, b.y, 1, hoek ? hoek.spiegel : kol ? 1 : -1, (b.x + b.y) * 10 - 5);
       half(r.st, b.af);
-      r.st.delen[0].tint = spriteVoor(soortVan(b)).tint;
+      r.st.delen[0].tint = basis.tint;
       if (b.goed) {
         const p = stukVoor(b.goed, 'last');
         if (!r.last) r.last = beeld.maak(p.naam, true);
         zetNaam(r.last, p);
         toon(r.last, true);
-        const [dx, dy] = RICHTINGEN[b.naar];
+        // tot het midden van de tegel komt het uit de richting waar het vandaan kwam, daarna gaat het de bocht om
         const f = Math.min(1, b.voortgang) - 0.5;
+        const [dx, dy] = RICHTINGEN[bocht && f < 0 ? bocht.richting : b.naar];
         zetDing(r.last, b.x + dx * f, b.y + dy * f, (b.x + b.y) * 10 + 2);
         for (const d of r.last.delen) d.y -= 4 * PIXEL;
       } else if (r.last) toon(r.last, false);

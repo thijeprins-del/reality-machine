@@ -69,6 +69,7 @@ wat je hebt, en zijn recepten met iconen. Klik op een gebouw in de wereld en het
 - **Winningsgebouw** (de boor of de oogster; in de zoutzee het dok, de kelpkwekerij en de zoutpan): klik naast een veld van
   de goede grondstof. De machine gooit het erheen. Het haalt het veld leeg, ook het deel waar ratten niet bij kunnen.
 - **Band** (BELT): sleep van een gebouw naar het magazijn of een ander gebouw. **R** draait een losse tegel.
+  Waar de band de bocht om gaat, legt het spel zelf een hoekstuk: je hoeft alleen te slepen.
 - **Paal** (POLE): brengt stroom verder. Kabels lopen van paal naar paal; een rode paal hangt nergens aan.
   Rond de machine is er stroom zonder paal (de groene cirkel als je een gebouw kiest dat stroom vraagt).
 - **Magazijn** (WAREHOUSE en SMALL STORE): meer opslag, voor alles. Binnen de ring.

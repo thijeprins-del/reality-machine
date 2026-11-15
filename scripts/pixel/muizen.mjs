@@ -563,6 +563,31 @@ function tekenBandLeeg() {
   bewaar('band-leeg', d, ax, ay, 1);
 }
 
+// HOEKSTUK van de loopband (1 tegel): de band gaat de bocht om, van de ene rand van de tegel naar een rand ernaast.
+// Zelfde bouw als de rechte band: een stalen bak met rubberen lamellen. Twee stukken in een L: `lang` loopt van een
+// rand tot voorbij het midden, `kort` van de andere rand tot tegen het lange stuk. Elk stuk is [kol, rij, u, v] in
+// stappen (een tegel is 8 x 8 stappen, de band is 4 breed) en 'kol' of 'rij': de kant waarlangs het loopt.
+// Drie stukken volstaan: boven (west en noord), onder (oost en zuid) en rechts (oost en noord); links is rechts gespiegeld.
+function tekenBandHoek(naam, zaad, stukken) {
+  const d = new Doek(40, 30);
+  const r = ruis(zaad);
+  const ax = 22, ay = 13;
+  const g = isoPunt(ax, ay);
+  // van achter naar voor, zodat het voorste stuk over het achterste valt
+  const volgorde = [...stukken].sort((a, b) => a[0] + a[1] - (b[0] + b[1]));
+  for (const [k, rij, u, v] of volgorde) d.blokS(...g(k, rij, 0), u, v, 4, T.staal, { r });
+  for (const [k, rij, u, v, langs] of volgorde) {
+    // lamellen dwars op de looprichting
+    if (langs === 'kol') for (let s = 0; s < u; s++) streep(d, g(k + s, rij, 4), v, 'rij', (k + s) % 2 ? T.rubber[1] : T.rubber[4]);
+    else for (let s = 0; s < v; s++) streep(d, g(k, rij + s, 4), u, 'kol', (rij + s) % 2 ? T.rubber[1] : T.rubber[4]);
+  }
+  d.omlijn(K.lijn);
+  d.vuil(0.08, K.olie, 0.45, r);
+  const [nx, ny] = g(4, 4, 6);
+  d.neon(nx, ny, N.gif, 1);
+  bewaar(naam, d, ax, ay, 1);
+}
+
 // LADING op de band: een brok schroot, een stuk hout of een kristal. Anker = midden onderaan.
 function tekenLading(goed) {
   const d = new Doek(18, 16);
@@ -892,6 +917,9 @@ tekenKabels();
 tekenMachine();
 tekenOpslag();
 tekenBandLeeg();
+tekenBandHoek('band-hoek-boven', 53, [[0, 2, 6, 4, 'kol'], [2, 0, 4, 2, 'rij']]); // west en noord
+tekenBandHoek('band-hoek-onder', 54, [[2, 2, 6, 4, 'kol'], [2, 6, 4, 2, 'rij']]); // oost en zuid
+tekenBandHoek('band-hoek-rechts', 55, [[2, 2, 6, 4, 'kol'], [2, 0, 4, 2, 'rij']]); // oost en noord
 for (const g of ['schroot', 'hout', 'kristal', 'plaat', 'balk']) {
   tekenLading(g);
   tekenHoop(g);
