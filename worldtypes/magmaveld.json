@@ -2,7 +2,7 @@
   "id": "magmaveld",
   "name": "MAGMA FIELD",
   "tileset": "magmaveld",
-  "economy": "schroot",
+  "economy": "magmaveld",
   "ground": ["#1a1514", "#201917", "#161211", "#241c19", "#1c1614"],
   "spot": "#ff6a1a",
   "spotGlows": true,

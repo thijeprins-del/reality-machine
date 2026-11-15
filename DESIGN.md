@@ -97,7 +97,18 @@ wereld. Het spel leest twee mappen met JSON-bestanden, zodat je kunt schaven zon
 - **Nog geen kunst?** Een gebouw of goed zonder eigen plaatje krijgt een bestaand plaatje in zijn kleur.
 - **Stroom** valt hierbuiten: de bronnen stoken `hout`, `schroot` en `kristal` (zie hieronder). In een wereld zonder
   die goederen draait alleen het looprad; brandstof per economie staat op de later-lijst.
-- **Nu**: alle werelden draaien op `schroot` (Junkyard), behalve de zoutzee: die draait op `vis` (Fishery).
+- **De zes economieën** (één per wereldtype). Overal bouw je met dezelfde twee materialen, `plaat` en `balk`, maar
+  hoe je eraan komt verschilt, en niet elke wereld heeft elke grondstof:
+  | wereld | economie | ligt er | plaat | balk | bijzonder |
+  |---|---|---|---|---|---|
+  | roestduin | `schroot` Junkyard | schroot, oude banden | 2 schroot → 2 | 3 schroot → 1 | geen hout; banden branden als `hout` |
+  | aarde | `aarde` Homestead | hout, steen, ijzererts | 2 erts + 1 hout → 2 | 2 hout → 1 | geen schroot; magazijn kost steen |
+  | gifwoud | `gifwoud` Rotwood Grove | rothout, hars, sporen | 2 hout + 1 hars → 2 | 2 hout → 1 | geen metaal; sporen branden als `kristal` |
+  | magmaveld | `magmaveld` Foundry | magma-erts, basalt | 2 erts → 2 (+ 1 slak) | 3 basalt → 1 | smederij vraagt geen stroom; slak brandt als `schroot` |
+  | kristaltoendra | `kristaltoendra` Crystal Tundra | kristal, ijs, één wrak | 2 kristal → 1 | 4 ijs + 1 kristal → 1, of 3 wrak → 1 | geen hout |
+  | zoutzee | `zoutzee` Salt Flats | zout, kelp, wat drijfhout | 3 zout + 1 kelp → 2 | 4 kelp → 1, of 2 drijfhout → 1 | bijna geen hout |
+  Banden, palen, magazijnen, splitter en merger kosten overal plaat en balk, dus wat je meeneemt blijft bruikbaar.
+  De viseconomie uit de sandbox was een voorbeeld en zit niet in het spel (wel nog in `tools/economy.html`).
 
 ## Pack rats (voorheen muizen)
 De industriegetallen in dit hoofdstuk (kosten, recepten, boor, band, paal, stapel) staan sinds 15 nov in

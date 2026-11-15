@@ -1,0 +1,31 @@
+{
+  "id": "aarde",
+  "name": "Homestead",
+  "startingResources": { "hout": 40, "steen": 30, "plaat": 4, "balk": 2 },
+  "settings": { "bufferSize": 6, "defaultStorage": 8, "warehouseStorage": 250 },
+  "resources": [
+    { "id": "hout", "name": "WOOD", "color": "#b07a3c", "volume": 1, "sprite": "hout", "onMap": true, "fields": { "count": 3, "tiles": [6, 10], "perTile": 150, "distance": [19, 27] } },
+    { "id": "steen", "name": "STONE", "color": "#8d8a80", "volume": 1, "onMap": true, "fields": { "count": 3, "tiles": [6, 10], "perTile": 150, "distance": [20, 27] } },
+    { "id": "erts", "name": "IRON ORE", "color": "#8d5b4c", "volume": 1, "onMap": true, "fields": { "count": 2, "tiles": [5, 8], "perTile": 120, "distance": [23, 28] } },
+    { "id": "plaat", "name": "IRON PLATE", "color": "#9aa3ad", "volume": 1 },
+    { "id": "balk", "name": "BEAM", "color": "#8a6a40", "volume": 1 }
+  ],
+  "recipes": [
+    { "id": "mijn_hout", "name": "Fell trees", "time": 0.5, "inputs": {}, "outputs": { "hout": 1 } },
+    { "id": "mijn_steen", "name": "Quarry stone", "time": 0.5, "inputs": {}, "outputs": { "steen": 1 } },
+    { "id": "mijn_erts", "name": "Mine iron ore", "time": 0.5, "inputs": {}, "outputs": { "erts": 1 } },
+    { "id": "balk", "name": "Saw beam", "time": 3, "inputs": { "hout": 2 }, "outputs": { "balk": 1 } },
+    { "id": "plaat", "name": "Smelt iron plate", "time": 4, "inputs": { "erts": 2, "hout": 1 }, "outputs": { "plaat": 2 } }
+  ],
+  "buildings": [
+    { "id": "zagerij", "name": "SAWMILL", "color": "#9a6b34", "sprite": "pers", "size": 2, "insideRing": true, "cost": { "hout": 12, "steen": 6 }, "work": 10, "kW": 2, "crew": 2, "storage": 8, "recipes": ["balk"], "key": "Z" },
+    { "id": "smelter", "name": "SMELTER", "color": "#c8642d", "sprite": "pers", "size": 2, "insideRing": true, "cost": { "steen": 15, "hout": 5 }, "work": 10, "kW": 3, "crew": 2, "storage": 8, "recipes": ["plaat"], "key": "F" },
+    { "id": "boor", "name": "HARVESTER", "color": "#7a5c48", "sprite": "boor", "key": "B", "size": 2, "onDeposit": true, "range": 3, "cost": { "plaat": 3, "balk": 1 }, "work": 8, "kW": 2, "storage": 12, "recipes": ["mijn_hout", "mijn_steen", "mijn_erts"] },
+    { "id": "band", "name": "BELT", "color": "#5b554b", "sprite": "band-leeg", "key": "L", "belt": true, "speed": 2, "kW": 0.05, "cost": { "plaat": 1 }, "work": 1.2 },
+    { "id": "paal", "name": "POLE", "color": "#6a552d", "sprite": "mast", "key": "P", "pole": true, "link": 8, "reach": 5, "cost": { "balk": 1 }, "work": 3 },
+    { "id": "stapel", "name": "WAREHOUSE", "color": "#55606b", "sprite": "stapel", "key": "O", "sink": true, "storage": 150, "size": 2, "insideRing": true, "cost": { "steen": 6, "balk": 2 }, "work": 6 },
+    { "id": "kist", "name": "SMALL STORE", "color": "#55606b", "sprite": "stapel-1", "key": "K", "sink": true, "storage": 40, "size": 1, "insideRing": true, "cost": { "steen": 2 }, "work": 2 },
+    { "id": "splitter", "name": "SPLITTER", "color": "#4d6478", "key": "T", "splitter": true, "ports": 3, "size": 1, "cost": { "plaat": 2 }, "work": 2 },
+    { "id": "merger", "name": "MERGER", "color": "#6a5a80", "key": "M", "merger": true, "ports": 3, "size": 1, "cost": { "plaat": 2 }, "work": 2 }
+  ]
+}

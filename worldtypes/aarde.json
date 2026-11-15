@@ -2,7 +2,7 @@
   "id": "aarde",
   "name": "EARTH",
   "tileset": "aarde",
-  "economy": "schroot",
+  "economy": "aarde",
   "ground": ["#527e2f"],
   "spot": "#2f4a1c",
   "spotChance": 0.08,

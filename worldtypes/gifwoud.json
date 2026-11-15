@@ -2,7 +2,7 @@
   "id": "gifwoud",
   "name": "POISON WOODS",
   "tileset": "gifwoud",
-  "economy": "schroot",
+  "economy": "gifwoud",
   "ground": ["#1f3a14", "#24431a", "#1a3311", "#2a4b1d", "#203d16"],
   "spot": "#9dff2e",
   "spotGlows": true,

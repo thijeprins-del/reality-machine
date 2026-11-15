@@ -8,9 +8,11 @@ Je speelt de pack rats: ratten die alles meeslepen wat los ligt. Het spel begint
 Je begint met je reality machine (de grote toren), een magazijn ernaast en zestig ratten. Meer ratten krijg je
 niet, dus zuinig zijn. Rond de machine liggen velden met grondstoffen, tussen de heuvels van de wereld.
 
-**Elke wereld heeft haar eigen economie.** In een schrootwereld liggen schroot, hout en kristal en bouw je fabricators en
-boren; in de zoutzee liggen vis, kelp en zout en bouw je dokken, rokerijen en touwbanen. Het bouwmenu toont wat je in deze
-wereld kunt bouwen. De eerste keer dat je in een nieuwe economie landt krijg je een startvoorraad om mee te beginnen.
+**Elke wereld heeft haar eigen economie.** Overal bouw je met platen en balken, maar hoe je eraan komt verschilt, en niet
+elke wereld heeft elke grondstof. In de roestduinen pers je allebei uit schroot; op aarde zaag je balken uit hout en smelt
+je platen uit ijzererts; in het gifwoud pers je platen uit hout met hars; in het magmaveld giet je platen uit erts en zaag
+je balken uit basalt; op de toendra slijp je platen uit kristal en vries je balken van ijs; in de zoutzee bak je platen van
+zout en vlecht je balken van kelp. Het bouwmenu toont wat je in deze wereld kunt bouwen. De eerste keer dat je in een nieuwe economie landt krijg je een startvoorraad om mee te beginnen.
 Je voorraad en de gebouwen binnen de ring gaan mee naar de volgende wereld en blijven werken.
 
 ## De gele ring en de stream

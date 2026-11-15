@@ -2,7 +2,7 @@
   "id": "zoutzee",
   "name": "SALT SEA",
   "tileset": "zoutzee",
-  "economy": "vis",
+  "economy": "zoutzee",
   "ground": ["#c98aa5", "#d496b0", "#bf7f9b", "#dca2bb", "#c48aa3"],
   "spot": "#fff0fa",
   "spotChance": 0.1,

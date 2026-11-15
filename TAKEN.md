@@ -27,8 +27,9 @@ De otters zijn vervallen (O1, O2): er is één soort, de pack rats, en elke were
 - [ ] E1 Eén soort: factiekeuze weg, `src/muizen` → `src/ratten`, grotere rattensprite (Lieuwe, branch `lieuwe/economy`)
 - [ ] E2 Wereldtypes en economieën als JSON (`worldtypes/`, `economies/`), lader met controle (Lieuwe, zelfde branch)
 - [ ] E3 Generieke gebouwen uit de economie: productie, winning, magazijn, splitter, merger, band, paal; opslag in volume (Lieuwe, zelfde branch)
-- [ ] E4 Economie per wereld bij de sprong, startkapitaal per economie, viseconomie in de zoutzee (Lieuwe, zelfde branch)
-- [ ] E5 Balans van de viseconomie; meer economieën (schrootwereld met schrootmijnen op autokerkhoven)
+- [ ] E4 Economie per wereld bij de sprong, startkapitaal per economie (Lieuwe, zelfde branch)
+- [ ] E5 Zes economieën, één per wereldtype: elke wereld een eigen weg naar platen en balken (Lieuwe, zelfde branch)
+- [ ] E6 Balans van de zes economieën; langere ketens per wereld
 
 ## Planning
 - Week 1 (t/m 8 nov): repo, uitrol, iso-veld met eiland, één dimensie, streamtimer
@@ -41,7 +42,7 @@ De otters zijn vervallen (O1, O2): er is één soort, de pack rats, en elke were
 - Bruggen en sorteerders voor banden
 - Brandstof voor de stroombronnen per economie (nu stoken ze alleen hout, schroot en kristal)
 - De grondstoffen die de generator rolt (`aanbod`: metaal, hout, water, steen) koppelen aan `onMap` in de economie
-- Eigen plaatjes voor de gebouwen en goederen van de viseconomie; lopende rat met lading voor elk goed
+- Eigen plaatjes voor de nieuwe gebouwen en grondstoffen (steen, erts, hars, basalt, ijs, zout, kelp, oude banden); lopende rat met lading voor elk goed
 - Voorrang en een filter per magazijn (de stapel per goed met prioriteit is vervallen)
 - Boten of veerponten over water
 - Online tweespeler, meer dan twee facties, opslaan midden in een run, verhaal
