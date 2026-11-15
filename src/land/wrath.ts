@@ -4,6 +4,7 @@ import {
   VERDEDIG_STRAAL, WRATH_KALMEER_PER_SEC, WRATH_MAX, WRATH_PER_GOED, WRATH_PER_OVERVALLER_WEG, WRATH_RUST_NA, WRATH_STADIA, WRATH_VLOER,
   type WrathStadium,
 } from '../data/wrath';
+import { AANVAL } from '../data/run';
 import { vrijOp } from '../kern/routes';
 import type { SpelStaat } from '../kern/spel';
 import { volgende } from '../kern/toeval';
@@ -18,6 +19,8 @@ export interface Overvaller {
   hp: number;
   maxHp: number;
   kijkt: 1 | -1;
+  snelheid: number;
+  schade: number;
 }
 
 export interface LandStaat {
@@ -64,9 +67,9 @@ export const overvallerSprites = (a: GerolDimensie['archetype']): string[] =>
 
 // Een overval: `aantal` overvallers uit een hoek van de kaart, op lopend land, een eind buiten de ring.
 export function overval(s: SpelStaat, aantal: number): void {
-  const l = s.land, k = s.kaart;
+  const l = s.land, k = s.kaart, stijl = AANVAL[l.dim.archetype];
   const hoek0 = volgende(s) * Math.PI * 2;
-  const sprites = overvallerSprites(l.dim.archetype);
+  const sprites = stijl?.sprites ?? overvallerSprites(l.dim.archetype);
   for (let i = 0; i < aantal; i++) {
     let x = k.ring.x, y = k.ring.y;
     for (let poging = 0; poging < 40; poging++) {
@@ -75,8 +78,8 @@ export function overval(s: SpelStaat, aantal: number): void {
       const px = k.ring.x + Math.cos(hoek) * af, py = k.ring.y + Math.sin(hoek) * af;
       if (px > 1 && py > 1 && px < k.breed - 1 && py < k.diep - 1 && vrijOp(k.lopen, px, py)) { x = px; y = py; break; }
     }
-    const maxHp = OVERVAL_HP * l.dim.sterkte;
-    l.raiders.push({ id: l.volgendId++, soort: sprites[l.volgendId % sprites.length], x, y, hp: maxHp, maxHp, kijkt: 1 });
+    const maxHp = OVERVAL_HP * l.dim.sterkte * (stijl?.hp ?? 1);
+    l.raiders.push({ id: l.volgendId++, soort: sprites[l.volgendId % sprites.length], x, y, hp: maxHp, maxHp, kijkt: 1, snelheid: OVERVAL_SNELHEID * (stijl?.snelheid ?? 1), schade: OVERVAL_SCHADE * (stijl?.schade ?? 1) });
   }
 }
 
@@ -95,12 +98,13 @@ export function stapLand(s: SpelStaat, sec: number): void {
   if (l.rust > WRATH_RUST_NA) l.wrath = Math.max(l.vloer, l.wrath - WRATH_KALMEER_PER_SEC * sec);
 
   // overvallen volgens het stadium
-  const raid = stadium(l.wrath).raid;
+  const stijl = AANVAL[l.dim.archetype];
+  const raid = l.wrath >= (stijl?.stilTot ?? 0) ? stadium(l.wrath).raid : null;
   if (raid) {
     l.raidIn -= sec;
     if (l.raidIn <= 0) {
-      overval(s, Math.round(raid.aantal * Math.sqrt(l.dim.sterkte)));
-      l.raidIn = raid.elke;
+      overval(s, stijl?.vast ?? Math.max(1, Math.round(raid.aantal * (stijl?.aantal ?? 1) * Math.sqrt(l.dim.sterkte))));
+      l.raidIn = raid.elke * (stijl?.elke ?? 1);
     }
   } else l.raidIn = Math.max(l.raidIn, EERSTE_OVERVAL_SEC);
 
@@ -110,12 +114,12 @@ export function stapLand(s: SpelStaat, sec: number): void {
   for (const o of l.raiders) {
     const dx = mx - o.x, dy = my - o.y, d = Math.hypot(dx, dy);
     if (d > OVERVAL_BEREIK) {
-      const st = Math.min(d - OVERVAL_BEREIK, OVERVAL_SNELHEID * sec);
+      const st = Math.min(d - OVERVAL_BEREIK, o.snelheid * sec);
       const nx = o.x + (dx / d) * st, ny = o.y + (dy / d) * st;
       if (vrijOp(k.lopen, nx, ny)) { o.x = nx; o.y = ny; } else if (vrijOp(k.lopen, o.x + (dx / d) * st, o.y)) o.x += (dx / d) * st; else if (vrijOp(k.lopen, o.x, o.y + (dy / d) * st)) o.y += (dy / d) * st;
       if (Math.abs(dx - dy) > 0.01) o.kijkt = dx - dy > 0 ? 1 : -1;
     } else {
-      m.heelheid = Math.max(0, m.heelheid - OVERVAL_SCHADE * sec);
+      m.heelheid = Math.max(0, m.heelheid - o.schade * sec);
       raakt = true;
     }
     let muizen = 0;

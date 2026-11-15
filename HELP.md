@@ -55,3 +55,9 @@ Bouwen kost onderdelen: **platen** (PLATE) en **balken** (BEAM). Die maak je in 
 - Taking resources from the land raises Wrath. Leave it alone for 10 seconds and it slowly calms down.
 - From WARY on, natives raid your machine. Mice close to a raider fight back, so sending every mouse out to mine leaves the machine open. Raiders damage the machine; the stream needs at least 50% machine health.
 - Test shortcuts in the address bar: `?type=stone` (also antiquity, medieval, industrial, modern, scifi, bugs, monsters, hordes, giants, aliens, tentacle), `?wrath=80`, `?shift=4` (start in dimension 4), `?seed=123`. Combine them: `?factie=muizen&type=stone&wrath=60`.
+
+## A full run
+- A run is 8 shifts plus a finale. Shifts 1 to 3 are always Stone age, Bugs and Giants; 4 to 8 are rolled; the finale starts at WRATHFUL.
+- You win by getting through the stream of the finale. You lose if the machine is not charged (100% power, 50% integrity) when a stream comes, or if its integrity hits 0.
+- Bugs come in fast swarms. Giants only wake at Wrath 55 and then send one huge, slow stomper.
+- Shortcut: `?factie=muizen&power=free` starts a run where the power always counts as charged (to test the whole run). Also `?seed=`, `?shift=`, `?type=`, `?wrath=`.

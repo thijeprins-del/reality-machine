@@ -28,6 +28,18 @@ try {
   }
   if (!(staat.schroot > staat.voor)) fouten.push('muizen hebben geen schroot naar de opslag gebracht');
   if (staat.schijfHoogte !== 1) fouten.push(`schijf ligt op hoogte ${staat.schijfHoogte}, niet 1`);
+  // Een hele run met gratis stroom: 8 shiften plus finale moeten uitkomen op een gewonnen run (de machine blijft heel).
+  const run = await browser.newPage();
+  run.on('pageerror', (e) => fouten.push(String(e)));
+  await run.goto('http://localhost:4317/?seed=7&factie=muizen&power=free');
+  await run.waitForFunction(() => window.SPEL !== undefined, null, { timeout: 15000 });
+  const eind = await run.evaluate(() => {
+    const s = window.SPEL.staat, types = [];
+    for (let i = 0; i < 9 * 3200 && !s.uitkomst; i++) { s.machine.heelheid = 100; if (!types.length || types.at(-1) !== s.land.dim.archetype + s.dimensie) types.push(s.land.dim.archetype + s.dimensie); window.SPEL.stap(0.1); }
+    return { uitkomst: s.uitkomst, dimensie: s.dimensie, types };
+  });
+  console.log('run:', JSON.stringify(eind));
+  if (!eind.uitkomst?.gewonnen || eind.dimensie !== 9) fouten.push('een hele run (8 shiften + finale) werd niet gewonnen');
   if (!(await page.$('canvas'))) fouten.push('geen canvas');
   console.log('staat na 60 s:', JSON.stringify(staat));
 } finally {

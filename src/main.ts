@@ -6,6 +6,7 @@ import { versieTekst } from './kern/omgeving';
 import { beeldKlaar, markeer, maakOverlay, rapport, zetExtra } from './kern/prestatie';
 import { kiesFactie, maakBalk } from './kern/scherm';
 import { nieuwSpel, restTijd, seedUitAdres, startUitAdres, stap, stream, type SpelStaat } from './kern/spel';
+import { FINALE, RUN_SHIFTS } from './data/run';
 import { WRATH_MAX, WRATH_STADIA } from './data/wrath';
 import { landSprites } from './land/beeld';
 import { geefWrath, overval, stadium, stadiumNummer } from './land/wrath';
@@ -91,6 +92,7 @@ async function start(): Promise<void> {
     stuur(staat, ids, kol, rij),
   beeld.bewerker,
   );
+  let eind: HTMLElement | null = null;
   const balk = maakBalk();
   const paneel = factie.paneel ? (await factie.paneel())(() => staat, beeld) : null;
 
@@ -108,17 +110,37 @@ async function start(): Promise<void> {
     const v = staat.voorraad;
     const bezig = staat.werkers.filter((w) => w.taak !== 'rust').length;
     balk.zet([
+      staat.dimensie >= FINALE ? '<b style="color:#ff3030">FINALE</b> · hold out until the machine charges one last time' : `Run: shift ${staat.dimensie} of ${RUN_SHIFTS} + finale`,
       staat.onderweg > 0
         ? `In the void · on the way to ${dimensieKleur(staat.dimensie).naam}`
         : `Dimension ${staat.dimensie} · ${dimensieKleur(staat.dimensie).naam} · stream in ${Math.floor(rest / 60)}:${String(rest % 60).padStart(2, '0')}`,
       wrathRegel(staat),
-      `Machine: power ${Math.floor((100 * staat.machine.energie) / staat.machine.maxEnergie)}% (needs 100% at the stream)${staat.gemist ? ` · stream missed ${staat.gemist}×` : ''}`,
+      `Machine: power ${Math.floor((100 * staat.machine.energie) / staat.machine.maxEnergie)}% · integrity ${Math.floor(staat.machine.heelheid)}%${rest <= 60 && staat.onderweg <= 0 && !staat.start?.gratisStroom && (staat.machine.energie < staat.machine.maxEnergie || staat.machine.heelheid < 50) ? ' · <b style="color:#ff3030">NOT READY FOR THE STREAM: you lose if it comes now</b>' : ' (needs 100% power and 50% integrity at the stream)'}`,
       `Stock: scrap ${Math.floor(v.schroot ?? 0)} · wood ${Math.floor(v.hout ?? 0)} · crystal ${Math.floor(v.kristal ?? 0)}`,
       `${factie.data.naam}: ${staat.werkers.length} (${bezig} working) · selected ${besturing.selectie.size}`,
     ]);
+    if (staat.uitkomst && !eind) eind = toonEinde(staat);
     markeer('first frame');
     beeldKlaar(t.deltaMS, performance.now() - t0);
   });
+}
+
+// Het eind van de run: gewonnen of verloren, met een knop voor een nieuwe run.
+function toonEinde(s: SpelStaat): HTMLElement {
+  const u = s.uitkomst!;
+  const d = document.createElement('div');
+  d.id = 'eind';
+  d.style.cssText = 'position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(5,6,8,.88);color:#e8e8e0;font:16px monospace;text-align:center;padding:24px;z-index:50';
+  d.innerHTML = `<h1 style="margin:0;font-size:40px;color:${u.gewonnen ? '#6fcf6f' : '#ff3030'}">${u.gewonnen ? 'YOU MADE IT' : 'RUN OVER'}</h1>
+    <p style="max-width:520px;margin:0">${u.reden}</p>
+    <p style="margin:0;color:#9a9a90">Reached ${s.dimensie >= FINALE ? 'the finale' : `shift ${s.dimensie} of ${RUN_SHIFTS}`} · ${s.land.dim.naam}</p>`;
+  const b = document.createElement('button');
+  b.textContent = 'NEW RUN';
+  b.style.cssText = 'font:inherit;padding:10px 24px;background:#1d1e1c;color:#9dff2e;border:2px solid #9dff2e;cursor:pointer';
+  b.onclick = () => { const p = new URLSearchParams(location.search); p.delete('seed'); p.delete('shift'); location.search = p.toString(); };
+  d.appendChild(b);
+  document.body.appendChild(d);
+  return d;
 }
 
 const wrathRegel = (s: SpelStaat): string => {
