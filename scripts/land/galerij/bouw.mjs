@@ -9,10 +9,10 @@ const wortel = join(hier, '../../..');
 const uit = process.argv[2] ?? join(wortel, 'dist-galerij.html');
 const bundel = join(hier, '.bundel.js');
 execFileSync('npx', ['--yes', 'esbuild', join(hier, 'ingang.ts'), '--bundle', '--format=iife', '--minify', `--outfile=${bundel}`], { cwd: wortel, stdio: 'inherit' });
-const SPRITES = { steentijd: 'steentijd/pl-krijger', insecten: 'insecten/pl-korf', reuzen: 'reuzen/pl-reus', aliens: 'aliens/pl-grijs', scifi: 'scifi/pl-mech' };
+const TYPES = ['steentijd', 'oudheid', 'middeleeuwen', 'industrieel', 'modern', 'scifi', 'insecten', 'monsters', 'kuddes', 'reuzen', 'aliens', 'tentakelbeest'];
 const urls = {};
-for (const [k, v] of Object.entries(SPRITES)) {
-  const pad = join(wortel, 'assets/land', v + '.png');
+for (const k of TYPES) {
+  const pad = join(wortel, 'assets/land', k, 'otter.png');
   if (existsSync(pad)) urls[k] = 'data:image/png;base64,' + readFileSync(pad).toString('base64');
 }
 const html = readFileSync(join(hier, 'sjabloon.html'), 'utf8')
