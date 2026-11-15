@@ -20,6 +20,7 @@ export function uitlegVan(b: BouwSoort): string {
   if (b.aard === 'sink') return 'Storage for anything. Click it to let a belt next to it take goods out.';
   if (b.aard === 'trash') return 'Destroys what a belt brings in.';
   if (b.aard === 'splitter') return 'A junction: belts run in and out, what comes in leaves in turns.';
+  if (b.aard === 'grabber') return 'An arm: it takes a good from the belt behind it and drops it on the belt in front. Use it to move goods from one line to another. R turns it.';
   if (b.aard === 'merger') return 'A junction: several belts run in, one runs out.';
   if (b.workshop) return 'Turns goods into research packs: click it and pick what to study. Deeper goods give more packs. Spend packs here in the build menu to unlock buildings and recipes. Packs vaporize in the stream.';
   if (b.generator) return 'A generator: it burns fuel and gives power while it burns. Bring fuel by belt (to an input arrow) or by rats. R turns its arrows.';
@@ -27,7 +28,7 @@ export function uitlegVan(b: BouwSoort): string {
   return `Makes goods from a recipe. Bring its input by belt (to an input arrow, the ones with a bar) or by rats${b.recipes.length > 1 ? '; click it to pick a recipe' : ''}. R turns its arrows.`;
 }
 const soortNaam = (b: BouwSoort): string =>
-  b.aard === 'belt' || b.aard === 'splitter' || b.aard === 'merger' ? 'LOGISTICS' : b.workshop ? 'RESEARCH' : b.aard === 'pole' || b.generator ? 'POWER' : b.aard === 'sink' ? 'STORAGE' : b.aard === 'trash' ? 'WASTE' : b.onDeposit ? 'EXTRACTION' : 'PRODUCTION';
+  b.aard === 'belt' || b.aard === 'splitter' || b.aard === 'merger' || b.aard === 'grabber' ? 'LOGISTICS' : b.workshop ? 'RESEARCH' : b.aard === 'pole' || b.generator ? 'POWER' : b.aard === 'sink' ? 'STORAGE' : b.aard === 'trash' ? 'WASTE' : b.onDeposit ? 'EXTRACTION' : 'PRODUCTION';
 export const knoppen = (): Knop[] => [
   ...bouwSoorten().map((b) => ({ id: b.id, naam: b.name, uitleg: uitlegVan(b), soort: b })),
   { id: 'sloop', naam: 'DEMOLISH', uitleg: 'Click or drag over what you want gone. You get the build cost back. Key: X.' },
@@ -132,6 +133,7 @@ export function maakBouwmenu(h: BouwmenuHaken): { werk(sec: number): void; zicht
     if (b.aard === 'prod' && !b.generator) feiten.push(['OUTPUT', `holds ${b.storage}`]);
     if (b.generator) feiten.push(['GIVES', `${Math.max(...b.recipes.map((id) => actieveEconomie().recepten.get(id)?.power ?? 0))} kW`]);
     if (b.aard === 'belt') feiten.push(['SPEED', `${b.speed} tiles/s`]);
+    if (b.aard === 'grabber') feiten.push(['SPEED', `${+(b.speed / 2).toFixed(2)} goods/s`]);
     if (b.aard === 'pole') feiten.push(['REACH', `${b.reach} tiles`], ['LINK', `${b.link} tiles`]);
     if (b.onDeposit) feiten.push(['RANGE', `${b.range} tiles`]);
     feiten.push(['WHERE', b.insideRing ? 'inside the ring' : b.onDeposit ? 'next to a field' : 'anywhere']);
@@ -181,6 +183,7 @@ export function maakBouwmenu(h: BouwmenuHaken): { werk(sec: number): void; zicht
         ${r && !leeg(r.inputs) ? `<div class="rij"><i>IN</i><span class="lijst">${Object.keys(r.inputs).map((x) => `<span class="stuk">${icoon(x)}${Math.floor(g.invoer[x] ?? 0)}</span>`).join('')}</span></div>` : ''}
         ${r && !leeg(r.outputs) ? `<div class="rij"><i>OUT</i><span class="lijst">${Object.keys(r.outputs).map((x) => `<span class="stuk">${icoon(x)}${telling[x] ?? 0}</span>`).join('')}</span></div>` : ''}`;
     } else vastHtml += `<p>${veilig(uitlegVan(b))}</p>`;
+    if (b.aard === 'grabber' && !g.af) standHtml = `<p class="${g.geblokt ? 'geblokt' : 'draait'}">${veilig(g.geblokt || (g.buffer.length ? `CARRYING ${naamVan(g.buffer[0])}` : 'WAITING FOR A GOOD'))}</p>`;
     if (b.aard === 'prod' && !b.onDeposit) vastHtml += '<p class="tip">R turns its arrows: where belts go in and come out.</p>';
     return [vastHtml, standHtml];
   }

@@ -588,6 +588,60 @@ function tekenBandHoek(naam, zaad, stukken) {
   bewaar(naam, d, ax, ay, 1);
 }
 
+// GRIJPER (1 tegel): een voet met een draaikrans, en een arm die het spel er los op zet. De arm is getekend in zestien
+// standen rond (elke 22,5 graden, 0 = naar het oosten, met de klok mee over zuid), in het vlak van de tegels, zodat
+// hij in het isometrische beeld echt ronddraait. De hand reikt tot het midden van de tegel ernaast.
+const GRIJPER_STANDEN = 16;
+function tekenGrijperVoet(d, g, r) {
+  d.blokS(...g(1.5, 1.5, 0), 5, 5, 2, T.staal, { r });
+  d.blokS(...g(2.5, 2.5, 2), 3, 3, 5, T.olijf, { r });
+  d.blokS(...g(3, 3, 7), 2, 2, 2, T.chroom, { r });
+}
+function tekenGrijperArm(d, g, r, stand) {
+  const a = (stand / GRIJPER_STANDEN) * Math.PI * 2;
+  const punt = (af, z) => g(4 + Math.cos(a) * af, 4 + Math.sin(a) * af, z);
+  // de giek: van de draaikrans schuin omhoog naar de elleboog en dan omlaag naar de hand
+  const [x0, y0] = punt(0, 11), [x1, y1] = punt(4, 15), [x2, y2] = punt(7.5, 9);
+  for (const dy of [0, 1]) {
+    d.lijn(x0, y0 + dy, x1, y1 + dy, dy ? T.roest[4] : T.roest[6]);
+    d.lijn(x1, y1 + dy, x2, y2 + dy, dy ? T.staal[4] : T.staal[7]);
+  }
+  d.blokS(...punt(-0.7, 9), 1.4, 1.4, 3, T.chroom, { r }); // schouder
+  const [ex, ey] = punt(4, 15);
+  d.zet(ex, ey, T.messing[6]); d.zet(ex, ey + 1, T.messing[4]); // elleboog
+  // de klauw: twee vingers die omlaag wijzen
+  const [hx, hy] = punt(7.5, 8);
+  for (const dx of [-2, 2]) { d.zet(hx + dx, hy, T.staal[6]); d.zet(hx + dx, hy + 1, T.staal[5]); d.zet(hx + dx, hy + 2, T.staal[3]); }
+  d.zet(hx - 1, hy - 1, T.staal[6]); d.zet(hx, hy - 1, T.staal[7]); d.zet(hx + 1, hy - 1, T.staal[6]);
+}
+function tekenGrijper() {
+  const maak = () => ({ d: new Doek(64, 48), r: ruis(61) });
+  const ax = 32, ay = 22;
+  const g = isoPunt(ax, ay);
+  { // de voet
+    const { d, r } = maak();
+    tekenGrijperVoet(d, g, r);
+    d.omlijn(K.lijn);
+    d.vuil(0.06, K.olie, 0.4, r);
+    d.neon(...g(4, 5.5, 5), N.natrium, 1);
+    bewaar('grijper-voet', d, ax, ay, 1);
+  }
+  for (let st = 0; st < GRIJPER_STANDEN; st++) { // de arm, los
+    const { d, r } = maak();
+    tekenGrijperArm(d, g, r, st);
+    d.omlijn(K.lijn);
+    bewaar(`grijper-arm-${st}`, d, ax, ay, 1);
+  }
+  { // voor het bouwmenu en het spook: voet met de arm naar voren
+    const { d, r } = maak();
+    tekenGrijperVoet(d, g, r);
+    tekenGrijperArm(d, g, r, 1);
+    d.omlijn(K.lijn);
+    d.neon(...g(4, 5.5, 5), N.natrium, 1);
+    bewaar('grijper', d, ax, ay, 1);
+  }
+}
+
 // LADING op de band: een brok schroot, een stuk hout of een kristal. Anker = midden onderaan.
 function tekenLading(goed) {
   const d = new Doek(18, 16);
@@ -936,6 +990,7 @@ tekenKabels();
 tekenMachine();
 tekenOpslag();
 tekenBandLeeg();
+tekenGrijper();
 tekenBandHoek('band-hoek-boven', 53, [[0, 2, 6, 4, 'kol'], [2, 0, 4, 2, 'rij']]); // west en noord
 tekenBandHoek('band-hoek-onder', 54, [[2, 2, 6, 4, 'kol'], [2, 6, 4, 2, 'rij']]); // oost en zuid
 tekenBandHoek('band-hoek-rechts', 55, [[2, 2, 6, 4, 'kol'], [2, 0, 4, 2, 'rij']]); // oost en noord

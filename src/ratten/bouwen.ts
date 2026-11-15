@@ -14,7 +14,7 @@ import { PIXEL, type Stuk, type WereldBeeld } from '../kern/wereldbeeld';
 import { energie, verbruiker } from './energie';
 import {
   aangesloten, bereikVan, blokVan, bouwSoorten, gebouwOp, getallen, goederen, industrie, kanBandOp, kanZetten, kiesRecept, koop, legBand,
-  magazijnen, makers, midden, palen as allePalen, draaiPoorten, poorten, poortenVan, RICHTINGEN, sloop, soortVan, tegel, vast, zet,
+  magazijnen, makers, midden, palen as allePalen, draaiPoorten, GRIJP_RICHTING, poorten, poortenVan, RICHTINGEN, sloop, soortVan, tegel, vast, zet,
   type Gebouw, type Oordeel, type Poort,
 } from './industrie';
 import { maakBouwmenu } from './bouwmenu';
@@ -91,6 +91,7 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
   const voorVoet = new Map<number, Stuk[]>(); // wat een boor of fabricator klaar heeft liggen
   const banden = new Map<number, { st: Stuk; last: Stuk | null }>();
   const vaste = new Map<string, Stuk>(); // bronnen en gebouwen
+  const armen = new Map<number, { arm: Stuk; last: Stuk | null }>(); // de arm van elke grijper en wat hij draagt
   const hopen: Stuk[] = [];
   let geestStuk: Stuk | null = null;
   let radHoek = 0;
@@ -333,6 +334,27 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
       zetDing(st, b.x + w - 0.2 - (i % 4) * 0.28, b.y + w - 0.1 - Math.floor(i / 4) * 0.22, (b.x + b.y + w + 1) * 10 + 5);
     });
   }
+  // De arm van een grijper. Hij wijst naar de band achter hem (klok 0) en zwaait met de klok mee naar de band voor hem
+  // (klok 1); er zijn zestien getekende standen, 0 = naar het oosten. Wat hij draagt hangt onder de klauw.
+  function tekenArm(g: Gebouw, naam: string): void {
+    const voor = (g.draai % 4) * 4; // stand als hij naar voren wijst: oost 0, zuid 4, west 8, noord 12
+    const stand = (((voor + 8 + Math.round(g.klok * 8)) % 16) + 16) % 16;
+    let a = armen.get(g.id);
+    if (!a) armen.set(g.id, (a = { arm: beeld.maak(`${naam}-arm-${stand}`), last: null }));
+    if (a.arm.naam !== `${naam}-arm-${stand}`) beeld.wissel(a.arm, `${naam}-arm-${stand}`);
+    zetStuk(a.arm, g.x, g.y, 1, 1, (g.x + g.y) * 10 + 7);
+    half(a.arm, g.af);
+    if (g.buffer.length) {
+      const hoek = (stand / 16) * Math.PI * 2;
+      const p = stukVoor(g.buffer[0], 'last');
+      if (!a.last) a.last = beeld.maak(p.naam, true);
+      zetNaam(a.last, p);
+      toon(a.last, true);
+      zetDing(a.last, g.x + Math.cos(hoek) * 0.94, g.y + Math.sin(hoek) * 0.94, (g.x + g.y) * 10 + 8);
+      for (const d of a.last.delen) d.y -= 7 * PIXEL;
+    } else if (a.last) toon(a.last, false);
+  }
+
   // De aansluitpunten van een gebouw: een pijl op de tegel waar een band hoort, in de kleur van het goed dat erdoor gaat
   // (wit = nog geen recept gekozen, of alles). Ingangen liggen links en wijzen het gebouw in, uitgangen rechts en wijzen weg.
   // `fel` = met een rand om de tegel erbij: voor het gekozen gebouw, en voor alles als je een band legt.
@@ -380,7 +402,9 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
     for (const g of ind.gebouwen) {
       const soort = soortVan(g), blok = blokVan(g);
       if (soort.onDeposit) continue;
-      vastAan(`g-${g.id}`, spriteVoor(soort).naam, blok, soort.size, true, g.af, soort.aard === 'sink' ? (g.x + g.y) * 10 - 5 : undefined);
+      const grijpt = soort.aard === 'grabber' && beeld.heeft(`${spriteVoor(soort).naam}-voet`);
+      vastAan(`g-${g.id}`, grijpt ? `${spriteVoor(soort).naam}-voet` : spriteVoor(soort).naam, blok, soort.size, true, g.af, soort.aard === 'sink' ? (g.x + g.y) * 10 - 5 : undefined);
+      if (grijpt) tekenArm(g, spriteVoor(soort).naam);
       const st = vaste.get(`g-${g.id}`)!;
       st.delen[0].tint = spriteVoor(soort).tint;
       voortgang(blok, g.af, soort.work, g.nodig, soort.cost);
@@ -397,6 +421,7 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
       }
     }
     for (const [k, st] of vaste) if (!gezien.has(k)) { beeld.weg(st); vaste.delete(k); }
+    for (const [id, a] of armen) if (!ind.gebouwen.some((g) => g.id === id)) { beeld.weg(a.arm); if (a.last) beeld.weg(a.last); armen.delete(id); }
 
     // winningsgebouwen: vliegen, landen, opgebouwd worden, trillen
     const winners = makers(ind).filter((b) => soortVan(b).onDeposit);
@@ -650,6 +675,13 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
         for (const a of bereikVan(s, soort, kol, rij)) geest.poly(ruitPad(a.x, a.y)).fill({ color: hex(goed(a.goed).color), alpha: 0.3 });
       }
       if (soort.aard === 'pole') cirkel(kol, rij, soort.reach, kleur);
+      if (soort.aard === 'grabber') {
+        const naar = GRIJP_RICHTING[bouwDraai % 4], [dx, dy] = RICHTINGEN[naar];
+        for (const [x, y] of [[kol - dx, rij - dy], [kol + dx, rij + dy]]) {
+          geest.poly(ruitPad(x, y)).stroke({ width: PIXEL, color: 0xffd23f, alpha: 0.7 });
+          pijl(x, y, naar, 0xffd23f);
+        }
+      }
       tekenPoorten(geest, poortenVan(soort, soort.recipes.length === 1 ? actieveEconomie().recepten.get(soort.recipes[0]) : undefined, kol, rij, bouwDraai), true);
       return;
     }

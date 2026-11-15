@@ -101,7 +101,7 @@ wereld. Het spel leest twee mappen met JSON-bestanden, zodat je kunt schaven zon
 - **Tiers en onderzoek** (15 nov). Gebouwen en recepten hebben een `tier` (standaard 1) en, boven tier 1, een prijs
   `unlock` in research packs. Tier 1 is vrij: mijnen en oogsters, branders, band, paal, magazijnen, de werkplaats en de
   basisfabrieken met hun eerste recepten. Daarboven koop je elk gebouw en elk recept apart vrij in het bouwmenu; iets
-  van tier N kan pas als er iets van tier N-1 vrij is. Nu op slot: splitter en merger (12 packs), de tweede routes
+  van tier N kan pas als er iets van tier N-1 vrij is. Nu op slot: splitter en merger (12 packs), de grijper (10 packs), de tweede routes
   (8 packs) en per economie één gebouw voor geavanceerde fabricage (20 packs) dat twee platen en een lokale grondstof
   hardt tot een **pantserplaat** (`pantserplaat`, overal hetzelfde id, per wereld een eigen naam): temper forge
   (roestduin, koolstof), blast furnace (aarde, biomassa), autoclave (gifwoud, hars), quench tower (magmaveld, basalt),
@@ -113,6 +113,10 @@ wereld. Het spel leest twee mappen met JSON-bestanden, zodat je kunt schaven zon
   heeft `"vaporizes": true`: het verdampt bij de sprong, uit de voorraad, van de banden en uit de gebouwen. Wat je
   hebt vrijgekocht blijft per economie de hele run; in een nieuwe economie begin je weer bij tier 1. De lader eist per
   economie een werkplaats, het goed `onderzoek` en minstens één goed met `research`.
+- **Grijper** (`"grabber": true`, 16 nov): een gebouw van één tegel met een arm. Hij pakt een goed van de bandtegel
+  achter zich en legt het op de bandtegel voor zich; `speed` is het aantal zwaaien per seconde (heen en terug is één
+  goed), `draai` op het gebouw bepaalt waar hij heen wijst (R). Alleen van band naar band; in of uit een gebouw pakt hij
+  niet. In beeld: een vaste voet met de arm er los op, in zestien getekende standen (`scripts/pixel/muizen.mjs`).
 - **Nog geen kunst?** Een gebouw of goed zonder eigen plaatje krijgt een bestaand plaatje in zijn kleur.
 - **Stroom** (15 nov): het looprad hoort bij de machine; alle andere stroom komt van **generatoren**, en dat zijn gewone
   productiegebouwen met een recept dat stroom levert: `{ "inputs": { "biomassa": 1 }, "time": 5, "power": 5 }` geeft 5 kW

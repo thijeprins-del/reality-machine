@@ -76,6 +76,9 @@ wat je hebt, en zijn recepten met iconen. Klik op een gebouw in de wereld en het
   Klik erop en kies een goed: een band ernaast die er niet in loopt, trekt dat goed eruit.
 - **Splitter** en **Merger**: een kruispunt van één tegel. Banden lopen erin en eruit; wat erin komt gaat om de beurt de
   banden op die ervan weg lopen. **Incinerator**: vernietigt wat een band erin brengt.
+- **Grijper** (GRABBER, op slot): een arm van één tegel. Hij pakt een goed van de band achter zich en legt het op de
+  band voor zich, dus je kunt er goederen mee van de ene lijn naar de andere tillen. **R** draait hem: de gele pijlen
+  bij het neerzetten laten zien van welke tegel naar welke. Hij heeft stroom nodig.
 - **Slopen** (DEMOLISH, toets **X**): klik of sleep. Je krijgt de kosten terug.
 - **Laboratorium** (LABORATORY) en **onderzoek**: niet alles is vanaf het begin te bouwen. Een kaart met LOCKED
   zit op slot, net als sommige recepten. Bouw een laboratorium, klik erop en kies een grondstof om te onderzoeken: per

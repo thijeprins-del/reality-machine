@@ -4,6 +4,7 @@
 //             levert zijn recept stroom ("power"), dan is het een generator (brander)
 //   sink      magazijn: neemt alles aan en geeft de opslag meer ruimte
 //   trash     vernietigt wat een band erin brengt
+//   grabber   grijper: pakt een goed van de band achter zich en legt het op de band voor zich (R draait hem)
 //   splitter / merger   kruispunt op de banden: wat erin loopt gaat om de beurt de banden op die ervan weg lopen
 //   belt      lopende band, één tegel
 //   pole      paal: draagt stroom verder
@@ -57,7 +58,7 @@ export interface Gebouw {
   vlieg: number; // seconden nog in de lucht (gegooid door de machine); 0 = staat
   graaft: boolean; // onDeposit: is nu aan het winnen (voor het beeld)
   uit: Goed | null; // sink: welk goed een band ernaast eruit trekt (instelbaar: klik erop)
-  draai: number; // prod: zoveel kwartslagen (0..3) zijn de aansluitpunten met de klok mee gedraaid
+  draai: number; // prod: zoveel kwartslagen (0..3) zijn de aansluitpunten met de klok mee gedraaid; grijper: waar hij heen wijst
 }
 export interface MBand extends Band {
   eco: string;
@@ -75,6 +76,8 @@ export interface IndustrieStaat {
   net: { tik: number; palen: Set<number> };
 }
 
+// Waar een grijper heen wijst bij draai 0, 1, 2 en 3: met de klok mee. Hij pakt achter zich en legt voor zich neer.
+export const GRIJP_RICHTING: Richting[] = ['O', 'Z', 'W', 'N'];
 export const RICHTINGEN: Record<Richting, [number, number]> = { O: [1, 0], W: [-1, 0], Z: [0, 1], N: [0, -1] };
 export const tegel = (x: number, y: number) => y * 1000 + x;
 export const leeg = (v: Voorraad) => !Object.values(v).some((n) => (n ?? 0) > 0);
@@ -210,6 +213,7 @@ export function industrieVraag(s: SpelStaat): number {
   let kw = 0;
   for (const b of i.banden.values()) if (!b.af) kw += soortVan(b).kW;
   for (const g of makers(i)) if (klaar(g) && (g.recept || soortVan(g).onDeposit) && gevoed(s, blokVan(g))) kw += soortVan(g).kW;
+  for (const g of i.gebouwen) if (soortVan(g).aard === 'grabber' && klaar(g) && gevoed(s, blokVan(g))) kw += soortVan(g).kW;
   return Math.round(kw * 10) / 10;
 }
 // ---- generatoren: gebouwen met een recept dat stroom levert ----
@@ -296,6 +300,7 @@ export function kanZetten(s: SpelStaat, soort: BouwSoort, x: number, y: number):
   if (soort.aard === 'sink') return { ok: true, reden: `${soort.name} HERE: +${soort.storage} STORAGE. CLICK IT LATER TO LET A BELT TAKE GOODS OUT` };
   if (soort.aard === 'trash') return { ok: true, reden: `${soort.name} HERE: DESTROYS WHAT A BELT BRINGS IN` };
   if (soort.aard === 'splitter' || soort.aard === 'merger') return { ok: true, reden: `${soort.name} HERE: BELTS RUN IN, BELTS RUN OUT, IN TURNS` };
+  if (soort.aard === 'grabber') return { ok: true, reden: `${soort.name} HERE: TAKES FROM THE BELT BEHIND IT, DROPS ON THE BELT IN FRONT. R TURNS IT${stroom}` };
   return { ok: true, reden: `${soort.name} HERE${stroom}` };
 }
 
@@ -415,6 +420,32 @@ function stapMakers(s: SpelStaat, sec: number): void {
     const soort = soortVan(g);
     if (soort.aard === 'splitter' || soort.aard === 'merger') {
       if (klaar(g) && g.buffer.length) zetOpBand(i, g);
+      continue;
+    }
+    if (soort.aard === 'grabber') {
+      // De grijper: `klok` is waar de arm staat (0 = boven de band achter hem, 1 = boven de band voor hem). Met een goed in
+      // de klauw zwaait hij naar voren en legt het neer zodra daar plek is; leeg zwaait hij terug en pakt het volgende.
+      if (!klaar(g)) continue;
+      const [dx, dy] = RICHTINGEN[GRIJP_RICHTING[g.draai % 4]];
+      const stroom = soort.kW > 0 ? (gevoed(s, blokVan(g)) ? k : 0) : 1;
+      const zwaai = sec * soort.speed * stroom;
+      g.geblokt = stroom > 0 ? '' : 'NO POWER';
+      if (g.buffer.length) {
+        g.klok = Math.min(1, g.klok + zwaai);
+        const doel = i.banden.get(tegel(g.x + dx, g.y + dy));
+        if (g.klok >= 1 && doel && !doel.af && !doel.goed) {
+          doel.goed = g.buffer.pop();
+          doel.voortgang = 0.5; // midden op de tegel, waar de klauw hangt
+        } else if (g.klok >= 1) g.geblokt = doel ? 'THE BELT IN FRONT IS FULL' : 'NO BELT IN FRONT';
+      } else {
+        g.klok = Math.max(0, g.klok - zwaai);
+        const bron = i.banden.get(tegel(g.x - dx, g.y - dy));
+        if (g.klok <= 0 && bron && !bron.af && bron.goed) {
+          g.buffer.push(bron.goed);
+          bron.goed = undefined;
+          bron.voortgang = 0;
+        } else if (g.klok <= 0 && !bron) g.geblokt = 'NO BELT BEHIND';
+      }
       continue;
     }
     if (soort.aard !== 'prod') continue;
@@ -609,9 +640,10 @@ export function poortenVan(soort: BouwSoort, recept: ReceptSoort | undefined, x:
 }
 // De aansluitpunten een kwartslag verder (R).
 export function draaiPoorten(s: SpelStaat, g: Gebouw): void {
-  if (soortVan(g).aard !== 'prod' || soortVan(g).onDeposit) return;
+  const soort = soortVan(g);
+  if (soort.aard !== 'grabber' && (soort.aard !== 'prod' || soort.onDeposit)) return;
   g.draai = (g.draai + 1) % 4;
-  log(energie(s), `${soortVan(g).name}: ARROWS TURNED`, 'cyaan');
+  log(energie(s), soort.aard === 'grabber' ? `${soort.name} TURNED` : `${soort.name}: ARROWS TURNED`, 'cyaan');
 }
 export const poorten = (g: Gebouw): Poort[] => poortenVan(soortVan(g), receptVan(g), g.x, g.y, g.draai);
 // De tegels waar dit gebouw zijn uitvoer op een band legt: zijn uitgangen, of (kruispunten) elke tegel eromheen.

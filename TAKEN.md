@@ -32,7 +32,8 @@ De otters zijn vervallen (O1, O2): er is één soort, de pack rats, en elke were
 - [ ] E6 Stroom uit de economie: generatoren als gebouwen (koolstof- en biomassabrander), oude bronnen en upgrades weg (Lieuwe, zelfde branch)
 - [ ] E7 Knutselwerkplaats, research packs en tiers: vrijkopen per gebouw en recept, packs verdampen bij de sprong (Lieuwe, zelfde branch)
 - [ ] E8 Per economie een tier 2-gebouw voor geavanceerde fabricage dat pantserplaat maakt (Lieuwe, zelfde branch)
-- [ ] E9 Balans van de zes economieën en de onderzoeksprijzen; langere ketens per wereld met complexe producten op hogere tiers
+- [ ] E9 Grijper: een arm die van de ene band pakt en op de andere legt, tier 2 (Lieuwe, zelfde branch)
+- [ ] E10 Balans van de zes economieën en de onderzoeksprijzen; langere ketens per wereld met complexe producten op hogere tiers
 
 ## Planning
 - Week 1 (t/m 8 nov): repo, uitrol, iso-veld met eiland, één dimensie, streamtimer
@@ -43,6 +44,7 @@ De otters zijn vervallen (O1, O2): er is één soort, de pack rats, en elke were
 
 ## Later-lijst (niet bouwen tenzij alles af is)
 - Bruggen en sorteerders voor banden
+- De grijper ook uit en in gebouwen en magazijnen laten pakken; een filter per grijper
 - Gebouwen die pantser maken uit pantserplaat (tier 3); een eigen plaatje van de pantserplaat per wereld
 - Plaatjes voor koolstof en biomassa, en eigen plaatjes voor de twee branders (nu de oude houtbrander en dynamo)
 - Een generator die stilvalt als er geen vraag is (nu stookt hij altijd door)

@@ -39,7 +39,7 @@ export interface ReceptSoort {
   unlock: number; // prijs in research packs om het vrij te kopen (tier > 1)
 }
 // Het gedrag van een gebouw. Nieuw gedrag vraagt code; een nieuw gebouw met bestaand gedrag alleen een regel in het bestand.
-export type Aard = 'prod' | 'sink' | 'trash' | 'splitter' | 'merger' | 'belt' | 'pole';
+export type Aard = 'prod' | 'sink' | 'trash' | 'splitter' | 'merger' | 'grabber' | 'belt' | 'pole';
 export interface BouwSoort {
   id: string;
   name: string;
@@ -51,7 +51,7 @@ export interface BouwSoort {
   work: number; // rat-seconden bouwen op de plek
   size: 1 | 2; // tegels breed en diep
   storage: number; // 'prod': volume dat de uitvoer mag innemen; 'sink': wat het magazijn erbij geeft
-  speed: number; // 'prod': maal de snelheid van het recept; 'belt': tegels per seconde
+  speed: number; // 'prod': maal de snelheid van het recept; 'belt': tegels per seconde; 'grabber': zwaaien per seconde
   ports: number; // splitter: uitgangen; merger: ingangen
   kW: number;
   crew: number; // ratten voor volle snelheid (0 = draait vanzelf)
@@ -189,8 +189,8 @@ export function leesEconomie(bron: unknown): { fouten: string[]; economie?: Econ
     const rs = b.workshop ? studies : b.recipes ?? [];
     if (!Array.isArray(rs) || rs.some((x) => typeof x !== 'string')) return fouten.push(`Building "${b.id}": "recipes" must be an array of recipe ids`);
     (rs as string[]).forEach((r) => { if (!C.has(r)) fouten.push(`Building "${b.id}": unknown recipe "${r}"`); });
-    const aard: Aard = b.belt ? 'belt' : b.pole ? 'pole' : b.trash ? 'trash' : b.sink ? 'sink' : b.splitter ? 'splitter' : b.merger ? 'merger' : 'prod';
-    if (aard === 'prod' && !rs.length) waarschuwingen.push(`Building "${b.id}" has no recipes and isn't a sink, trash, splitter, merger, belt or pole`);
+    const aard: Aard = b.belt ? 'belt' : b.pole ? 'pole' : b.trash ? 'trash' : b.sink ? 'sink' : b.splitter ? 'splitter' : b.merger ? 'merger' : b.grabber ? 'grabber' : 'prod';
+    if (aard === 'prod' && !rs.length) waarschuwingen.push(`Building "${b.id}" has no recipes and isn't a sink, trash, splitter, merger, grabber, belt or pole`);
     if (aard !== 'prod' && rs.length) waarschuwingen.push(`Building "${b.id}" is a ${aard}, so its recipes are ignored`);
     const ports = b.ports ?? ({ sink: 4, trash: 2, splitter: 3, merger: 3 } as Record<string, number>)[aard] ?? 1;
     if (!(Number.isInteger(ports) && (ports as number) >= 1 && (ports as number) <= 8)) fouten.push(`Building "${b.id}": "ports" must be a whole number 1–8`);
@@ -198,7 +198,7 @@ export function leesEconomie(bron: unknown): { fouten: string[]; economie?: Econ
     if (!(typeof speed === 'number' && speed > 0)) fouten.push(`Building "${b.id}": "speed" must be a number > 0`);
     if (b.storage !== undefined && !(typeof b.storage === 'number' && b.storage > 0)) fouten.push(`Building "${b.id}": "storage" must be a number > 0`);
     const storage = getal(b.storage, defaultStorage);
-    const size = b.size ?? (aard === 'belt' || aard === 'pole' || aard === 'splitter' || aard === 'merger' || aard === 'trash' ? 1 : 2);
+    const size = b.size ?? (aard === 'belt' || aard === 'pole' || aard === 'splitter' || aard === 'merger' || aard === 'grabber' || aard === 'trash' ? 1 : 2);
     if (size !== 1 && size !== 2) fouten.push(`Building "${b.id}": "size" must be 1 or 2`);
     if (aard === 'prod') (rs as string[]).forEach((r) => {
       const c = C.get(r);
