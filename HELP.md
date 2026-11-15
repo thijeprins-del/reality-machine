@@ -77,6 +77,13 @@ wat je hebt, en zijn recepten met iconen. Klik op een gebouw in de wereld en het
 - **Splitter** en **Merger**: een kruispunt van één tegel. Banden lopen erin en eruit; wat erin komt gaat om de beurt de
   banden op die ervan weg lopen. **Incinerator**: vernietigt wat een band erin brengt.
 - **Slopen** (DEMOLISH, toets **X**): klik of sleep. Je krijgt de kosten terug.
+- **Werkplaats** (TINKERING WORKSHOP) en **onderzoek**: niet alles is vanaf het begin te bouwen. Een kaart met LOCKED
+  zit op slot, net als sommige recepten. Bouw een werkplaats, klik erop en kies een grondstof om te onderzoeken: per
+  paar stuks komt er een **research pack** uit. Bewerkte goederen (platen, balken, brandstof) geven er meer dan ruwe
+  grondstof. Klik een kaart op slot en koop hem vrij met **UNLOCK**; een recept op slot koop je vrij in de lijst van het
+  aangeklikte gebouw. Linksboven in het bouwmenu staat hoeveel packs je hebt. **Research packs verdampen bij de
+  sprong**, dus geef ze uit voor de stream komt. Wat je hebt vrijgekocht blijft in die economie de hele run; in een
+  wereld met een andere economie begin je opnieuw.
 - **De opslag is één voorraad**: alles deelt dezelfde ruimte (STORAGE in het bouwmenu), en grote goederen nemen meer
   plek in. Vol? Bouw een magazijn, of verbruik wat je hebt. Ratten graven een grondstof met de hand maar tot haar deel.
 - Je kunt alles neerzetten, ook als het er nog niet is: ratten brengen de spullen uit de opslag zodra ze er liggen.

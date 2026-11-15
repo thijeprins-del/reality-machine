@@ -600,6 +600,10 @@ function tekenLading(goed) {
     d.blokS(...g(-2.5, -1, 0), 5, 1, 2, T.bruin, { r });
     d.blokS(...g(-2, 0.2, 0), 5, 1, 2, T.bruin, { r });
     d.blokS(...g(-2.2, -0.4, 2), 5, 1, 2, T.bruin, { r });
+  } else if (goed === 'onderzoek') {
+    // research pack: een messing kistje met een gloeiend buisje erop
+    d.blokS(...g(-2, -1.5, 0), 4, 3, 3, T.messing, { r });
+    d.blokS(...g(-0.5, -0.5, 3), 1, 1, 4, T.glas, { r });
   } else if (goed === 'plaat') {
     // onderdeel: twee geslepen stalen platen
     d.blokS(...g(-2.5, -2, 0), 5, 4, 1, T.staal, { r });
@@ -614,6 +618,7 @@ function tekenLading(goed) {
   }
   d.omlijn(K.lijn);
   if (goed === 'kristal') for (const [x, y] of [[9, 1], [9, 2], [9, 3], [8, 5]]) d.licht(x, y, N.cyaan);
+  if (goed === 'onderzoek') for (const dz of [4, 5, 6]) d.licht(...g(0, 0.5, dz), N.cyaan);
   bewaar(`last-${goed}`, d, 9, 13, 0);
 }
 
@@ -631,6 +636,10 @@ function tekenHoop(goed) {
   } else if (goed === 'hout') {
     for (let z = 0; z < 4; z++)
       for (let j = 0; j < 4 - z; j++) d.blokS(...g(-3 + z * 0.4, -2 + j * 1.2 + z * 0.6, z * 1.6), 6 - z * 0.5, 1, 1.6, T.bruin, { r });
+  } else if (goed === 'onderzoek') {
+    // een stapeltje kistjes, elk met een buisje
+    for (const [k, rr, z] of [[-3, -2, 0], [0.5, -2.5, 0], [-2.5, 0.8, 0], [0.8, 0.5, 0], [-1.2, -1, 3]]) d.blokS(...g(k, rr, z), 3, 2.4, 3, T.messing, { r });
+    for (const [k, rr, z] of [[-1.8, -1, 3], [1.6, -1.6, 3], [-1.4, 1.6, 3], [0, 0, 6]]) d.blokS(...g(k, rr, z), 0.8, 0.8, 3, T.glas, { r });
   } else if (goed === 'plaat') {
     for (let z = 0; z < 6; z++) d.blokS(...g(-3 + (z % 2) * 0.3, -2.5 + (z % 3) * 0.2, z * 1.1), 6, 5, 1, T.staal, { r });
   } else if (goed === 'balk') {
@@ -646,6 +655,7 @@ function tekenHoop(goed) {
   d.omlijn(K.lijn);
   d.vuil(0.05, K.olie, 0.4, r);
   if (goed === 'kristal') for (const [x, y] of [[13, 3], [13, 4], [15, 7], [12, 7], [14, 9]]) d.licht(x, y, N.cyaan);
+  if (goed === 'onderzoek') for (const [k, rr, z] of [[-1.4, -0.6, 5], [2, -1.2, 5], [-1, 2, 5], [0.4, 0.4, 8]]) d.licht(...g(k, rr, z), N.cyaan);
   bewaar(`hoop-${goed}`, d, 14, 19, 0);
 }
 
@@ -920,7 +930,7 @@ tekenBandLeeg();
 tekenBandHoek('band-hoek-boven', 53, [[0, 2, 6, 4, 'kol'], [2, 0, 4, 2, 'rij']]); // west en noord
 tekenBandHoek('band-hoek-onder', 54, [[2, 2, 6, 4, 'kol'], [2, 6, 4, 2, 'rij']]); // oost en zuid
 tekenBandHoek('band-hoek-rechts', 55, [[2, 2, 6, 4, 'kol'], [2, 0, 4, 2, 'rij']]); // oost en noord
-for (const g of ['schroot', 'hout', 'kristal', 'plaat', 'balk']) {
+for (const g of ['schroot', 'hout', 'kristal', 'plaat', 'balk', 'onderzoek']) {
   tekenLading(g);
   tekenHoop(g);
 }

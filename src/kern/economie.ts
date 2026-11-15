@@ -24,6 +24,8 @@ export interface GoedSoort {
   icon?: string; // klein plaatje als data-URL (uit de sandbox)
   onMap: boolean; // ligt als veld op de kaart
   glows: boolean; // gloeit in beeld (kristal)
+  research?: { per: number; packs: number }; // de werkplaats maakt van `per` stuks `packs` research packs
+  vaporizes: boolean; // verdwijnt bij de sprong (research packs)
   fields?: Velden;
 }
 export interface ReceptSoort {
@@ -33,6 +35,8 @@ export interface ReceptSoort {
   inputs: Voorraad; // leeg = winning (mijn, steengroeve)
   outputs: Voorraad;
   power: number; // kW die het gebouw levert zolang dit recept draait (0 = geen generator)
+  tier: number; // 1 = vanaf het begin; hoger koop je vrij met research packs
+  unlock: number; // prijs in research packs om het vrij te kopen (tier > 1)
 }
 // Het gedrag van een gebouw. Nieuw gedrag vraagt code; een nieuw gebouw met bestaand gedrag alleen een regel in het bestand.
 export type Aard = 'prod' | 'sink' | 'trash' | 'splitter' | 'merger' | 'belt' | 'pole';
@@ -52,6 +56,9 @@ export interface BouwSoort {
   kW: number;
   crew: number; // ratten voor volle snelheid (0 = draait vanzelf)
   insideRing: boolean; // mag alleen binnen de ring
+  tier: number; // 1 = vanaf het begin te bouwen; hoger koop je vrij met research packs
+  unlock: number; // prijs in research packs om het vrij te kopen (tier > 1)
+  workshop: boolean; // de knutselwerkplaats: zijn recepten zijn de goederen met "research"
   generator: boolean; // een van zijn recepten levert stroom ("power"): een brander, een turbine
   onDeposit: boolean; // moet bij een veld staan en draait het recept dat dat veld geeft
   depRes: string[]; // welke grondstoffen op de kaart dit gebouw kan winnen
@@ -77,6 +84,8 @@ const heeft = (o: object, k: string) => Object.prototype.hasOwnProperty.call(o, 
 const kleur = (c: unknown, anders: string) => (typeof c === 'string' && /^#[0-9a-f]{6}$/i.test(c) ? c : anders);
 const getal = (v: unknown, anders: number) => (typeof v === 'number' && Number.isFinite(v) ? v : anders);
 const paar = (v: unknown): v is [number, number] => Array.isArray(v) && v.length === 2 && v.every((n) => typeof n === 'number' && n >= 0) && v[0] <= v[1];
+// Het goed dat de werkplaats maakt en waarmee je vrijkoopt. Bestaat in elke economie met hetzelfde id.
+export const ONDERZOEK = 'onderzoek';
 const VELD_STANDAARD: Velden = { count: 3, tiles: [6, 10], perTile: 150, distance: [19, 27] };
 
 // Volume van een stapel goederen.
@@ -96,6 +105,14 @@ export function leesEconomie(bron: unknown): { fouten: string[]; economie?: Econ
   if (fouten.length) return { fouten };
 
   const R = new Map<string, GoedSoort>(), C = new Map<string, ReceptSoort>(), B = new Map<string, BouwSoort>();
+  // Tier en prijs van een gebouw of recept: tier 1 is vrij, daarboven hoort er een prijs in research packs bij.
+  const slot = (o: Obj, wat: string): { tier: number; unlock: number } => {
+    const tier = o.tier ?? 1, unlock = o.unlock ?? 0;
+    if (!(Number.isInteger(tier) && (tier as number) >= 1)) fouten.push(`${wat}: "tier" must be a whole number ≥ 1`);
+    if (!(Number.isInteger(unlock) && (unlock as number) >= 0)) fouten.push(`${wat}: "unlock" must be a whole number of research packs ≥ 0`);
+    if ((tier as number) > 1 && o.unlock === undefined) fouten.push(`${wat} is tier ${tier}, so it needs "unlock": the price in research packs`);
+    return { tier: Number.isInteger(tier) ? (tier as number) : 1, unlock: Number.isInteger(unlock) ? (unlock as number) : 0 };
+  };
   (bron.resources as unknown[]).forEach((r, i) => {
     if (!isObj(r) || typeof r.id !== 'string' || !r.id) return fouten.push(`resources[${i}] needs a string "id"`);
     if (R.has(r.id)) return fouten.push(`Duplicate resource id "${r.id}"`);
@@ -121,8 +138,14 @@ export function leesEconomie(bron: unknown): { fouten: string[]; economie?: Econ
       if (f.tiles !== undefined && !paar(f.tiles)) fouten.push(`Resource "${r.id}": "fields.tiles" must be [min, max]`);
       if (f.distance !== undefined && !paar(f.distance)) fouten.push(`Resource "${r.id}": "fields.distance" must be [min, max]`);
     }
+    let research: GoedSoort['research'];
+    if (r.research !== undefined) {
+      const o = isObj(r.research) ? r.research : {};
+      if (Number.isInteger(o.per) && (o.per as number) >= 1 && Number.isInteger(o.packs) && (o.packs as number) >= 1) research = { per: o.per as number, packs: o.packs as number };
+      else fouten.push(`Resource "${r.id}": "research" must be { "per": whole number ≥ 1, "packs": whole number ≥ 1 }`);
+    }
     R.set(r.id, { id: r.id, name: typeof r.name === 'string' && r.name ? r.name : r.id.toUpperCase(), color: kleur(r.color, '#999999'), volume: v as number,
-      sprite: typeof r.sprite === 'string' ? r.sprite : undefined, icon, onMap, glows: !!r.glows, fields });
+      sprite: typeof r.sprite === 'string' ? r.sprite : undefined, icon, onMap, glows: !!r.glows, research, vaporizes: !!r.vaporizes, fields });
   });
 
   (bron.recipes as unknown[]).forEach((c, i) => {
@@ -141,18 +164,29 @@ export function leesEconomie(bron: unknown): { fouten: string[]; economie?: Econ
     if (isObj(outs) && !Object.keys(outs).length && !(typeof power === 'number' && power > 0)) fouten.push(`Recipe "${c.id}" has no outputs and no power`);
     const t = c.time ?? 1;
     if (!(typeof t === 'number' && t > 0)) fouten.push(`Recipe "${c.id}": "time" must be seconds > 0`);
-    C.set(c.id, { id: c.id, name: typeof c.name === 'string' && c.name ? c.name : c.id, time: t as number, inputs: (isObj(ins) ? ins : {}) as Voorraad, outputs: (isObj(outs) ? outs : {}) as Voorraad, power: typeof power === 'number' && power > 0 ? power : 0 });
+    C.set(c.id, { id: c.id, name: typeof c.name === 'string' && c.name ? c.name : c.id, time: t as number, inputs: (isObj(ins) ? ins : {}) as Voorraad, outputs: (isObj(outs) ? outs : {}) as Voorraad, power: typeof power === 'number' && power > 0 ? power : 0, ...slot(c, `Recipe "${c.id}"`) });
+    // winnen moet altijd kunnen: een recept zonder invoer dat een veld leeghaalt zit nooit op slot
+    if (isObj(ins) && !Object.keys(ins).length && !(power as number > 0) && ((c.tier as number) ?? 1) > 1) fouten.push(`Recipe "${c.id}" digs a resource, so it must be tier 1`);
   });
 
   const s = isObj(bron.settings) ? bron.settings : {};
   const pos = (v: unknown, d: number) => (typeof v === 'number' && v > 0 ? v : d);
   const bufferSize = pos(s.bufferSize, 10), defaultStorage = pos(s.defaultStorage, 10), warehouseStorage = pos(s.warehouseStorage, 200);
   const volume = (g: string) => R.get(g)?.volume ?? 1;
+  // De werkplaats: voor elk goed met "research" een recept dat er research packs van maakt.
+  const studies: string[] = [];
+  if (R.has(ONDERZOEK))
+    for (const g of R.values()) if (g.research) {
+      const rid = `onderzoek_${g.id}`;
+      if (C.has(rid)) { fouten.push(`Recipe id "${rid}" is reserved for the workshop`); continue; }
+      C.set(rid, { id: rid, name: `Study ${g.name.toLowerCase()}`, time: pos(s.researchTime, 4), inputs: { [g.id]: g.research.per }, outputs: { [ONDERZOEK]: g.research.packs }, power: 0, tier: 1, unlock: 0 });
+      studies.push(rid);
+    }
 
   (bron.buildings as unknown[]).forEach((b, i) => {
     if (!isObj(b) || typeof b.id !== 'string' || !b.id) return fouten.push(`buildings[${i}] needs a string "id"`);
     if (B.has(b.id)) return fouten.push(`Duplicate building id "${b.id}"`);
-    const rs = b.recipes ?? [];
+    const rs = b.workshop ? studies : b.recipes ?? [];
     if (!Array.isArray(rs) || rs.some((x) => typeof x !== 'string')) return fouten.push(`Building "${b.id}": "recipes" must be an array of recipe ids`);
     (rs as string[]).forEach((r) => { if (!C.has(r)) fouten.push(`Building "${b.id}": unknown recipe "${r}"`); });
     const aard: Aard = b.belt ? 'belt' : b.pole ? 'pole' : b.trash ? 'trash' : b.sink ? 'sink' : b.splitter ? 'splitter' : b.merger ? 'merger' : 'prod';
@@ -193,11 +227,16 @@ export function leesEconomie(bron: unknown): { fouten: string[]; economie?: Econ
       sprite: typeof b.sprite === 'string' ? b.sprite : undefined, aard, recipes: aard === 'prod' ? (rs as string[]) : [], cost,
       work: pos(b.work, 4), size: (size === 1 ? 1 : 2), storage, speed: speed as number, ports: ports as number,
       kW: Math.max(0, getal(b.kW, 0)), crew: Math.max(0, getal(b.crew, 0)), insideRing: !!b.insideRing, onDeposit: !!b.onDeposit,
+      ...slot(b, `Building "${b.id}"`), workshop: !!b.workshop && aard === 'prod',
       generator: aard === 'prod' && (rs as string[]).some((r) => (C.get(r)?.power ?? 0) > 0),
       depRes: [...depRes], range: pos(b.range, 3), link: pos(b.link, 8), reach: pos(b.reach, 5),
     });
   });
 
+  // Elke economie heeft een werkplaats, research packs en iets om te onderzoeken: anders kom je nooit voorbij tier 1.
+  if (!R.has(ONDERZOEK)) fouten.push(`there is no resource "${ONDERZOEK}" (the research pack)`);
+  if (![...B.values()].some((b) => b.workshop)) fouten.push('there is no building with "workshop": true (each economy needs a tinkering workshop)');
+  if (![...R.values()].some((g) => g.research)) fouten.push('no resource has "research", so the workshop has nothing to study');
   if (!fouten.length) {
     const alle = [...B.values()];
     for (const c of C.values()) if (!alle.some((b) => b.recipes.includes(c.id))) waarschuwingen.push(`Recipe "${c.id}" isn't available in any building`);
@@ -267,5 +306,5 @@ export function goed(id: string, eerst: Economie = actieveEconomie()): GoedSoort
     const g = e.goederen.get(id);
     if (g) return g;
   }
-  return { id, name: id.toUpperCase(), color: '#999999', volume: 1, onMap: false, glows: false };
+  return { id, name: id.toUpperCase(), color: '#999999', volume: 1, onMap: false, glows: false, vaporizes: false };
 }

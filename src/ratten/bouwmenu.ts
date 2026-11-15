@@ -2,13 +2,15 @@
 // gebouw dat je aanwijst of gekozen hebt (wat het doet, kosten tegen wat je hebt, stroom, ploeg, recepten met iconen),
 // en het gebouw dat je in de wereld hebt aangeklikt (stand, recept kiezen, wat een band uit een magazijn trekt).
 // In de kop staat welke economie geldt en uit welk bestand ze komt (handig bij het schaven aan economies/*.json).
+// Tiers: wat op slot zit staat er gedimd bij met zijn prijs in research packs. Klik de kaart en koop het vrij met UNLOCK;
+// recepten op slot koop je vrij in de lijst van het aangeklikte gebouw.
 // Gewoon HTML bovenop het spel; de stijl staat in index.html. Regels staan in industrie.ts.
-import { actieveEconomie, goed, volumeVan, type BouwSoort, type ReceptSoort } from '../kern/economie';
+import { actieveEconomie, economie, goed, ONDERZOEK, volumeVan, type BouwSoort, type ReceptSoort } from '../kern/economie';
 import { schermAf, tipsIn } from '../kern/scherm';
 import type { SpelStaat } from '../kern/spel';
 import type { Goed, Voorraad } from '../kern/types';
 import { gebouwPlaatje, goedIcoon } from './beeld';
-import { bouwSoorten, industrie, kiesRecept, opslagMax, opslagVol, receptenVan, receptVan, soortVan, zetUit, type Gebouw, type Oordeel } from './industrie';
+import { bouwSoorten, industrie, isVrij, kiesRecept, koop, koopOordeel, opslagMax, opslagVol, receptenVan, receptVan, soortVan, zetUit, type Gebouw, type Oordeel } from './industrie';
 import { kanBetalen, naamVan } from './kosten';
 
 export interface Knop { id: string; naam: string; uitleg: string; soort?: BouwSoort }
@@ -19,12 +21,13 @@ export function uitlegVan(b: BouwSoort): string {
   if (b.aard === 'trash') return 'Destroys what a belt brings in.';
   if (b.aard === 'splitter') return 'A junction: belts run in and out, what comes in leaves in turns.';
   if (b.aard === 'merger') return 'A junction: several belts run in, one runs out.';
+  if (b.workshop) return 'Turns goods into research packs: click it and pick what to study. Deeper goods give more packs. Spend packs here in the build menu to unlock buildings and recipes. Packs vaporize in the stream.';
   if (b.generator) return 'A generator: it burns fuel and gives power while it burns. Bring fuel by belt (to an input arrow) or by rats. R turns its arrows.';
   if (b.onDeposit) return `Place it next to a field of ${b.depRes.map((g) => naamVan(g).toLowerCase()).join(' or ')}. The machine throws it there. It digs out the whole field.`;
   return `Makes goods from a recipe. Bring its input by belt (to an input arrow, the ones with a bar) or by rats${b.recipes.length > 1 ? '; click it to pick a recipe' : ''}. R turns its arrows.`;
 }
 const soortNaam = (b: BouwSoort): string =>
-  b.aard === 'belt' || b.aard === 'splitter' || b.aard === 'merger' ? 'LOGISTICS' : b.aard === 'pole' || b.generator ? 'POWER' : b.aard === 'sink' ? 'STORAGE' : b.aard === 'trash' ? 'WASTE' : b.onDeposit ? 'EXTRACTION' : 'PRODUCTION';
+  b.aard === 'belt' || b.aard === 'splitter' || b.aard === 'merger' ? 'LOGISTICS' : b.workshop ? 'RESEARCH' : b.aard === 'pole' || b.generator ? 'POWER' : b.aard === 'sink' ? 'STORAGE' : b.aard === 'trash' ? 'WASTE' : b.onDeposit ? 'EXTRACTION' : 'PRODUCTION';
 export const knoppen = (): Knop[] => [
   ...bouwSoorten().map((b) => ({ id: b.id, naam: b.name, uitleg: uitlegVan(b), soort: b })),
   { id: 'sloop', naam: 'DEMOLISH', uitleg: 'Click or drag over what you want gone. You get the build cost back. Key: X.' },
@@ -81,6 +84,15 @@ export function maakBouwmenu(h: BouwmenuHaken): { werk(sec: number): void; zicht
   menu.addEventListener('pointerdown', (e) => {
     if (e.button !== 0) return;
     const el = e.target as HTMLElement, s = h.staat();
+    // vrijkopen: 'g:<gebouw>' uit de economie van deze wereld, of 'r:<recept>' uit de economie van het aangeklikte gebouw
+    const kopen = el.closest<HTMLElement>('[data-koop]');
+    if (kopen) {
+      const [soort, id] = [kopen.dataset.koop![0], kopen.dataset.koop!.slice(2)];
+      const eco = soort === 'g' ? actieveEconomie() : economie(kopen.dataset.eco!);
+      const wat = soort === 'g' ? eco.gebouwen.get(id) : eco.recepten.get(id);
+      if (wat) koop(s, eco, wat);
+      return;
+    }
     const kaart = el.closest<HTMLElement>('[data-kies]');
     if (kaart) return h.kies(kaart.dataset.kies!);
     const g = industrie(s).gebouwen.find((x) => x.id === h.gekozen());
@@ -94,12 +106,14 @@ export function maakBouwmenu(h: BouwmenuHaken): { werk(sec: number): void; zicht
   function kaartenHtml(s: SpelStaat): string {
     return knoppen().map((k) => {
       const b = k.soort, plaatje = b ? gebouwPlaatje(b) : undefined;
-      const duur = b && !kanBetalen(s.voorraad, b.cost);
-      return `<button class="kaart${h.modus() === k.id ? ' aan' : ''}${duur ? ' duur' : ''}${b ? '' : ' sloop'}" data-kies="${k.id}">
+      const opSlot = !!b && !isVrij(s, actieveEconomie().id, b);
+      const duur = b && !opSlot && !kanBetalen(s.voorraad, b.cost);
+      return `<button class="kaart${h.modus() === k.id ? ' aan' : ''}${duur ? ' duur' : ''}${opSlot ? ' slot' : ''}${b ? '' : ' sloop'}" data-kies="${k.id}">
+        ${b && b.tier > 1 ? `<span class="tier">${opSlot ? 'LOCKED ' : ''}T${b.tier}</span>` : ''}
         ${b ? '' : '<span class="toets">X</span>'}
         <span class="beeld">${plaatje ? `<img src="${plaatje}" alt="">` : b ? `<i style="background:${b.color}"></i>` : '<b>X</b>'}</span>
         <span class="naam">${veilig(k.naam)}</span>
-        <span class="kost">${b ? stuks(b.cost, s.voorraad) + (b.aard === 'belt' ? '<span class="per">/tile</span>' : '') : '<span class="stuk gratis">COST BACK</span>'}</span>
+        <span class="kost">${opSlot ? `<span class="stuk${(s.voorraad[ONDERZOEK] ?? 0) < b!.unlock ? ' tekort' : ''}">${icoon(ONDERZOEK)}${b!.unlock}</span>` : b ? stuks(b.cost, s.voorraad) + (b.aard === 'belt' ? '<span class="per">/tile</span>' : '') : '<span class="stuk gratis">COST BACK</span>'}</span>
       </button>`;
     }).join('');
   }
@@ -124,11 +138,19 @@ export function maakBouwmenu(h: BouwmenuHaken): { werk(sec: number): void; zicht
     const recepten = b.recipes.map((id) => eco.recepten.get(id)!).filter(Boolean);
     return `<div class="titel"><b>${veilig(b.name)}</b><span class="soort">${soortNaam(b)}</span></div>
       <div class="boven">${plaatje ? `<img class="groot" src="${plaatje}" alt="">` : ''}<p>${veilig(k.uitleg)}</p></div>
+      ${slotHtml(s, b)}
       <div class="feiten">${feiten.map(([a, w]) => `<span><i>${a}</i>${w}</span>`).join('')}</div>
       <div class="rij"><i>COST${b.aard === 'belt' ? ' PER TILE' : ''}</i><span class="lijst">${Object.entries(b.cost).filter(([, n]) => (n ?? 0) > 0).map(([g, n]) =>
         `<span class="stuk${(s.voorraad[g] ?? 0) < (n ?? 0) ? ' tekort' : ''}">${icoon(g)}${n}<small>have ${Math.floor(s.voorraad[g] ?? 0)}</small></span>`).join('') || '<span class="stuk gratis">FREE</span>'}</span></div>
       ${recepten.length ? `<div class="rij"><i>${b.onDeposit ? 'DIGS' : recepten.length > 1 ? 'RECIPES' : b.generator ? 'BURNS' : 'RECIPE'}</i><span class="lijst kolom">${recepten.map((r) =>
-        `<span class="recept" data-tip="${veilig(r.name)}">${receptRegel(r)}</span>`).join('')}</span></div>` : ''}`;
+        `<span class="recept${isVrij(s, eco.id, r) ? '' : ' slot'}" data-tip="${veilig(r.name)}${isVrij(s, eco.id, r) ? '' : `: locked, ${r.unlock} research packs`}">${receptRegel(r)}${isVrij(s, eco.id, r) ? '' : `<span class="tier">T${r.tier}</span>`}</span>`).join('')}</span></div>` : ''}`;
+  }
+  // Een gebouw op slot: zijn tier, de prijs en de knop om het vrij te kopen (met de reden als het nog niet kan).
+  function slotHtml(s: SpelStaat, b: BouwSoort): string {
+    const eco = actieveEconomie();
+    if (isVrij(s, eco.id, b)) return '';
+    const o = koopOordeel(s, eco, b);
+    return `<div class="slotbalk"><span>LOCKED · TIER ${b.tier}</span><button class="${o.ok ? 'kan' : 'nee'}" data-koop="g:${b.id}">UNLOCK ${icoon(ONDERZOEK)}${b.unlock}</button>${o.ok ? '' : `<small>${veilig(o.reden)}</small>`}</div>`;
   }
 
   // Het gebouw dat je in de wereld hebt aangeklikt: het vaste deel (naam, knoppen) en de stand (verandert steeds).
@@ -144,8 +166,13 @@ export function maakBouwmenu(h: BouwmenuHaken): { werk(sec: number): void; zicht
     } else if (b.aard === 'prod') {
       const r = receptVan(g);
       if (!b.onDeposit)
-        vastHtml += `<div class="knoppen kolom">${[...receptenVan(g), null].map((x) =>
-          `<button class="${g.recept === (x?.id ?? null) ? 'aan' : ''}" data-recept="${x?.id ?? ''}" data-tip="${x ? veilig(x.name) : `Stop this ${veilig(b.name.toLowerCase())}`}">${x ? receptRegel(x) : 'STOP'}</button>`).join('')}</div>`;
+        vastHtml += `<div class="knoppen kolom">${[...receptenVan(g), null].map((x) => {
+          if (x && !isVrij(s, g.eco, x)) {
+            const o = koopOordeel(s, economie(g.eco), x);
+            return `<button class="slot ${o.ok ? 'kan' : 'nee'}" data-koop="r:${x.id}" data-eco="${g.eco}" data-tip="${veilig(x.name)}: locked (tier ${x.tier}). ${veilig(o.reden)}">${receptRegel(x)}<span class="prijs">UNLOCK ${icoon(ONDERZOEK)}${x.unlock}</span></button>`;
+          }
+          return `<button class="${g.recept === (x?.id ?? null) ? 'aan' : ''}" data-recept="${x?.id ?? ''}" data-tip="${x ? veilig(x.name) : `Stop this ${veilig(b.name.toLowerCase())}`}">${x ? receptRegel(x) : 'STOP'}</button>`;
+        }).join('')}</div>`;
       const telling: Voorraad = {};
       for (const x of g.buffer) telling[x] = (telling[x] ?? 0) + 1;
       standHtml = `<p class="${g.geblokt ? 'geblokt' : 'draait'}">${veilig(g.geblokt || (r ? r.name.toUpperCase() : 'IDLE'))}</p>
@@ -172,6 +199,7 @@ export function maakBouwmenu(h: BouwmenuHaken): { werk(sec: number): void; zicht
       const vol = opslagVol(s), max = opslagMax(s);
       zet(kop, `<b>BUILD</b><span class="eco" data-tip="The economy of this world: what lies here and what you can build">${veilig(eco.name)}</span>
         <span class="bestand" data-tip="The file this economy comes from">economies/${veilig(eco.id)}.json</span>
+        <span class="packs" data-tip="Research packs: made in the tinkering workshop, spent here to unlock buildings and recipes. They vaporize in the stream">${icoon(ONDERZOEK)}${Math.floor(s.voorraad[ONDERZOEK] ?? 0)}</span>
         <span class="opslag${vol >= max - 1 ? ' vol' : ''}" data-tip="Storage used: everything shares one stock">STORAGE ${Math.round(vol)}/${Math.round(max)}</span>`);
       zet(kaarten, kaartenHtml(s));
       const m = h.melding();

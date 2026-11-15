@@ -16,9 +16,11 @@
 //   andere (eerst: in links, uit rechts). Met R draai je de punten een kwartslag; het gebouw zelf draait niet. Elk punt hoort bij één goed van het recept: een band levert alleen af
 //   op het punt van zijn goed, en een band die op een uitgang begint draagt alleen dat product.
 // - Gebouwen met stroomvraag draaien alleen binnen bereik van de machine of van een aangesloten paal.
+// - Tiers: tier 1 is vrij; een gebouw of recept van een hoger tier koop je vrij met research packs, die de werkplaats
+//   maakt uit grondstoffen (`koop`). Wat vrij is blijft per economie de hele run; de packs zelf verdampen bij de sprong.
 // - Een gebouw onthoudt uit welke economie het komt: na een sprong naar een andere wereld blijft het staan en werken.
 // - Bij de stream wordt alles buiten de ring ingepakt: de bouwkosten komen terug.
-import { actieveEconomie, economie, goed, grondstoffenVan, volumeVan, type BouwSoort, type ReceptSoort } from '../kern/economie';
+import { actieveEconomie, economie, economieen, goed, grondstoffenVan, ONDERZOEK, volumeVan, type BouwSoort, type Economie, type ReceptSoort } from '../kern/economie';
 import { binnenBlok, binnenRing, type Blok } from '../kern/kaart';
 import { TEGEL_WATER } from '../kern/terrein';
 import type { SpelStaat } from '../kern/spel';
@@ -67,6 +69,7 @@ export interface IndustrieStaat {
   gebouwen: Gebouw[];
   banden: Map<number, MBand>; // sleutel = tegel(x, y)
   basis: number; // volume van het magazijn waarmee je begon
+  vrij: Map<string, Set<string>>; // per economie wat er vrijgekocht is: 'g:<gebouw>' of 'r:<recept>'
   volGemeld: boolean;
   volgendeId: number;
   net: { tik: number; palen: Set<number> };
@@ -84,7 +87,7 @@ export const getallen = () => G;
 export function industrie(s: SpelStaat): IndustrieStaat {
   let i = STATEN.get(s);
   if (!i) {
-    i = { gebouwen: [], banden: new Map(), basis: actieveEconomie().warehouseStorage, volGemeld: false, volgendeId: 1, net: { tik: -1, palen: new Set() } };
+    i = { gebouwen: [], banden: new Map(), basis: actieveEconomie().warehouseStorage, vrij: new Map(), volGemeld: false, volgendeId: 1, net: { tik: -1, palen: new Set() } };
     STATEN.set(s, i);
   }
   return i;
@@ -110,6 +113,34 @@ function gebracht(soort: BouwSoort, nodig: Voorraad): Voorraad {
 }
 // Hoeveel invoer een gebouw wil hebben liggen: genoeg voor een paar keer.
 export const invoerMax = (g: Gebouw, goedId: Goed) => (receptVan(g)?.inputs[goedId] ?? 0) * G.invoerKeer;
+
+// ---- tiers: vrijkopen met research packs ----
+type Slot = BouwSoort | ReceptSoort;
+const sleutel = (wat: Slot) => ('aard' in wat ? 'g:' : 'r:') + wat.id;
+// Is dit gebouw of recept te gebruiken in deze economie? Tier 1 altijd; hoger als het vrijgekocht is.
+export const isVrij = (s: SpelStaat, eco: string, wat: Slot): boolean => wat.tier <= 1 || !!industrie(s).vrij.get(eco)?.has(sleutel(wat));
+// Kun je het nu vrijkopen? Iets van tier N pas als er iets van tier N-1 vrij is (tier 1 is dat altijd).
+export function koopOordeel(s: SpelStaat, eco: Economie, wat: Slot): Oordeel {
+  if (isVrij(s, eco.id, wat)) return { ok: false, reden: 'ALREADY UNLOCKED' };
+  const vorige = wat.tier - 1;
+  if (vorige > 1 && ![...eco.gebouwen.values(), ...eco.recepten.values()].some((x) => x.tier === vorige && isVrij(s, eco.id, x)))
+    return { ok: false, reden: `UNLOCK SOMETHING OF TIER ${vorige} FIRST` };
+  const heb = Math.floor(s.voorraad[ONDERZOEK] ?? 0);
+  if (heb < wat.unlock) return { ok: false, reden: `NEEDS ${wat.unlock} ${naamVan(ONDERZOEK)}S, YOU HAVE ${heb}. MAKE THEM IN THE WORKSHOP` };
+  return { ok: true, reden: `UNLOCK FOR ${wat.unlock} ${naamVan(ONDERZOEK)}S` };
+}
+export function koop(s: SpelStaat, eco: Economie, wat: Slot): boolean {
+  const o = koopOordeel(s, eco, wat);
+  if (!o.ok || !betaal(s.voorraad, { [ONDERZOEK]: wat.unlock })) {
+    log(energie(s), o.reden, 'rood');
+    return false;
+  }
+  const i = industrie(s);
+  if (!i.vrij.has(eco.id)) i.vrij.set(eco.id, new Set());
+  i.vrij.get(eco.id)!.add(sleutel(wat));
+  log(energie(s), `UNLOCKED: ${wat.name.toUpperCase()}`, 'groen');
+  return true;
+}
 
 // ---- vaste plekken rond de machine ----
 export function vast(s: SpelStaat): { erf: Blok; bronnen: Record<string, Blok> } {
@@ -138,9 +169,10 @@ export function opslagMax(s: SpelStaat): number {
 export const opslagVol = (s: SpelStaat): number => volumeVan(s.voorraad, vol);
 // Hoeveel stuks van dit goed er nog bij kunnen.
 export const ruimteVoor = (s: SpelStaat, g: Goed): number => Math.floor((opslagMax(s) - opslagVol(s)) / vol(g) + 1e-9);
-// Met de hand graven ratten een grondstof maar tot haar deel van de opslag, zodat één veld niet alles vult.
+// Met de hand graven ratten een grondstof maar tot haar deel van de opslag, zodat één veld niet alles vult: zestig
+// procent van de opslag is voor ruwe grondstof, eerlijk verdeeld over wat er in deze wereld op de kaart ligt.
 export const handRuimte = (s: SpelStaat, g: Goed): number =>
-  Math.min(ruimteVoor(s, g), Math.floor(opslagMax(s) / Math.max(1, actieveEconomie().goederen.size)) - (s.voorraad[g] ?? 0));
+  Math.min(ruimteVoor(s, g), Math.floor((0.6 * opslagMax(s)) / Math.max(1, grondstoffen().length)) - (s.voorraad[g] ?? 0));
 
 // ---- het stroomnet van palen ----
 // De machine is de wortel. Een paal hangt eraan als hij binnen zijn `link` van de machine of van een aangesloten paal staat.
@@ -244,6 +276,7 @@ const kostOk = (s: SpelStaat, soort: BouwSoort): Oordeel | null =>
 
 export function kanZetten(s: SpelStaat, soort: BouwSoort, x: number, y: number): Oordeel {
   if (s.onderweg > 0) return { ok: false, reden: 'WAIT FOR THE LANDING' };
+  if (!isVrij(s, actieveEconomie().id, soort)) return { ok: false, reden: `${soort.name} IS LOCKED: UNLOCK IT IN THE BUILD MENU FOR ${soort.unlock} ${naamVan(ONDERZOEK)}S` };
   if (soort.aard === 'belt') return { ok: kanBandOp(s, x, y), reden: '' };
   const w = soort.size;
   if (!vrijVoorBlok(s, x, y, w)) return { ok: false, reden: soort.onDeposit ? 'NOT HERE: NEXT TO THE FIELD, NOT ON IT' : 'SOMETHING IS IN THE WAY' };
@@ -280,7 +313,7 @@ export function zet(s: SpelStaat, wat: BouwSoort | string, x: number, y: number,
   const g: Gebouw = {
     id: i.volgendeId++, eco: actieveEconomie().id, soort: soort.id, x, y, af: soort.work, nodig: { ...soort.cost },
     // één recept: dat draait hij meteen; meer recepten: klik erop en kies
-    recept: soort.aard === 'prod' && !soort.onDeposit && soort.recipes.length === 1 ? soort.recipes[0] : null,
+    recept: soort.aard === 'prod' && !soort.onDeposit && soort.recipes.length === 1 && isVrij(s, actieveEconomie().id, actieveEconomie().recepten.get(soort.recipes[0])!) ? soort.recipes[0] : null,
     invoer: {}, betaald: false, klok: 0, ploeg: 0, geblokt: '', buffer: [], uitvoer: 0,
     vlieg: soort.onDeposit ? G.vliegSec : 0, graaft: false, uit: null, draai: ((draai % 4) + 4) % 4,
   };
@@ -361,6 +394,7 @@ export function kiesRecept(s: SpelStaat, g: Gebouw, r: string | null): void {
   if (g.recept === r) return;
   const oud = receptVan(g), nieuw = r ? economie(g.eco).recepten.get(r) : undefined;
   if (r && !nieuw) return;
+  if (nieuw && !isVrij(s, g.eco, nieuw)) return log(energie(s), `${nieuw.name.toUpperCase()} IS LOCKED: UNLOCK IT FOR ${nieuw.unlock} ${naamVan(ONDERZOEK)}S`, 'rood');
   if (g.betaald && oud) terug(s.voorraad, oud.inputs);
   // wat er lag en het nieuwe recept niet gebruikt, gaat terug naar de opslag
   for (const [x, n] of Object.entries(g.invoer)) if (!nieuw || !nieuw.inputs[x]) {
@@ -651,6 +685,23 @@ function opStream(s: SpelStaat): void {
     n++;
   }
   if (n) log(energie(s), `PACKED UP ${n} THINGS OUTSIDE THE RING. COSTS REFUNDED`, 'cyaan');
+  // Wat verdampt (research packs) haalt de sprong niet: uit de voorraad, van de banden en uit de gebouwen.
+  const weg = new Set(economieen().flatMap((e) => [...e.goederen.values()].filter((g) => g.vaporizes).map((g) => g.id)));
+  let verdampt = 0;
+  for (const g of weg) {
+    verdampt += Math.floor(s.voorraad[g] ?? 0);
+    delete s.voorraad[g];
+  }
+  for (const t of i.banden.values()) if (t.goed && weg.has(t.goed)) {
+    t.goed = undefined;
+    verdampt++;
+  }
+  for (const g of i.gebouwen) {
+    verdampt += g.buffer.filter((x) => weg.has(x)).length;
+    g.buffer = g.buffer.filter((x) => !weg.has(x));
+    for (const x of Object.keys(g.invoer)) if (weg.has(x)) delete g.invoer[x];
+  }
+  if (verdampt) log(energie(s), `${verdampt} ${naamVan(ONDERZOEK)}S VAPORIZED IN THE STREAM`, 'amber');
 }
 
 export function industrieTrucje(getallen: IndustrieGetallen): Trucje {

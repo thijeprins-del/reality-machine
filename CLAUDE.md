@@ -7,7 +7,9 @@ Code-namen mogen Engels of Nederlands, maar per map consequent.
 - Jouw stukje land zweeft door dimensies. Een dimensie duurt een vaste tijd (begin: 4 minuten), daarna komt de stream.
 - Tussendoor: verkennen, loot zoeken, grondstoffen oogsten, bouwen op je eigen eiland, en de tegenstander lastigvallen.
 - Om de stream te halen moet je reality machine genoeg energie en heelheid hebben. Haal je hem niet, dan verlies je.
-- Tech alleen uit loot: vondsten inbouwen of ontleden tot bouwplan. Geen techboom.
+- Tech: elke economie heeft een kleine techboom. In de knutselwerkplaats maak je research packs uit grondstoffen en
+  daarmee koop je in het bouwmenu gebouwen en recepten van een hoger tier vrij (Lieuwe, 15 nov; was: "alleen uit loot,
+  geen techboom"). Loot kan daar later bovenop komen.
 - Eén soort: de pack rats (hamsterende ratten, cyberpunk/dieselpunk). De tegenstander is het land zelf.
 - Elke wereld heeft een wereldtype (`worldtypes/*.json`: tegelset, kleuren, economie) en een economie
   (`economies/*.json`: grondstoffen, recepten, gebouwen, startkapitaal). Schaven doe je in die bestanden.

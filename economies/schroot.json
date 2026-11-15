@@ -2,13 +2,14 @@
   "id": "schroot",
   "name": "Junkyard",
   "startingResources": { "schroot": 50, "plaat": 4, "balk": 2, "koolstof": 10 },
-  "settings": { "bufferSize": 6, "defaultStorage": 8, "warehouseStorage": 250 },
+  "settings": { "bufferSize": 6, "defaultStorage": 8, "warehouseStorage": 250, "researchTime": 4 },
   "resources": [
-    { "id": "schroot", "name": "SCRAP", "color": "#a8a49a", "volume": 1, "sprite": "schroot", "onMap": true, "fields": { "count": 4, "tiles": [8, 12], "perTile": 200, "distance": [19, 25] } },
-    { "id": "banden", "name": "OLD TYRES", "color": "#3a3a42", "volume": 1, "sprite": "tyres", "onMap": true, "fields": { "count": 2, "tiles": [5, 8], "perTile": 120, "distance": [21, 27] } },
-    { "id": "koolstof", "name": "CARBON", "color": "#3a3a40", "volume": 1 },
-    { "id": "plaat", "name": "PLATE", "color": "#9aa3ad", "volume": 1 },
-    { "id": "balk", "name": "GIRDER", "color": "#7d8288", "volume": 1, "sprite": "ligger" }
+    { "id": "schroot", "name": "SCRAP", "color": "#a8a49a", "volume": 1, "sprite": "schroot", "onMap": true, "fields": { "count": 4, "tiles": [8, 12], "perTile": 200, "distance": [19, 25] }, "research": { "per": 4, "packs": 1 } },
+    { "id": "banden", "name": "OLD TYRES", "color": "#3a3a42", "volume": 1, "sprite": "tyres", "onMap": true, "fields": { "count": 2, "tiles": [5, 8], "perTile": 120, "distance": [21, 27] }, "research": { "per": 4, "packs": 1 } },
+    { "id": "koolstof", "name": "CARBON", "color": "#3a3a40", "volume": 1, "research": { "per": 4, "packs": 3 } },
+    { "id": "plaat", "name": "PLATE", "color": "#9aa3ad", "volume": 1, "research": { "per": 4, "packs": 3 } },
+    { "id": "balk", "name": "GIRDER", "color": "#7d8288", "volume": 1, "sprite": "ligger", "research": { "per": 4, "packs": 3 } },
+    { "id": "onderzoek", "name": "RESEARCH PACK", "color": "#4ef2ff", "volume": 1, "glows": true, "vaporizes": true }
   ],
   "recipes": [
     { "id": "mijn_schroot", "name": "Dig scrap", "time": 0.5, "inputs": {}, "outputs": { "schroot": 1 } },
@@ -21,12 +22,13 @@
   "buildings": [
     { "id": "fabricator", "name": "SCRAP PRESS", "color": "#c8642d", "sprite": "pers", "size": 2, "insideRing": true, "cost": { "schroot": 20 }, "work": 10, "kW": 2, "crew": 2, "storage": 8, "recipes": ["plaat", "balk", "koolstof"] },
     { "id": "koolstofbrander", "name": "CARBON BURNER", "color": "#ff9a1f", "sprite": "dynamo", "size": 2, "insideRing": true, "cost": { "plaat": 4, "balk": 3 }, "work": 10, "storage": 8, "recipes": ["stook_koolstof"] },
+    { "id": "werkplaats", "name": "TINKERING WORKSHOP", "color": "#3aa8b8", "sprite": "werkplaats", "workshop": true, "size": 2, "insideRing": true, "cost": { "schroot": 15 }, "work": 10, "kW": 1, "crew": 1, "storage": 8 },
     { "id": "boor", "name": "SCRAP DIGGER", "color": "#7a5c48", "sprite": "boor", "size": 2, "onDeposit": true, "range": 3, "cost": { "plaat": 3, "balk": 1 }, "work": 8, "kW": 2, "storage": 12, "recipes": ["mijn_schroot", "mijn_banden"] },
     { "id": "band", "name": "BELT", "color": "#5b554b", "sprite": "band-leeg", "belt": true, "speed": 2, "kW": 0.05, "cost": { "plaat": 1 }, "work": 1.2 },
     { "id": "paal", "name": "POLE", "color": "#6a552d", "sprite": "mast", "pole": true, "link": 8, "reach": 5, "cost": { "balk": 1 }, "work": 3 },
     { "id": "stapel", "name": "WAREHOUSE", "color": "#55606b", "sprite": "stapel", "sink": true, "storage": 150, "size": 2, "insideRing": true, "cost": { "balk": 4 }, "work": 6 },
     { "id": "kist", "name": "SMALL STORE", "color": "#55606b", "sprite": "stapel-1", "sink": true, "storage": 40, "size": 1, "insideRing": true, "cost": { "balk": 1 }, "work": 2 },
-    { "id": "splitter", "name": "SPLITTER", "color": "#4d6478", "sprite": "splitter", "splitter": true, "ports": 3, "size": 1, "cost": { "plaat": 2 }, "work": 2 },
-    { "id": "merger", "name": "MERGER", "color": "#6a5a80", "sprite": "merger", "merger": true, "ports": 3, "size": 1, "cost": { "plaat": 2 }, "work": 2 }
+    { "id": "splitter", "name": "SPLITTER", "color": "#4d6478", "sprite": "splitter", "splitter": true, "ports": 3, "size": 1, "cost": { "plaat": 2 }, "work": 2, "tier": 2, "unlock": 12 },
+    { "id": "merger", "name": "MERGER", "color": "#6a5a80", "sprite": "merger", "merger": true, "ports": 3, "size": 1, "cost": { "plaat": 2 }, "work": 2, "tier": 2, "unlock": 12 }
   ]
 }

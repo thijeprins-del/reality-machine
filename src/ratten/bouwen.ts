@@ -13,7 +13,7 @@ import type { Goed, Richting, Voorraad } from '../kern/types';
 import { PIXEL, type Stuk, type WereldBeeld } from '../kern/wereldbeeld';
 import { energie, verbruiker } from './energie';
 import {
-  aangesloten, bereikVan, blokVan, bouwSoorten, gebouwOp, getallen, goederen, industrie, kanBandOp, kanZetten, kiesRecept, legBand,
+  aangesloten, bereikVan, blokVan, bouwSoorten, gebouwOp, getallen, goederen, industrie, kanBandOp, kanZetten, kiesRecept, koop, legBand,
   magazijnen, makers, midden, palen as allePalen, draaiPoorten, poorten, poortenVan, RICHTINGEN, sloop, soortVan, tegel, vast, zet,
   type Gebouw, type Oordeel, type Poort,
 } from './industrie';
@@ -30,6 +30,7 @@ declare global {
       band: (a: [number, number], b: [number, number]) => number;
       recept: (gebouwId: number, r: string | null) => void;
       kies: (gebouwId: number | null) => void;
+      koop: (soort: 'g' | 'r', id: string) => boolean; // koop een gebouw ('g') of recept ('r') van deze economie vrij
       sloop: (x: number, y: number) => boolean;
       taken: () => [number, unknown][];
       scherm: (kol: number, rij: number) => { x: number; y: number };
@@ -257,6 +258,10 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
       if (g) kiesRecept(staat(), g, rec);
     },
     kies: (id) => (gekozen = id),
+    koop: (soort, id) => {
+      const eco = actieveEconomie(), wat = soort === 'g' ? eco.gebouwen.get(id) : eco.recepten.get(id);
+      return !!wat && koop(staat(), eco, wat);
+    },
     sloop: (x, y) => sloop(staat(), x, y),
     taken: () => [...werk(staat()).taken],
     scherm: (kol, rij) => {

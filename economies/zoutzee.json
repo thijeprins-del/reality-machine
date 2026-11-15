@@ -2,14 +2,15 @@
   "id": "zoutzee",
   "name": "Salt Flats",
   "startingResources": { "zout": 40, "kelp": 30, "plaat": 4, "balk": 2, "biomassa": 10 },
-  "settings": { "bufferSize": 6, "defaultStorage": 8, "warehouseStorage": 250 },
+  "settings": { "bufferSize": 6, "defaultStorage": 8, "warehouseStorage": 250, "researchTime": 4 },
   "resources": [
-    { "id": "zout", "name": "SALT", "color": "#f2e6ec", "volume": 1, "onMap": true, "fields": { "count": 4, "tiles": [8, 12], "perTile": 200, "distance": [19, 26] } },
-    { "id": "kelp", "name": "KELP", "color": "#4d7a3a", "volume": 1, "onMap": true, "fields": { "count": 3, "tiles": [6, 10], "perTile": 150, "distance": [19, 27] } },
-    { "id": "hout", "name": "DRIFTWOOD", "color": "#c2a98a", "volume": 1, "sprite": "drijfhout", "onMap": true, "fields": { "count": 1, "tiles": [4, 6], "perTile": 100, "distance": [23, 28] } },
-    { "id": "biomassa", "name": "BIOMASS", "color": "#7a9a3a", "volume": 1 },
-    { "id": "plaat", "name": "SALT BRICK", "color": "#e0c8d2", "volume": 1, "sprite": "zout-plaat" },
-    { "id": "balk", "name": "KELP BEAM", "color": "#6b8f3a", "volume": 1, "sprite": "kelp-balk" }
+    { "id": "zout", "name": "SALT", "color": "#f2e6ec", "volume": 1, "onMap": true, "fields": { "count": 4, "tiles": [8, 12], "perTile": 200, "distance": [19, 26] }, "research": { "per": 4, "packs": 1 } },
+    { "id": "kelp", "name": "KELP", "color": "#4d7a3a", "volume": 1, "onMap": true, "fields": { "count": 3, "tiles": [6, 10], "perTile": 150, "distance": [19, 27] }, "research": { "per": 4, "packs": 1 } },
+    { "id": "hout", "name": "DRIFTWOOD", "color": "#c2a98a", "volume": 1, "sprite": "drijfhout", "onMap": true, "fields": { "count": 1, "tiles": [4, 6], "perTile": 100, "distance": [23, 28] }, "research": { "per": 4, "packs": 1 } },
+    { "id": "biomassa", "name": "BIOMASS", "color": "#7a9a3a", "volume": 1, "research": { "per": 4, "packs": 3 } },
+    { "id": "plaat", "name": "SALT BRICK", "color": "#e0c8d2", "volume": 1, "sprite": "zout-plaat", "research": { "per": 4, "packs": 3 } },
+    { "id": "balk", "name": "KELP BEAM", "color": "#6b8f3a", "volume": 1, "sprite": "kelp-balk", "research": { "per": 4, "packs": 3 } },
+    { "id": "onderzoek", "name": "RESEARCH PACK", "color": "#4ef2ff", "volume": 1, "glows": true, "vaporizes": true }
   ],
   "recipes": [
     { "id": "mijn_zout", "name": "Rake salt", "time": 0.5, "inputs": {}, "outputs": { "zout": 1 } },
@@ -17,7 +18,7 @@
     { "id": "mijn_hout", "name": "Collect driftwood", "time": 0.5, "inputs": {}, "outputs": { "hout": 1 } },
     { "id": "plaat", "name": "Fire salt brick", "time": 4, "inputs": { "zout": 3, "kelp": 1 }, "outputs": { "plaat": 2 } },
     { "id": "balk_kelp", "name": "Weave kelp beam", "time": 4, "inputs": { "kelp": 4 }, "outputs": { "balk": 1 } },
-    { "id": "balk_hout", "name": "Saw driftwood", "time": 3, "inputs": { "hout": 2 }, "outputs": { "balk": 1 } },
+    { "id": "balk_hout", "name": "Saw driftwood", "time": 3, "inputs": { "hout": 2 }, "outputs": { "balk": 1 }, "tier": 2, "unlock": 8 },
     { "id": "biomassa", "name": "Dry kelp", "time": 2, "inputs": { "kelp": 1 }, "outputs": { "biomassa": 2 } },
     { "id": "stook_biomassa", "name": "Burn biomass", "time": 5, "inputs": { "biomassa": 1 }, "power": 5 }
   ],
@@ -25,12 +26,13 @@
     { "id": "zoutoven", "name": "SALT KILN", "color": "#c98aa5", "sprite": "zoutoven", "size": 2, "insideRing": true, "cost": { "zout": 20 }, "work": 10, "kW": 2, "crew": 2, "storage": 8, "recipes": ["plaat"] },
     { "id": "vlechterij", "name": "WEAVERY", "color": "#5c7a35", "sprite": "vlechterij", "size": 2, "insideRing": true, "cost": { "kelp": 15, "zout": 5 }, "work": 10, "kW": 2, "crew": 2, "storage": 8, "recipes": ["balk_kelp", "balk_hout", "biomassa"] },
     { "id": "biomassabrander", "name": "BIOMASS BURNER", "color": "#ff5a2a", "sprite": "houtbrander", "size": 2, "insideRing": true, "cost": { "plaat": 4, "balk": 4 }, "work": 10, "storage": 8, "recipes": ["stook_biomassa"] },
+    { "id": "werkplaats", "name": "TINKERING WORKSHOP", "color": "#3aa8b8", "sprite": "werkplaats", "workshop": true, "size": 2, "insideRing": true, "cost": { "zout": 15 }, "work": 10, "kW": 1, "crew": 1, "storage": 8 },
     { "id": "boor", "name": "HARVESTER", "color": "#7a5c48", "sprite": "oogster", "size": 2, "onDeposit": true, "range": 3, "cost": { "plaat": 3, "balk": 1 }, "work": 8, "kW": 2, "storage": 12, "recipes": ["mijn_zout", "mijn_kelp", "mijn_hout"] },
     { "id": "band", "name": "BELT", "color": "#5b554b", "sprite": "band-leeg", "belt": true, "speed": 2, "kW": 0.05, "cost": { "plaat": 1 }, "work": 1.2 },
     { "id": "paal", "name": "POLE", "color": "#6a552d", "sprite": "mast", "pole": true, "link": 8, "reach": 5, "cost": { "balk": 1 }, "work": 3 },
     { "id": "stapel", "name": "WAREHOUSE", "color": "#55606b", "sprite": "stapel", "sink": true, "storage": 150, "size": 2, "insideRing": true, "cost": { "balk": 4 }, "work": 6 },
     { "id": "kist", "name": "SMALL STORE", "color": "#55606b", "sprite": "stapel-1", "sink": true, "storage": 40, "size": 1, "insideRing": true, "cost": { "balk": 1 }, "work": 2 },
-    { "id": "splitter", "name": "SPLITTER", "color": "#4d6478", "sprite": "splitter", "splitter": true, "ports": 3, "size": 1, "cost": { "plaat": 2 }, "work": 2 },
-    { "id": "merger", "name": "MERGER", "color": "#6a5a80", "sprite": "merger", "merger": true, "ports": 3, "size": 1, "cost": { "plaat": 2 }, "work": 2 }
+    { "id": "splitter", "name": "SPLITTER", "color": "#4d6478", "sprite": "splitter", "splitter": true, "ports": 3, "size": 1, "cost": { "plaat": 2 }, "work": 2, "tier": 2, "unlock": 12 },
+    { "id": "merger", "name": "MERGER", "color": "#6a5a80", "sprite": "merger", "merger": true, "ports": 3, "size": 1, "cost": { "plaat": 2 }, "work": 2, "tier": 2, "unlock": 12 }
   ]
 }

@@ -30,7 +30,8 @@ De otters zijn vervallen (O1, O2): er is één soort, de pack rats, en elke were
 - [ ] E4 Economie per wereld bij de sprong, startkapitaal per economie (Lieuwe, zelfde branch)
 - [ ] E5 Zes economieën, één per wereldtype: elke wereld een eigen weg naar platen en balken (Lieuwe, zelfde branch)
 - [ ] E6 Stroom uit de economie: generatoren als gebouwen (koolstof- en biomassabrander), oude bronnen en upgrades weg (Lieuwe, zelfde branch)
-- [ ] E7 Balans van de zes economieën; langere ketens per wereld
+- [ ] E7 Knutselwerkplaats, research packs en tiers: vrijkopen per gebouw en recept, packs verdampen bij de sprong (Lieuwe, zelfde branch)
+- [ ] E8 Balans van de zes economieën en de onderzoeksprijzen; langere ketens per wereld met complexe producten op hogere tiers
 
 ## Planning
 - Week 1 (t/m 8 nov): repo, uitrol, iso-veld met eiland, één dimensie, streamtimer

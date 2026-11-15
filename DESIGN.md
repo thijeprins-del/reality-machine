@@ -15,7 +15,9 @@ Nog een skelet. Werk dit bij bij elke grote regelwijziging.
 - **Stream gemist** (2 nov): heeft de machine op dat moment geen volle stroom, dan springt er niets (rode flits, vonken)
   en begint de dimensie opnieuw. Volgens het plan verlies je dan; voorlopig vergevingsgezind om mee te spelen.
 - Om de stream te halen heeft de reality machine genoeg energie en heelheid nodig. Haal je hem niet: verloren.
-- Tech alleen uit loot: vondsten inbouwen of ontleden tot bouwplan. Geen techboom.
+- Tech: elke economie heeft een kleine techboom. In de knutselwerkplaats maak je research packs uit grondstoffen en
+  daarmee koop je in het bouwmenu gebouwen en recepten van een hoger tier vrij (Lieuwe, 15 nov; was: "alleen uit loot,
+  geen techboom"). Loot kan daar later bovenop komen.
 - **Het spel draait om industrie:** een zo groot mogelijke fabriek met lange productieketens op je eiland.
   Gevechten zijn bijzaak en kort.
 - Ketens: ruwe grondstof uit de dimensie → tussenproducten → eindproduct dat de machine voedt (`streamKosten`).
@@ -96,6 +98,17 @@ wereld. Het spel leest twee mappen met JSON-bestanden, zodat je kunt schaven zon
 - **De sprong**: de voorraad blijft, gebouwen binnen de ring blijven staan en werken door (een gebouw onthoudt uit welke
   economie het komt), alles buiten de ring wordt ingepakt. Het bouwmenu toont de gebouwen van de nieuwe wereld. De eerste
   keer in een economie krijg je haar startkapitaal erbij, één keer per run.
+- **Tiers en onderzoek** (15 nov). Gebouwen en recepten hebben een `tier` (standaard 1) en, boven tier 1, een prijs
+  `unlock` in research packs. Tier 1 is vrij: mijnen en oogsters, branders, band, paal, magazijnen, de werkplaats en de
+  basisfabrieken met hun eerste recepten. Daarboven koop je elk gebouw en elk recept apart vrij in het bouwmenu; iets
+  van tier N kan pas als er iets van tier N-1 vrij is. Nu op slot: splitter en merger (12 packs) en de tweede routes
+  (8 packs).
+  De **knutselwerkplaats** (`"workshop": true`) is een productiegebouw zonder eigen recepten: de lader maakt er een
+  voor elk goed met `"research": { "per": 4, "packs": 1 }` (4 stuks geven 1 pack; diepere goederen geven er meer). Je
+  kiest wat je onderzoekt zoals je een recept kiest. Het **research pack** (`onderzoek`) bestaat in elke economie en
+  heeft `"vaporizes": true`: het verdampt bij de sprong, uit de voorraad, van de banden en uit de gebouwen. Wat je
+  hebt vrijgekocht blijft per economie de hele run; in een nieuwe economie begin je weer bij tier 1. De lader eist per
+  economie een werkplaats, het goed `onderzoek` en minstens één goed met `research`.
 - **Nog geen kunst?** Een gebouw of goed zonder eigen plaatje krijgt een bestaand plaatje in zijn kleur.
 - **Stroom** (15 nov): het looprad hoort bij de machine; alle andere stroom komt van **generatoren**, en dat zijn gewone
   productiegebouwen met een recept dat stroom levert: `{ "inputs": { "biomassa": 1 }, "time": 5, "power": 5 }` geeft 5 kW
