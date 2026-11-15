@@ -1,29 +1,25 @@
-// Het controlepaneel van de muizen: pixelart, schuin linksonder over de wereld. Elke knop en elk scherm doet iets.
-// Gewoon canvas 2D bovenop Pixi. Regels staan in energie.ts; dit bestand tekent alleen en vertaalt klikken.
+// Het stroompaneel: pixelart in de dialoog POWER (knop in de balk linksonder). Bronnen, het net en de verbruikers.
+// Elke knop en elk scherm doet iets; uitleg komt als tooltip bij de muis. De voorraad, de ratten en het logboek staan
+// in de balk (hud.ts). Gewoon canvas 2D; regels staan in energie.ts, dit bestand tekent alleen en vertaalt klikken.
 import type { SpelStaat } from '../kern/spel';
 import type { WereldBeeld } from '../kern/wereldbeeld';
 import { maakBouwen } from './bouwen';
-import { klein, knop as balkKnop } from '../kern/scherm';
+import { klein, knop as balkKnop, maakDialoog, toonTip } from '../kern/scherm';
 import { goed } from '../kern/economie';
 import { RATTEN_ENERGIE } from '../data/ratten';
 import { draaiKnop, energie, MAX_MK, omhoog, STANDEN, stroomVan, upgradeBron, upgradeKosten, verbruikVan, zetBron, zetVerbruiker, zwakte, type Bron, type EnergieStaat } from './energie';
-import { grondstoffen, industrie, industrieVraag, makers, opslagMax, opslagVol, ruimteVoor, soortVan } from './industrie';
-import { werk } from './werk';
+import { industrie, industrieVraag, makers, soortVan } from './industrie';
+import { maakHud } from './hud';
 import { kanBetalen, kostTekst, naamVan } from './kosten';
 import { tekenRegels, type Regel } from './letters';
 
 const kw = (n: number) => (Math.abs(n % 1) > 0.05 ? n.toFixed(1) : String(Math.round(n)));
 
-const PW = 484, PH = 212;
-// Omtrek: hoog aan de linkerkant, schuin omlaag naar een lager rechterdeel.
-const OMTREK: [number, number][] = [[0, 0], [184, 0], [244, 60], [476, 60], [484, 68], [484, 212], [0, 212]];
+const PW = 484, PH = 110;
 const MOD: Record<string, [number, number, number, number, string]> = {
-  bronnen: [4, 6, 178, 98, 'POWER SOURCES'],
-  voorraad: [4, 108, 178, 44, 'STOCK'],
-  muizen: [4, 156, 178, 52, 'RATS'],
-  net: [186, 64, 142, 100, 'POWER GRID'],
-  verbruik: [332, 64, 148, 100, 'CONSUMERS'],
-  log: [186, 168, 294, 40, 'LOG'],
+  bronnen: [4, 6, 178, 100, 'POWER SOURCES'],
+  net: [186, 6, 142, 100, 'POWER GRID'],
+  verbruik: [332, 6, 148, 100, 'CONSUMERS'],
 };
 
 export const FONT: Record<string, string> = {
@@ -43,45 +39,36 @@ const hash = (x: number, y: number, s = 0) => {
   h = Math.imul(h ^ (h >>> 13), 1274126177);
   return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
 };
-function binnen(x: number, y: number): boolean {
-  let in_ = false;
-  for (let i = 0, j = OMTREK.length - 1; i < OMTREK.length; j = i++) {
-    const [xi, yi] = OMTREK[i], [xj, yj] = OMTREK[j];
-    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) in_ = !in_;
-  }
-  return in_;
-}
+const binnen = (x: number, y: number): boolean => x >= 0 && y >= 0 && x < PW && y < PH;
 const doek = (w: number, h: number) => Object.assign(document.createElement('canvas'), { width: w, height: h });
 
 interface Hit { x: number; y: number; w: number; h: number; doe: (() => void) | null; hulp: string }
 
 export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(sec: number): void } {
+  // Het paneel staat in een dialoog die dicht begint: je opent hem met POWER in de balk.
+  const dialoog = maakDialoog('dlg-stroom', 'POWER', () => maat());
   const pv = doek(PW, PH);
   pv.id = 'paneel';
-  pv.setAttribute('aria-label', 'Rat control panel: power sources, stock, rats, power grid, consumers and log');
-  Object.assign(pv.style, { position: 'fixed', left: '0', bottom: '0', zIndex: '5', pointerEvents: 'none', display: 'block' });
-  document.body.appendChild(pv);
+  pv.setAttribute('aria-label', 'Power panel: power sources, power grid and consumers');
+  pv.style.display = 'block';
+  dialoog.inhoud.appendChild(pv);
+  dialoog.inhoud.style.padding = '0';
   const pvc = pv.getContext('2d')!;
   const pcan = doek(PW, PH), pc = pcan.getContext('2d')!;
   const pgl = doek(PW, PH), pg = pgl.getContext('2d')!;
   const pw1 = doek(Math.ceil(PW / 3), Math.ceil(PH / 3)), pw1c = pw1.getContext('2d')!;
   const pw2 = doek(Math.ceil(PW / 8), Math.ceil(PH / 8)), pw2c = pw2.getContext('2d')!;
   const plaat = doek(PW, PH);
-  let ps = 2, tijd = 0, scoop = 0, logScroll = 0, hover = -1, hits: Hit[] = [];
+  let ps = 2, tijd = 0, scoop = 0, hover = -1, hits: Hit[] = [];
 
-  let open = !klein(); // op een telefoon dicht tot je op PANEL tikt
   function maat(): void {
-    pv.style.display = open ? 'block' : 'none';
-    pv.style.bottom = klein() ? '52px' : '0'; // de knoppenbalk blijft vrij
-    const ps0 = klein() ? Math.min((innerWidth - 8) / PW, (innerHeight - 60) / PH) : Math.min((innerWidth * 0.78) / PW, (innerHeight * 0.5) / PH);
+    const ps0 = Math.min(3, (innerWidth - 24) / PW, (innerHeight * 0.6) / PH);
     ps = ps0 >= 1 ? Math.floor(ps0 * 2) / 2 : ps0; // halve stappen: groot genoeg, nog scherp genoeg
     const dpr = Math.min(2, devicePixelRatio || 1);
     pv.style.width = `${Math.floor(PW * ps)}px`;
     pv.style.height = `${Math.floor(PH * ps)}px`;
     pv.width = Math.round(PW * ps * dpr);
     pv.height = Math.round(PH * ps * dpr);
-    const hulp = document.getElementById('hulp');
-    if (hulp) hulp.style.left = `${Math.floor(PW * ps) + 8}px`;
   }
 
   // ---- tekenhulp ----
@@ -125,12 +112,6 @@ export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(
         d[i + 3] = 255;
       }
     c.putImageData(img, 0, 0);
-    // gevarenstrepen langs de schuine rand
-    for (let s = 0; s < 60; s++)
-      for (let j = 3; j < 7; j++) {
-        c.fillStyle = Math.floor((s + j) / 3) % 2 ? '#0a0a0a' : '#7a6418';
-        c.fillRect(184 + s - j, s + j - 1, 1, 1);
-      }
     for (const [, [x, y, w, h, naam]] of Object.entries(MOD)) {
       c.fillStyle = '#141615';
       c.fillRect(x, y, w, h);
@@ -158,15 +139,6 @@ export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(
           }
         lx += 4;
       }
-    }
-    // een paar kabels over de plaat
-    c.strokeStyle = '#07070a';
-    c.lineWidth = 1;
-    for (const [a, b, z] of [[[180, 2], [190, 166], 10], [[330, 60], [334, 166], 5], [[60, 212], [120, 156], -8]] as [number[], number[], number][]) {
-      c.beginPath();
-      c.moveTo(a[0], a[1]);
-      c.quadraticCurveTo((a[0] + b[0]) / 2 + z, (a[1] + b[1]) / 2, b[0], b[1]);
-      c.stroke();
     }
   }
 
@@ -281,47 +253,8 @@ export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(
     // hooguit drie kaarten; een bron die alleen uit loot komt en er nog niet is, staat er niet bij
     e.bronnen.filter((b) => b.mk || !b.loot).slice(0, 3).forEach((b, i) => bron(s, b, 8 + i * 58, 14, knipper));
 
-    // OPSLAG (de voorraad die de muizen aanslepen)
-    grondstoffen().slice(0, 3).forEach((g, i) => { // er passen drie regels: de eerste drie grondstoffen van deze wereld
-      const y = 116 + i * 11;
-      verzonken(8, y - 1, 170, 10, '#0a0b0b');
-      if (goed(g).glows) G(10, y + 1, 5, 5, goed(g).color);
-      else R(10, y + 1, 5, 5, goed(g).color);
-      txt(naamVan(g), 18, y + 1, KL.label);
-      const w = Math.floor(s.voorraad[g] ?? 0);
-      const max = Math.max(1, w + ruimteVoor(s, g)); // wat er nu hooguit van kan liggen: de opslag is gedeeld
-      txt(String(w).padStart(3, '0'), 50, y + 1, w < 4 ? (knipper ? KL.rood : '#501010') : w >= max ? (knipper ? KL.rood : KL.amber) : '#ffe08a', 1, true);
-      txt(`/${max}`, 62, y + 1, KL.dim);
-      // vulmeter
-      R(80, y + 6, 26, 1, '#050505');
-      G(80, y + 6, Math.round((26 * Math.min(w, max)) / max), 1, w >= max ? KL.rood : goed(g).color);
-      const tr = e.trend[g] ?? 0;
-      txt(`${tr >= 0 ? '+' : ''}${tr.toFixed(2)}/S`, 110, y + 1, tr > 0.01 ? KL.groen : tr < -0.01 ? KL.rood : KL.dim);
-      hit(8, y - 1, 170, 10, null, w >= max ? `STORAGE FULL! BUILD MORE STORAGE` : `${naamVan(g)} IN STOCK. STORAGE ${Math.round(opslagVol(s))} OF ${Math.round(opslagMax(s))} USED`);
-    });
-
-    // RATTEN: wat ze uit zichzelf aan het doen zijn
-    const tel = werk(s).telling;
-    const rijen: [string, number, string, string][] = [
-      ['BUILDING', tel.bouw, KL.geel, 'FINISHING BUILD SITES. COMES FIRST'],
-      ['WHEEL+FAB', tel.ren + tel.fab, KL.cyaan, 'RUNNING IN THE WHEEL AND WORKING IN FABRICATORS'],
-      ['HAULING', tel.haal + tel.breng + tel.lever, KL.amber, 'BRINGING PARTS TO BUILD SITES, INPUT TO FABRICATORS, OUTPUT TO THE STOCK'],
-      ['MINING', tel.graaf, KL.groen, 'DIGGING RESOURCES BY HAND, WHILE THERE IS ROOM'],
-      ['IDLE', tel.vrij, KL.label, 'NOTHING TO DO: STOCK FULL OR NOTHING TO BUILD'],
-    ];
-    const totaal = s.werkers.length || 1;
-    rijen.forEach(([naam, n, k, hulp], i) => {
-      const y = 166 + i * 8;
-      txt(naam, 8, y, KL.label);
-      txt(String(n).padStart(3, ' '), 54, y, n ? k : KL.dim, 1, n > 0);
-      verzonken(70, y, 104, 6, '#070707');
-      const bw = Math.round((102 * n) / totaal);
-      for (let x = 0; x < bw; x += 2) G(71 + x, y + 1, 1, 4, k);
-      hit(6, y - 1, 170, 8, null, `${naam}: ${hulp}`);
-    });
-
     // STROOMNET
-    const nx = 190, ny = 73;
+    const nx = 190, ny = 15;
     verzonken(nx, ny, 134, 52, '#03100a');
     for (let x = nx + 1; x < nx + 133; x += 11) R(x, ny + 1, 1, 50, '#0a2216');
     for (let y = ny + 1; y < ny + 51; y += 10) R(nx + 1, y, 132, 1, '#0a2216');
@@ -375,7 +308,7 @@ export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(
     // VERBRUIKERS
     const m = s.machine;
     e.verbruikers.forEach((c, i) => {
-      const x0 = 336, y0 = 72 + i * 23;
+      const x0 = 336, y0 = 14 + i * 23;
       verzonken(x0, y0, 140, 22, '#101111');
       R(x0 + 3, y0 + 3, 9, 16, '#050505');
       if (c.aan) {
@@ -426,34 +359,6 @@ export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(
       hit(x0 + 15, y0 + 1, 104, 20, null, hulp);
     });
 
-    // LOGBOEK
-    const lx = 190, ly = 175;
-    verzonken(lx, ly, 286, 30, '#0d0802');
-    const kleuren = { amber: KL.amber, rood: KL.rood, groen: KL.groen, cyaan: KL.cyaan };
-    for (let i = 0; i < 3; i++) {
-      const r = e.log[i + logScroll];
-      if (!r) continue;
-      const nieuw = i === 0 && logScroll === 0;
-      // lange regels worden smaller geschoven in plaats van afgekapt (tot 58 tekens)
-      const t = r.tekst.slice(0, 58);
-      txt(t.slice(0, 44), lx + 3, ly + 3 + i * 7, nieuw ? kleuren[r.kleur] : '#6b4a14', 1, nieuw);
-      if (regels.length) Object.assign(regels[regels.length - 1], { s: t, w: 174 });
-    }
-    R(lx + 180, ly + 2, 1, 26, '#2a1a06');
-    const uitleg = hover >= 0 && hits[hover] ? hits[hover].hulp : logScroll ? 'OLDER MESSAGES. CLICK FOR MORE' : 'POINT AT SOMETHING FOR HELP';
-    // uitleg rechts in twee regels van 25 tekens
-    const woorden = uitleg.split(' ');
-    const zinnen = [''];
-    for (const w of woorden) {
-      if ((zinnen[zinnen.length - 1] + ' ' + w).trim().length > 25 && zinnen.length < 3) zinnen.push('');
-      zinnen[zinnen.length - 1] = (zinnen[zinnen.length - 1] + ' ' + w).trim();
-    }
-    zinnen.slice(0, 3).forEach((r, i) => txt(r.slice(0, 25), lx + 184, ly + 3 + i * 8, KL.cyaan, 1, hover >= 0));
-    for (let y = ly + 1; y < ly + 29; y += 2) R(lx + 1, y, 284, 1, 'rgba(0,0,0,.22)');
-    hit(lx, ly, 180, 30, () => {
-      logScroll = e.log.length > 3 ? (logScroll + 3) % (e.log.length - 2) : 0;
-    }, 'LOG: CLICK FOR OLDER MESSAGES');
-
     if (hover >= 0 && hits[hover]?.doe) {
       const h = hits[hover];
       pg.strokeStyle = '#ffd23f88';
@@ -502,19 +407,23 @@ export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(
   };
   window.addEventListener('pointermove', (e) => {
     const p = punt(e);
-    hover = p ? zoek(p) : -1;
-    document.body.style.cursor = hover >= 0 && hits[hover].doe ? 'pointer' : '';
+    const was = hover;
+    hover = p && dialoog.open ? zoek(p) : -1;
+    if (hover >= 0) toonTip(hits[hover].hulp, e.clientX, e.clientY);
+    else if (was >= 0) toonTip(null);
+    pv.style.cursor = hover >= 0 && hits[hover].doe ? 'pointer' : '';
   });
   window.addEventListener(
     'pointerdown',
     (e) => {
-      const p = punt(e);
+      const p = dialoog.open ? punt(e) : null;
       if (!p) return;
       e.stopPropagation();
       e.preventDefault();
       if (e.button !== 0) return;
       const i = zoek(p);
-      hover = i; // ook bij tikken de uitleg laten zien
+      hover = i;
+      if (i >= 0) toonTip(hits[i].hulp, e.clientX, e.clientY); // ook bij tikken de uitleg laten zien
       hits[i]?.doe?.();
     },
     { capture: true },
@@ -523,7 +432,7 @@ export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(
     window.addEventListener(
       soort,
       (e) => {
-        if (punt(e)) {
+        if (dialoog.open && punt(e)) {
           e.stopPropagation();
           e.preventDefault();
         }
@@ -543,25 +452,22 @@ export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(
   maat();
   window.addEventListener('resize', maat);
   const bouwen = beeld ? maakBouwen(staat, beeld) : null;
-  // telefoon: het paneel en het bouwmenu om de beurt open, met knoppen
-  if (klein()) {
-    let kPaneel: HTMLButtonElement, kBouw: HTMLButtonElement | null = null;
-    const zet = (paneel: boolean, bouw: boolean) => {
-      open = paneel;
-      maat();
-      bouwen?.zicht(bouw);
-      kPaneel.classList.toggle('aan', paneel);
-      kBouw?.classList.toggle('aan', bouw);
-    };
-    kPaneel = balkKnop('PANEL', 'power, stock and rats', () => zet(!open, false));
-    if (bouwen) kBouw = balkKnop('BUILD', 'build menu', () => zet(false, !kBouw!.classList.contains('aan')));
+  // telefoon: het bouwmenu staat dicht tot je op BUILD tikt
+  if (klein() && bouwen) {
+    const kBouw: HTMLButtonElement = balkKnop('BUILD', 'build menu', () => {
+      const aan = !kBouw.classList.contains('aan');
+      bouwen.zicht(aan);
+      kBouw.classList.toggle('aan', aan);
+    });
   }
+  const hud = maakHud(staat, dialoog);
   return {
     werk(sec) {
       tijd += sec;
       bouwen?.werk(sec);
+      hud.werk(sec);
       const s = staat();
-      teken(s, energie(s));
+      if (dialoog.open) teken(s, energie(s)); // dicht: niets te tekenen
     },
   };
 }

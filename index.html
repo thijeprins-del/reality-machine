@@ -23,10 +23,67 @@
       #knoppen button.aan { border-color: #9dff2e; color: #9dff2e; box-shadow: 0 0 8px #9dff2e55; }
       @media (max-width: 999px), (max-height: 639px) {
         #balk { font-size: 11px; padding: 5px 8px; }
-        #hulp { display: none; }
+        #hud { font-size: 11px; max-width: 92vw; bottom: 20px; }
+        .dialoog .inhoud { font-size: 12px; }
         #versie { font-size: 10px; right: auto; left: 8px; bottom: 4px; }
       }
-      #hulp { position: fixed; left: 8px; bottom: 6px; font: 12px monospace; color: #5e6261; pointer-events: none; }
+      /* De balk linksonder: voorraad, stroom, RATS en LOG (inklapbaar) en de knoppen voor de dialogen. */
+      #hud { position: fixed; left: 6px; bottom: 6px; z-index: 6; max-width: 460px; padding: 6px 8px; font: 13px monospace; color: #c8ccd2;
+        background: #07080ae6; border: 1px solid #3d4143; user-select: none; }
+      #hud > div + div { margin-top: 5px; }
+      #hud .inv { display: flex; flex-wrap: wrap; gap: 3px 10px; align-items: center; }
+      #hud .item { display: inline-flex; align-items: center; gap: 4px; color: #ffe08a; }
+      .ico { display: inline-block; width: 10px; height: 10px; image-rendering: pixelated; border: 1px solid #050505; flex: 0 0 auto; }
+      .ico.gloeit { box-shadow: 0 0 6px currentColor; }
+      #hud .opslag { margin-left: auto; color: #8d9189; }
+      #hud .opslag.vol { color: #ff2a3a; }
+      #hud .stil { color: #5e6261; }
+      #hud .stroom { color: #8d9189; }
+      #hud .stroom b { margin-right: 10px; }
+      #hud .aanbod { color: #9dff2e; }
+      #hud .vraag { color: #ff9a1f; }
+      #hud .tekort { color: #ff2a3a; }
+      #hud button { font: inherit; color: #c8ccd2; background: #15171a; border: 1px solid #3d4143; border-radius: 0; cursor: pointer; }
+      #hud .kopje { display: block; width: 100%; padding: 2px 4px; text-align: left; background: none; border: 0; color: #a8861c;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      #hud .kopje:hover { color: #ffd23f; }
+      #hud .kort { color: #8d9189; }
+      #hud .lijf { padding: 2px 4px 2px 16px; font-size: 12px; }
+      #hud .rij { display: flex; gap: 8px; align-items: center; color: #8d9189; }
+      #hud .rij span:first-child { width: 96px; }
+      #hud .rij b { width: 22px; text-align: right; color: #c8ccd2; }
+      #hud .staaf { flex: 1; height: 5px; background: #050505; }
+      #hud .staaf i { display: block; height: 100%; background: #9dff2e; }
+      #hud .oud { color: #6b4a14; }
+      .log-amber { color: #ff9a1f; } .log-rood { color: #ff2a3a; } .log-groen { color: #9dff2e; } .log-cyaan { color: #4ef2ff; }
+      #hud .knoppen { display: flex; gap: 6px; }
+      #hud .knoppen button { flex: 1; padding: 6px 8px; font-weight: bold; touch-action: manipulation; }
+      #hud .knoppen button:hover { border-color: #8d9189; }
+      #hud .knoppen button.aan { border-color: #9dff2e; color: #9dff2e; }
+      /* Dialogen: midden in beeld, één tegelijk. */
+      .dialoog { display: none; position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 30; flex-direction: column;
+        max-width: 96vw; max-height: 90vh; font: 13px monospace; color: #c8ccd2; background: #0b0c0c; border: 1px solid #5a4a12;
+        box-shadow: 0 0 0 9999px #0006; }
+      .dialoog .kop { display: flex; justify-content: space-between; align-items: center; padding: 6px 8px 6px 10px; color: #a8861c;
+        border-bottom: 1px solid #353837; letter-spacing: 1px; }
+      .dialoog .kop button { width: 26px; height: 22px; font: bold 12px monospace; color: #c8ccd2; background: #15171a; border: 1px solid #3d4143;
+        border-radius: 0; cursor: pointer; }
+      .dialoog .kop button:hover { border-color: #ff2a3a; color: #ff2a3a; }
+      .dialoog .inhoud { padding: 10px 14px; overflow: auto; }
+      .dialoog h3 { margin: 10px 0 4px; font-size: 12px; color: #a8861c; letter-spacing: 1px; text-transform: uppercase; }
+      .dialoog h3:first-child { margin-top: 0; }
+      .dialoog table { border-collapse: collapse; }
+      .dialoog th { padding: 2px 18px 2px 0; text-align: left; font-weight: normal; color: #ffe08a; white-space: nowrap; }
+      .dialoog td { padding: 2px 0; color: #8d9189; }
+      .dialoog p { margin: 10px 0 0; max-width: 420px; color: #5e6261; line-height: 1.4; }
+      .productie td, .productie th { padding: 3px 14px 3px 0; }
+      .productie thead td, .productie thead th { color: #a8861c; border-bottom: 1px solid #353837; }
+      .productie .getal { text-align: right; color: #c8ccd2; }
+      .productie .leeg th, .productie .leeg .getal { color: #5e6261; }
+      .productie .getal.plus { color: #9dff2e; } .productie .getal.min { color: #ff2a3a; } .productie .getal.nul { color: #5e6261; }
+      /* Tooltip bij de muis. */
+      #tip { display: none; position: fixed; z-index: 40; max-width: 300px; padding: 5px 8px; font: 12px monospace; line-height: 1.35; color: #4ef2ff;
+        background: #07080af2; border: 1px solid #25506a; pointer-events: none; }
     </style>
   </head>
   <body>

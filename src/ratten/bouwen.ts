@@ -5,7 +5,7 @@
 // bestaand plaatje in zijn kleur. Regels staan in industrie.ts en werk.ts; dit bestand tekent alleen en vertaalt klikken.
 import { Graphics } from 'pixi.js';
 import { naarScherm } from '../kern/iso';
-import { klein } from '../kern/scherm';
+import { klein, toonTip } from '../kern/scherm';
 import type { Blok } from '../kern/kaart';
 import type { SpelStaat } from '../kern/spel';
 import { hoogteOp, tegelOnder } from '../kern/terrein';
@@ -289,17 +289,13 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
           y += 8;
         }
       }
-    } else {
-      txt('SELECTED', 8, y + 2, KL.dim);
-      y += 11;
-      for (const z of zinnen('CLICK A BUILDING TO SET IT UP: ITS RECIPE, OR WHAT A BELT TAKES OUT OF STORAGE', 30, 3)) {
-        txt(z, 10, y, KL.dim);
-        y += 8;
-      }
     }
     // uitleg en meldingen onderaan
-    const regel = melding ? melding.reden : wijst >= 0 && vakken[wijst] ? vakken[wijst].hulp : modus ? lijst.find((k) => k.id === modus)?.uitleg ?? '' : matchMedia('(pointer: coarse)').matches ? 'PICK SOMETHING, THEN TAP THE GROUND. CLEAR STOPS' : 'PICK SOMETHING TO BUILD. RIGHT CLICK OR ESC STOPS';
-    R(6, SH - 42, SW - 10, 1, '#353837');
+    // Onderaan alleen wat je nu aan het doen bent: of het hier kan, of wat het gekozen gebouw wil. Uitleg bij een knop
+    // komt als tooltip bij de muis; op een aanraakscherm (geen muis) staat hij hier.
+    const tik = matchMedia('(pointer: coarse)').matches;
+    const regel = melding ? melding.reden : tik && wijst >= 0 && vakken[wijst] ? vakken[wijst].hulp : modus ? lijst.find((k) => k.id === modus)?.uitleg ?? '' : '';
+    if (regel) R(6, SH - 42, SW - 10, 1, '#353837');
     zinnen(regel, 31, 4).forEach((z, n) => txt(z, 8, SH - 37 + n * 8, melding ? (melding.ok ? KL.groen : KL.rood) : KL.cyaan));
     // naar het scherm: pixels opschalen, tekst scherp erover
     bvc.imageSmoothingEnabled = false;
@@ -334,8 +330,14 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
     wijst = n; // ook bij tikken de uitleg onderaan laten zien
     if (n >= 0 && e.button === 0) vakken[n].doe?.();
   });
-  bv.addEventListener('pointermove', (e) => (wijst = opMenu(e)));
-  bv.addEventListener('pointerleave', () => (wijst = -1));
+  bv.addEventListener('pointermove', (e) => {
+    wijst = opMenu(e);
+    toonTip(wijst >= 0 && e.pointerType === 'mouse' ? vakken[wijst].hulp : null, e.clientX, e.clientY);
+  });
+  bv.addEventListener('pointerleave', () => {
+    wijst = -1;
+    toonTip(null);
+  });
   bv.addEventListener('contextmenu', (e) => e.preventDefault());
 
   // ---- invoer in de wereld ----

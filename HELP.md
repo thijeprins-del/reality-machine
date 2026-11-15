@@ -30,8 +30,18 @@ stream gemist.
 - **WASD**, de **pijltjes** of slepen met de **middelste muisknop**: rondkijken. **Scrollen**: zoomen, ook ver uit om de hele wereld te zien.
   **Spatie**: terug naar de machine. **Esc**: niets meer geselecteerd.
 
+## De balk linksonder
+Linksonder staat alleen wat je steeds nodig hebt:
+- **Voorraad**: elk goed in je magazijnen met zijn icoon en het aantal, en rechts hoe vol de opslag is.
+- **SUPPLY** en **DEMAND**: hoeveel stroom je bronnen geven en hoeveel er gevraagd wordt (rood = tekort).
+- **RATS** en **LOG**: klik erop om ze uit te klappen (wat je ratten doen, de laatste meldingen). Een nieuwe melding
+  staat even naast LOG.
+- **PRODUCTION**: per goed wat je hebt en wat er per minuut bij komt of af gaat.
+- **POWER**: het stroompaneel (zie hieronder). **CONTROLS**: de besturing.
+Uitleg verschijnt als tooltip als je iets aanwijst. **Esc** of het kruisje sluit een venster.
+
 ## Stroom
-Linksonder zit het controlepaneel van de ratten. Elke knop doet iets; wijs iets aan en het logboek legt het uit.
+De knop **POWER** opent het stroompaneel. Elke knop doet iets; wijs iets aan voor uitleg.
 - **Bronnen**: je begint met een looprad (WHEEL) waar ratten in rennen: hoe hoger de stand, hoe meer ratten erin moeten.
   De houtbrander bouw je met **+**. De dynamo (schroot) bouw je met **+**, de reactor (kristal) vind je alleen
   als loot. Hendel = aan/uit (toetsen **1 2 3**), draaiknop = laag/normaal/overladen (**shift** + 1 2 3).
