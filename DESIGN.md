@@ -101,8 +101,12 @@ wereld. Het spel leest twee mappen met JSON-bestanden, zodat je kunt schaven zon
 - **Tiers en onderzoek** (15 nov). Gebouwen en recepten hebben een `tier` (standaard 1) en, boven tier 1, een prijs
   `unlock` in research packs. Tier 1 is vrij: mijnen en oogsters, branders, band, paal, magazijnen, de werkplaats en de
   basisfabrieken met hun eerste recepten. Daarboven koop je elk gebouw en elk recept apart vrij in het bouwmenu; iets
-  van tier N kan pas als er iets van tier N-1 vrij is. Nu op slot: splitter en merger (12 packs) en de tweede routes
-  (8 packs).
+  van tier N kan pas als er iets van tier N-1 vrij is. Nu op slot: splitter en merger (12 packs), de tweede routes
+  (8 packs) en per economie één gebouw voor geavanceerde fabricage (20 packs) dat twee platen en een lokale grondstof
+  hardt tot een **pantserplaat** (`pantserplaat`, overal hetzelfde id, per wereld een eigen naam): temper forge
+  (roestduin, koolstof), blast furnace (aarde, biomassa), autoclave (gifwoud, hars), quench tower (magmaveld, basalt),
+  cryo temperer (toendra, ijs) en brine bath (zoutzee, zout). De pantserplaat is bedoeld voor latere gebouwen die
+  pantser maken; nu is ze alleen te onderzoeken (2 stuks geven 4 packs).
   Het **laboratorium** (LABORATORY in beeld; `"workshop": true` in het bestand) is een productiegebouw zonder eigen recepten: de lader maakt er een
   voor elk goed met `"research": { "per": 4, "packs": 1 }` (4 stuks geven 1 pack; diepere goederen geven er meer). Je
   kiest wat je onderzoekt zoals je een recept kiest. Het **research pack** (`onderzoek`) bestaat in elke economie en

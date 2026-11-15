@@ -600,6 +600,10 @@ function tekenLading(goed) {
     d.blokS(...g(-2.5, -1, 0), 5, 1, 2, T.bruin, { r });
     d.blokS(...g(-2, 0.2, 0), 5, 1, 2, T.bruin, { r });
     d.blokS(...g(-2.2, -0.4, 2), 5, 1, 2, T.bruin, { r });
+  } else if (goed === 'pantserplaat') {
+    // gehard: één dikke donkere plaat met klinknagels
+    d.blokS(...g(-2.5, -2, 0), 5, 4, 2.4, T.chroom, { r });
+    d.blokS(...g(-2.5, -2, 2.4), 5, 4, 0.6, T.staal, { r });
   } else if (goed === 'onderzoek') {
     // research pack: een messing kistje met een gloeiend buisje erop
     d.blokS(...g(-2, -1.5, 0), 4, 3, 3, T.messing, { r });
@@ -636,6 +640,11 @@ function tekenHoop(goed) {
   } else if (goed === 'hout') {
     for (let z = 0; z < 4; z++)
       for (let j = 0; j < 4 - z; j++) d.blokS(...g(-3 + z * 0.4, -2 + j * 1.2 + z * 0.6, z * 1.6), 6 - z * 0.5, 1, 1.6, T.bruin, { r });
+  } else if (goed === 'pantserplaat') {
+    for (let z = 0; z < 4; z++) {
+      d.blokS(...g(-3 + (z % 2) * 0.4, -2.5 + (z % 2) * 0.3, z * 2.6), 6, 5, 2, T.chroom, { r });
+      d.blokS(...g(-3 + (z % 2) * 0.4, -2.5 + (z % 2) * 0.3, z * 2.6 + 2), 6, 5, 0.6, T.staal, { r });
+    }
   } else if (goed === 'onderzoek') {
     // een stapeltje kistjes, elk met een buisje
     for (const [k, rr, z] of [[-3, -2, 0], [0.5, -2.5, 0], [-2.5, 0.8, 0], [0.8, 0.5, 0], [-1.2, -1, 3]]) d.blokS(...g(k, rr, z), 3, 2.4, 3, T.messing, { r });
@@ -930,7 +939,7 @@ tekenBandLeeg();
 tekenBandHoek('band-hoek-boven', 53, [[0, 2, 6, 4, 'kol'], [2, 0, 4, 2, 'rij']]); // west en noord
 tekenBandHoek('band-hoek-onder', 54, [[2, 2, 6, 4, 'kol'], [2, 6, 4, 2, 'rij']]); // oost en zuid
 tekenBandHoek('band-hoek-rechts', 55, [[2, 2, 6, 4, 'kol'], [2, 0, 4, 2, 'rij']]); // oost en noord
-for (const g of ['schroot', 'hout', 'kristal', 'plaat', 'balk', 'onderzoek']) {
+for (const g of ['schroot', 'hout', 'kristal', 'plaat', 'balk', 'onderzoek', 'pantserplaat']) {
   tekenLading(g);
   tekenHoop(g);
 }

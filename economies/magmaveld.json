@@ -10,6 +10,7 @@
     { "id": "koolstof", "name": "CARBON", "color": "#3a3a40", "volume": 1, "research": { "per": 4, "packs": 3 } },
     { "id": "plaat", "name": "CAST PLATE", "color": "#9aa3ad", "volume": 1, "research": { "per": 4, "packs": 3 } },
     { "id": "balk", "name": "BASALT BEAM", "color": "#4c4854", "volume": 1, "sprite": "basalt-balk", "research": { "per": 4, "packs": 3 } },
+    { "id": "pantserplaat", "name": "OBSIDIAN PLATE", "color": "#3a3442", "volume": 1, "research": { "per": 2, "packs": 4 } },
     { "id": "onderzoek", "name": "RESEARCH PACK", "color": "#4ef2ff", "volume": 1, "glows": true, "vaporizes": true }
   ],
   "recipes": [
@@ -19,12 +20,14 @@
     { "id": "balk", "name": "Cut basalt beam", "time": 4, "inputs": { "basalt": 3 }, "outputs": { "balk": 1 } },
     { "id": "koolstof_slak", "name": "Crush slag", "time": 3, "inputs": { "slak": 2 }, "outputs": { "koolstof": 1 }, "tier": 2, "unlock": 8 },
     { "id": "koolstof_basalt", "name": "Crush basalt", "time": 4, "inputs": { "basalt": 3 }, "outputs": { "koolstof": 1 } },
-    { "id": "stook_koolstof", "name": "Burn carbon", "time": 6, "inputs": { "koolstof": 1 }, "power": 6 }
+    { "id": "stook_koolstof", "name": "Burn carbon", "time": 6, "inputs": { "koolstof": 1 }, "power": 6 },
+    { "id": "pantserplaat", "name": "Quench obsidian plate", "time": 6, "inputs": { "plaat": 2, "basalt": 1 }, "outputs": { "pantserplaat": 1 } }
   ],
   "buildings": [
     { "id": "smederij", "name": "LAVA FORGE", "color": "#d8581c", "sprite": "smederij", "size": 2, "insideRing": true, "cost": { "basalt": 15 }, "work": 10, "kW": 0, "crew": 2, "storage": 8, "recipes": ["plaat"] },
     { "id": "steenzaag", "name": "STONE CUTTER", "color": "#6a6474", "sprite": "steenzaag", "size": 2, "insideRing": true, "cost": { "basalt": 10 }, "work": 10, "kW": 2, "crew": 1, "storage": 8, "recipes": ["balk", "koolstof_slak", "koolstof_basalt"] },
     { "id": "koolstofbrander", "name": "CARBON BURNER", "color": "#ff9a1f", "sprite": "dynamo", "size": 2, "insideRing": true, "cost": { "plaat": 4, "balk": 3 }, "work": 10, "storage": 8, "recipes": ["stook_koolstof"] },
+    { "id": "blustoren", "name": "QUENCH TOWER", "color": "#d8581c", "sprite": "blustoren", "size": 2, "insideRing": true, "cost": { "plaat": 6, "balk": 4 }, "work": 12, "kW": 3, "crew": 2, "storage": 8, "recipes": ["pantserplaat"], "tier": 2, "unlock": 20 },
     { "id": "werkplaats", "name": "LABORATORY", "color": "#3aa8b8", "sprite": "werkplaats", "workshop": true, "size": 2, "insideRing": true, "cost": { "basalt": 15 }, "work": 10, "kW": 1, "crew": 1, "storage": 8 },
     { "id": "boor", "name": "ROCK DRILL", "color": "#7a5c48", "sprite": "boor", "size": 2, "onDeposit": true, "range": 3, "cost": { "plaat": 3, "balk": 1 }, "work": 8, "kW": 2, "storage": 12, "recipes": ["mijn_erts", "mijn_basalt"] },
     { "id": "band", "name": "BELT", "color": "#5b554b", "sprite": "band-leeg", "belt": true, "speed": 2, "kW": 0.05, "cost": { "plaat": 1 }, "work": 1.2 },

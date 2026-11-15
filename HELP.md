@@ -80,7 +80,8 @@ wat je hebt, en zijn recepten met iconen. Klik op een gebouw in de wereld en het
 - **Laboratorium** (LABORATORY) en **onderzoek**: niet alles is vanaf het begin te bouwen. Een kaart met LOCKED
   zit op slot, net als sommige recepten. Bouw een laboratorium, klik erop en kies een grondstof om te onderzoeken: per
   paar stuks komt er een **research pack** uit. Bewerkte goederen (platen, balken, brandstof) geven er meer dan ruwe
-  grondstof. Klik een kaart op slot en koop hem vrij met **UNLOCK**; een recept op slot koop je vrij in de lijst van het
+  grondstof. Elke wereld heeft ook een zwaarder gebouw op slot (bijvoorbeeld de TEMPER FORGE of het BRINE BATH) dat
+  platen hardt tot een pantserplaat. Klik een kaart op slot en koop hem vrij met **UNLOCK**; een recept op slot koop je vrij in de lijst van het
   aangeklikte gebouw. Linksboven in het bouwmenu staat hoeveel packs je hebt. **Research packs verdampen bij de
   sprong**, dus geef ze uit voor de stream komt. Wat je hebt vrijgekocht blijft in die economie de hele run; in een
   wereld met een andere economie begin je opnieuw.

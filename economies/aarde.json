@@ -10,6 +10,7 @@
     { "id": "biomassa", "name": "BIOMASS", "color": "#7a9a3a", "volume": 1, "research": { "per": 4, "packs": 3 } },
     { "id": "plaat", "name": "IRON PLATE", "color": "#9aa3ad", "volume": 1, "research": { "per": 4, "packs": 3 } },
     { "id": "balk", "name": "BEAM", "color": "#8a6a40", "volume": 1, "research": { "per": 4, "packs": 3 } },
+    { "id": "pantserplaat", "name": "STEEL PLATE", "color": "#6a7480", "volume": 1, "research": { "per": 2, "packs": 4 } },
     { "id": "onderzoek", "name": "RESEARCH PACK", "color": "#4ef2ff", "volume": 1, "glows": true, "vaporizes": true }
   ],
   "recipes": [
@@ -19,12 +20,14 @@
     { "id": "balk", "name": "Saw beam", "time": 3, "inputs": { "hout": 2 }, "outputs": { "balk": 1 } },
     { "id": "plaat", "name": "Smelt iron plate", "time": 4, "inputs": { "erts": 2, "hout": 1 }, "outputs": { "plaat": 2 } },
     { "id": "biomassa", "name": "Chip wood", "time": 2, "inputs": { "hout": 1 }, "outputs": { "biomassa": 2 } },
-    { "id": "stook_biomassa", "name": "Burn biomass", "time": 5, "inputs": { "biomassa": 1 }, "power": 5 }
+    { "id": "stook_biomassa", "name": "Burn biomass", "time": 5, "inputs": { "biomassa": 1 }, "power": 5 },
+    { "id": "pantserplaat", "name": "Blast steel plate", "time": 6, "inputs": { "plaat": 2, "biomassa": 1 }, "outputs": { "pantserplaat": 1 } }
   ],
   "buildings": [
     { "id": "zagerij", "name": "SAWMILL", "color": "#9a6b34", "sprite": "zagerij", "size": 2, "insideRing": true, "cost": { "hout": 12, "steen": 6 }, "work": 10, "kW": 2, "crew": 2, "storage": 8, "recipes": ["balk", "biomassa"] },
     { "id": "smelter", "name": "SMELTER", "color": "#c8642d", "sprite": "smelter", "size": 2, "insideRing": true, "cost": { "steen": 15, "hout": 5 }, "work": 10, "kW": 3, "crew": 2, "storage": 8, "recipes": ["plaat"] },
     { "id": "biomassabrander", "name": "BIOMASS BURNER", "color": "#ff5a2a", "sprite": "houtbrander", "size": 2, "insideRing": true, "cost": { "plaat": 4, "balk": 4 }, "work": 10, "storage": 8, "recipes": ["stook_biomassa"] },
+    { "id": "hoogoven", "name": "BLAST FURNACE", "color": "#a8482a", "sprite": "hoogoven", "size": 2, "insideRing": true, "cost": { "plaat": 6, "balk": 4 }, "work": 12, "kW": 3, "crew": 2, "storage": 8, "recipes": ["pantserplaat"], "tier": 2, "unlock": 20 },
     { "id": "werkplaats", "name": "LABORATORY", "color": "#3aa8b8", "sprite": "werkplaats", "workshop": true, "size": 2, "insideRing": true, "cost": { "hout": 15 }, "work": 10, "kW": 1, "crew": 1, "storage": 8 },
     { "id": "boor", "name": "HARVESTER", "color": "#7a5c48", "sprite": "oogster", "size": 2, "onDeposit": true, "range": 3, "cost": { "plaat": 3, "balk": 1 }, "work": 8, "kW": 2, "storage": 12, "recipes": ["mijn_hout", "mijn_steen", "mijn_erts"] },
     { "id": "band", "name": "BELT", "color": "#5b554b", "sprite": "band-leeg", "belt": true, "speed": 2, "kW": 0.05, "cost": { "plaat": 1 }, "work": 1.2 },
