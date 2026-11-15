@@ -2,7 +2,6 @@
 import { economie, type Economie } from '../kern/economie';
 import type { TegelSet } from '../kern/tegels';
 import { WERELDTYPES, wereldType, type WereldType } from '../kern/wereldtypes';
-import type { Grondstof } from '../kern/types';
 
 export const DIMENSIE_DUUR_SEC = 300; // 5 minuten per wereld (Thije, 3 nov)
 
@@ -44,13 +43,7 @@ export const TERREIN_VOL = 10;
 export const HOOGTE_TINT_LAAG = 0.58;
 export const hoogteTint = (z: number): number => HOOGTE_TINT_LAAG + ((1 - HOOGTE_TINT_LAAG) * Math.max(0, Math.min(HOOGTE_MAX, z))) / HOOGTE_MAX;
 
-// Velden met grondstoffen: hoeveel velden, hoeveel tegels per veld, hoeveel per tegel, hoe ver van de machine.
-export const VELDEN: Record<Grondstof, { aantal: number; tegels: [number, number]; perTegel: number; afstand: [number, number] }> = {
-  // Weinig velden die veel geven: een boor neerzetten moet de moeite waard zijn (Thije, 5 nov).
-  schroot: { aantal: 3, tegels: [8, 12], perTegel: 200, afstand: [19, 25] },
-  hout: { aantal: 3, tegels: [6, 10], perTegel: 150, afstand: [19, 27] },
-  kristal: { aantal: 2, tegels: [4, 6], perTegel: 80, afstand: [23, 28] },
-};
+// De velden met grondstoffen (hoeveel, hoe groot, hoe ver) staan per grondstof in de economie: economies/*.json, "fields".
 
 // Elke dimensie ziet er echt anders uit. Binnen de ring blijft je eigen grauwe grond; erbuiten de kleuren van de wereld.
 export interface DimensieKleur {

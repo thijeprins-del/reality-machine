@@ -15,7 +15,8 @@
 import { binnenBlok, binnenRing, type Blok } from '../kern/kaart';
 import { TEGEL_WATER } from '../kern/terrein';
 import type { SpelStaat } from '../kern/spel';
-import type { Band, Goed, Grondstof, Richting, Trucje, Voorraad } from '../kern/types';
+import { actieveEconomie, grondstoffenVan } from '../kern/economie';
+import type { Band, Goed, Richting, Trucje, Voorraad } from '../kern/types';
 import { energie, log, verbruiker } from './energie';
 import { betaal, kanBetalen, kostTekst, naamVan, terug } from './kosten';
 
@@ -93,8 +94,9 @@ export interface IndustrieStaat {
 }
 
 export const RICHTINGEN: Record<Richting, [number, number]> = { O: [1, 0], W: [-1, 0], Z: [0, 1], N: [0, -1] };
-export const GRONDSTOFFEN: Grondstof[] = ['schroot', 'hout', 'kristal'];
-export const GOEDEREN: Goed[] = [...GRONDSTOFFEN, ...DELEN];
+// Wat er in deze wereld te halen en te maken valt (de economie van de wereld waar je nu bent).
+export const grondstoffen = (): Goed[] => grondstoffenVan(actieveEconomie());
+export const goederen = (): Goed[] => [...actieveEconomie().goederen.keys()];
 export const tegel = (x: number, y: number) => y * 1000 + x;
 
 let G: IndustrieGetallen;
@@ -429,11 +431,11 @@ function stapIndustrie(s: SpelStaat, sec: number): void {
   const v = s.voorraad;
 
   // opslag vol: wat er meer is valt eraf
-  for (const g of GOEDEREN) {
+  for (const g of goederen()) {
     const max = opslagMax(s, g);
     if ((v[g] ?? 0) > max) v[g] = max;
     const vol = (v[g] ?? 0) >= max;
-    if (vol && !i.volGemeld[g]) log(energie(s), `STOCK FULL: ${naamVan(g)} ${max}${GRONDSTOFFEN.includes(g as Grondstof) ? `. BUILD A STOCKPILE FOR ${naamVan(g)}` : ''}`, 'rood');
+    if (vol && !i.volGemeld[g]) log(energie(s), `STOCK FULL: ${naamVan(g)} ${max}${grondstoffen().includes(g) ? `. BUILD A STOCKPILE FOR ${naamVan(g)}` : ''}`, 'rood');
     i.volGemeld[g] = vol;
   }
 

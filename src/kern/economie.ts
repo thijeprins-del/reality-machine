@@ -23,6 +23,7 @@ export interface GoedSoort {
   sprite?: string; // naam van het plaatje (assets/); zonder plaatje een blokje in `color`
   icon?: string; // klein plaatje als data-URL (uit de sandbox)
   onMap: boolean; // ligt als veld op de kaart
+  glows: boolean; // gloeit in beeld (kristal)
   fields?: Velden;
 }
 export interface ReceptSoort {
@@ -119,7 +120,7 @@ export function leesEconomie(bron: unknown): { fouten: string[]; economie?: Econ
       if (f.distance !== undefined && !paar(f.distance)) fouten.push(`Resource "${r.id}": "fields.distance" must be [min, max]`);
     }
     R.set(r.id, { id: r.id, name: typeof r.name === 'string' && r.name ? r.name : r.id.toUpperCase(), color: kleur(r.color, '#999999'), volume: v as number,
-      sprite: typeof r.sprite === 'string' ? r.sprite : undefined, icon, onMap, fields });
+      sprite: typeof r.sprite === 'string' ? r.sprite : undefined, icon, onMap, glows: !!r.glows, fields });
   });
 
   (bron.recipes as unknown[]).forEach((c, i) => {
@@ -241,14 +242,21 @@ export function economie(id: string): Economie {
   return e;
 }
 
+// De economie van de wereld waar het spel nu is: zet het spel bij de start en bij elke sprong (kern/spel.ts).
+let actief: Economie | null = null;
+export const zetActieveEconomie = (e: Economie): void => { actief = e; };
+export const actieveEconomie = (): Economie => actief ?? economieen()[0];
+// De grondstoffen die in deze economie op de kaart liggen, in de volgorde van het bestand.
+export const grondstoffenVan = (e: Economie): string[] => [...e.goederen.values()].filter((g) => g.onMap).map((g) => g.id);
+
 // Een goed opzoeken: eerst in de economie van de wereld waar je nu bent (zo heet het daar), anders in de eerste economie
 // die het id kent (voorraad uit een eerdere wereld). Een onbekend id krijgt een grauw standaardgoed.
-export function goed(id: string, eerst?: Economie): GoedSoort {
-  const hier = eerst?.goederen.get(id);
+export function goed(id: string, eerst: Economie = actieveEconomie()): GoedSoort {
+  const hier = eerst.goederen.get(id);
   if (hier) return hier;
   for (const e of ECONOMIEEN.values()) {
     const g = e.goederen.get(id);
     if (g) return g;
   }
-  return { id, name: id.toUpperCase(), color: '#999999', volume: 1, onMap: false };
+  return { id, name: id.toUpperCase(), color: '#999999', volume: 1, onMap: false, glows: false };
 }

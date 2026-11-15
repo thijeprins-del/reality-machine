@@ -2,6 +2,7 @@ import { Application } from 'pixi.js';
 import { dimensieKleur } from './data/dimensies';
 import { RATTEN } from './data/ratten';
 import { maakBesturing } from './kern/besturing';
+import { actieveEconomie, goed, grondstoffenVan } from './kern/economie';
 import { versieTekst } from './kern/omgeving';
 import { beeldKlaar, markeer, maakOverlay, rapport, zetExtra } from './kern/prestatie';
 import { maakBalk } from './kern/scherm';
@@ -100,7 +101,7 @@ async function start(): Promise<void> {
         : `Dimension ${staat.dimensie} · ${dimensieKleur(staat.dimensie).naam} · stream in ${Math.floor(rest / 60)}:${String(rest % 60).padStart(2, '0')}`,
       wrathRegel(staat),
       `Machine: power ${Math.floor((100 * staat.machine.energie) / staat.machine.maxEnergie)}% · integrity ${Math.floor(staat.machine.heelheid)}%${rest <= 60 && staat.onderweg <= 0 && !staat.start?.gratisStroom && (staat.machine.energie < staat.machine.maxEnergie || staat.machine.heelheid < 50) ? ' · <b style="color:#ff3030">NOT READY FOR THE STREAM: you lose if it comes now</b>' : ' (needs 100% power and 50% integrity at the stream)'}`,
-      `Stock: scrap ${Math.floor(v.schroot ?? 0)} · wood ${Math.floor(v.hout ?? 0)} · crystal ${Math.floor(v.kristal ?? 0)}`,
+      `Stock: ${grondstoffenVan(actieveEconomie()).map((g) => `${goed(g).name.toLowerCase()} ${Math.floor(v[g] ?? 0)}`).join(' · ')}`,
       `${RATTEN.naam}: ${staat.werkers.length} (${bezig} working) · selected ${besturing.selectie.size}`,
     ]);
     if (staat.uitkomst && !eind) eind = toonEinde(staat);

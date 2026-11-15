@@ -14,19 +14,19 @@ try {
   await page.waitForFunction(() => window.SPEL !== undefined, null, { timeout: 15000 });
   const staat = await page.evaluate(() => {
     const s = window.SPEL.staat;
-    const voor = s.voorraad.schroot ?? 0;
-    const a = s.kaart.afzettingen.find((a) => a.goed === 'schroot');
+    const a = s.kaart.afzettingen[0]; // de eerste grondstof van de economie van deze wereld
+    const voor = s.voorraad[a.goed] ?? 0;
     window.SPEL.stuur('alle', a.x, a.y);
     for (let i = 0; i < 600; i++) window.SPEL.stap(0.1);
     const posities = s.werkers.flatMap((w) => [w.x, w.y]);
     const k = s.kaart, schijfHoogte = k.hoogte[((k.machine.y - 2) * k.breed + k.machine.x) * 4];
-    return { tijd: s.tijd, dimensie: s.dimensie, voor, schroot: s.voorraad.schroot, werkers: s.werkers.length, schijfHoogte,
+    return { tijd: s.tijd, dimensie: s.dimensie, voor, gedolven: s.voorraad[a.goed], werkers: s.werkers.length, schijfHoogte,
       posities_ok: posities.every(Number.isFinite) ? 1 : NaN };
   });
   for (const [k, v] of Object.entries(staat)) {
     if (typeof v === 'number' && !Number.isFinite(v)) fouten.push(`staat.${k} = ${v}`);
   }
-  if (!(staat.schroot > staat.voor)) fouten.push('muizen hebben geen schroot naar de opslag gebracht');
+  if (!(staat.gedolven > staat.voor)) fouten.push('de ratten hebben geen grondstof naar de opslag gebracht');
   if (staat.schijfHoogte !== 1) fouten.push(`schijf ligt op hoogte ${staat.schijfHoogte}, niet 1`);
   // Een hele run met gratis stroom: 8 shiften plus finale moeten uitkomen op een gewonnen run (de machine blijft heel).
   const run = await browser.newPage();

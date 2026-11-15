@@ -1,4 +1,5 @@
-import { DIMENSIE_DUUR_SEC, zetWereldBron, MIST_ZICHT_MACHINE, MIST_ZICHT_MUIS, SPRONG_SEC } from '../data/dimensies';
+import { DIMENSIE_DUUR_SEC, economieVan, zetWereldBron, MIST_ZICHT_MACHINE, MIST_ZICHT_MUIS, SPRONG_SEC } from '../data/dimensies';
+import { zetActieveEconomie } from './economie';
 import { binnenRing, maakKaart, type Kaart } from './kaart';
 import { werkMist, type Kijker } from './mist';
 import { meet } from './prestatie';
@@ -51,6 +52,7 @@ export function nieuwSpel(seed: number, f: Soort, start: Start = {}): SpelStaat 
   const eerste = Math.max(1, Math.floor(start.shift ?? 1));
   // De kaart, de kleuren en de economie volgen het wereldtype van de gerolde dimensie; het type uit de URL geldt alleen voor de eerste.
   zetWereldBron((n) => gerold(seed, n, n === eerste ? start.type : undefined).wereldtype);
+  zetActieveEconomie(economieVan(eerste));
   const kaart = meet('generate map', () => maakKaart(seed, eerste));
   const werkers: Werker[] = [];
   for (const [soort, aantal] of Object.entries(f.startEenheden)) {
@@ -110,6 +112,7 @@ export function stream(s: SpelStaat, f?: Soort): void {
   s.dimensie += 1;
   s.tijd = 0;
   s.onderweg = SPRONG_SEC;
+  zetActieveEconomie(economieVan(s.dimensie)); // de nieuwe wereld heeft haar eigen grondstoffen en gebouwen
   verhuis(s);
   s.land = nieuwLand(s, gerold(s.seed, s.dimensie), s.dimensie === FINALE ? FINALE_WRATH : undefined); // de landing zet het beginpunt van Wrath
   f?.trucje.opStream?.(s);

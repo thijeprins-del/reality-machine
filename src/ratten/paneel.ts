@@ -4,10 +4,10 @@ import type { SpelStaat } from '../kern/spel';
 import type { WereldBeeld } from '../kern/wereldbeeld';
 import { maakBouwen } from './bouwen';
 import { klein, knop as balkKnop } from '../kern/scherm';
-import type { Grondstof } from '../kern/types';
+import { goed } from '../kern/economie';
 import { RATTEN_ENERGIE } from '../data/ratten';
 import { draaiKnop, energie, MAX_MK, omhoog, STANDEN, stroomVan, upgradeBron, upgradeKosten, verbruikVan, zetBron, zetVerbruiker, zwakte, type Bron, type EnergieStaat } from './energie';
-import { industrie, industrieVraag, opslagMax } from './industrie';
+import { grondstoffen, industrie, industrieVraag, opslagMax } from './industrie';
 import { werk } from './werk';
 import { kanBetalen, kostTekst, naamVan } from './kosten';
 import { tekenRegels, type Regel } from './letters';
@@ -37,7 +37,6 @@ export const FONT: Record<string, string> = {
   '!': '010010010000010', '?': '110001010000010', ' ': '000000000000000', ',': '000000000010100', '(': '010100100100010', ')': '010001001001010', '^': '010101000000000',
 };
 export const KL = { groen: '#9dff2e', amber: '#ff9a1f', rood: '#ff2a3a', cyaan: '#4ef2ff', magenta: '#ff2fb0', geel: '#ffd23f', label: '#8d9189', dim: '#3a3d3b', stencil: '#a8861c' };
-export const GRONDSTOFKLEUR: Record<Grondstof, string> = { schroot: '#a8a49a', hout: '#b07a3c', kristal: KL.cyaan };
 
 const hash = (x: number, y: number, s = 0) => {
   let h = (x * 374761393 + y * 668265263 + s * 1442695041) | 0;
@@ -242,7 +241,7 @@ export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(
       txt(`${b.rennen}/${nodig}`, cx + 9, cy + 65, !b.aan ? KL.dim : b.rennen >= nodig ? KL.groen : KL.amber);
       hit(cx + 2, cy + 63, 36, 8, null, `RATS IN THE WHEEL: ${b.rennen} OF ${nodig}. LOW ${b.renners[0]}, NORMAL ${b.renners[1]}, OVERCHARGE ${b.renners[2]}`);
     } else {
-      R(cx + 3, cy + 65, 4, 4, GRONDSTOFKLEUR[b.brandstof!]);
+      R(cx + 3, cy + 65, 4, 4, goed(b.brandstof!).color);
       txt(`-${verbruikVan(b).toFixed(2).replace(/^0/, '')}/S`, cx + 9, cy + 65, b.aan ? KL.amber : KL.dim);
     }
     const zwak = b.hitte > 3 && b.stand !== 2;
@@ -283,11 +282,11 @@ export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(
     e.bronnen.filter((b) => b.mk || !b.loot).slice(0, 3).forEach((b, i) => bron(s, b, 8 + i * 58, 14, knipper));
 
     // OPSLAG (de voorraad die de muizen aanslepen)
-    (['schroot', 'hout', 'kristal'] as Grondstof[]).forEach((g, i) => {
+    grondstoffen().slice(0, 3).forEach((g, i) => { // er passen drie regels: de eerste drie grondstoffen van deze wereld
       const y = 116 + i * 11;
       verzonken(8, y - 1, 170, 10, '#0a0b0b');
-      if (g === 'kristal') G(10, y + 1, 5, 5, GRONDSTOFKLEUR[g]);
-      else R(10, y + 1, 5, 5, GRONDSTOFKLEUR[g]);
+      if (goed(g).glows) G(10, y + 1, 5, 5, goed(g).color);
+      else R(10, y + 1, 5, 5, goed(g).color);
       txt(naamVan(g), 18, y + 1, KL.label);
       const w = Math.floor(s.voorraad[g] ?? 0);
       const max = opslagMax(s, g);
@@ -295,8 +294,8 @@ export function maakPaneel(staat: () => SpelStaat, beeld?: WereldBeeld): { werk(
       txt(`/${max}`, 62, y + 1, KL.dim);
       // vulmeter
       R(80, y + 6, 26, 1, '#050505');
-      G(80, y + 6, Math.round((26 * Math.min(w, max)) / max), 1, w >= max ? KL.rood : GRONDSTOFKLEUR[g]);
-      const tr = e.trend[g];
+      G(80, y + 6, Math.round((26 * Math.min(w, max)) / max), 1, w >= max ? KL.rood : goed(g).color);
+      const tr = e.trend[g] ?? 0;
       txt(`${tr >= 0 ? '+' : ''}${tr.toFixed(2)}/S`, 110, y + 1, tr > 0.01 ? KL.groen : tr < -0.01 ? KL.rood : KL.dim);
       hit(8, y - 1, 170, 10, null, w >= max ? `${naamVan(g)} FULL! BUILD A STOCKPILE FOR ${naamVan(g)}` : `${naamVan(g)} IN STOCK, MAX ${max}. MORE = A STOCKPILE FOR ${naamVan(g)}`);
     });

@@ -9,14 +9,13 @@
 // Je kunt muizen nog steeds verplaatsen of naar een veld sturen; daarna zoeken ze werk vanaf waar ze staan.
 // Het lopen, graven en sjouwen naar de opslag doet de kern (werkers.ts); dit trucje kiest alleen het werk.
 import type { SpelStaat } from '../kern/spel';
-import type { EenheidSoort, Goed, Grondstof, Trucje, Voorraad } from '../kern/types';
+import type { EenheidSoort, Goed, Trucje, Voorraad } from '../kern/types';
 import { stuur, type Werker } from '../kern/werkers';
 import { hash01 } from '../kern/toeval';
 import {
-  blok2, getallen, gevoed, GRONDSTOFFEN, heeftBand, industrie, invoerMax, leeg, midden, opslagMax, vast, type Maker,
+  blok2, getallen, gevoed, grondstoffen, heeftBand, industrie, invoerMax, leeg, midden, opslagMax, vast, type Maker,
 } from './industrie';
 import { energie, log } from './energie';
-import { VELDEN } from '../data/dimensies';
 import { naamVan } from './kosten';
 
 export type Klus = 'ren' | 'bouw' | 'fab' | 'haal' | 'breng' | 'graaf' | 'lever';
@@ -40,8 +39,8 @@ const STATEN = new WeakMap<SpelStaat, WerkStaat>();
 let DRAAGT = 2;
 let HAND = 0.15;
 // zo diep mag een muis met de hand graven: daaronder blijft het liggen voor een drill
-const handGrens = (a: { goed: Grondstof }) => VELDEN[a.goed].perTegel * (1 - HAND);
-const handOp = (a: { goed: Grondstof; rest: number }) => a.rest - handGrens(a) >= DRAAGT;
+const handGrens = (a: { max: number }) => a.max * (1 - HAND);
+const handOp = (a: { max: number; rest: number }) => a.rest - handGrens(a) >= DRAAGT;
 const handLeegGemeld = new WeakMap<SpelStaat, Set<string>>();
 
 export function werk(s: SpelStaat): WerkStaat {
@@ -226,7 +225,7 @@ function stapWerk(s: SpelStaat, sec: number): void {
           W.taken.delete(w.id);
           continue;
         }
-        w.lading = { goed: t.goed as Grondstof, n: neem }; // de kern noemt het Grondstof, maar het mag elk goed zijn
+        w.lading = { goed: t.goed!, n: neem };
         const p = randPlek(d.blok, w.id);
         Object.assign(t, { fase: 'breng', n: neem, x: p.x, y: p.y });
         stuur(s, [w.id], p.x, p.y);
@@ -267,7 +266,7 @@ function stapWerk(s: SpelStaat, sec: number): void {
           b.buffer.shift();
           n++;
         }
-        w.lading = { goed: g as Grondstof, n }; // de kern noemt het Grondstof, maar telt elk goed op in de opslag
+        w.lading = { goed: g, n };
         const p = brengPlek(s, g, w);
         W.taken.set(w.id, { klus: 'breng', doel: g, x: p.x, y: p.y });
         stuur(s, [w.id], p.x, p.y);
@@ -414,7 +413,7 @@ function stapWerk(s: SpelStaat, sec: number): void {
     if (n > 0) geef(n, b.x + 0.5, b.y + 0.5, (w) => ({ klus: 'haal', doel: b.id, ...randPlek(blok2(b), w.id) }));
   }
   // 4. zelf graven, alleen waar nog plek voor is; de grondstof die het leegst is eerst
-  const volgorde = GRONDSTOFFEN.filter((g) => ruimte(g) > 4 && s.kaart.afzettingen.some((a) => a.goed === g && handOp(a))).sort((a, b) => (v[a] ?? 0) / opslagMax(s, a) - (v[b] ?? 0) / opslagMax(s, b));
+  const volgorde = grondstoffen().filter((g) => ruimte(g) > 4 && s.kaart.afzettingen.some((a) => a.goed === g && handOp(a))).sort((a, b) => (v[a] ?? 0) / opslagMax(s, a) - (v[b] ?? 0) / opslagMax(s, b));
   // wie graaft voor een volle grondstof, stopt (de lading brengt hij nog weg)
   for (const w of gravers) {
     const a = s.kaart.afzettingen[w.bron];
@@ -446,7 +445,7 @@ function handGraven(s: SpelStaat): void {
   handLeegGemeld.set(s, gemeld);
   // wat er per tegel nog met de hand af mag, min wat de muizen die er al zijn gaan meenemen
   const ruim = new Map<number, number>();
-  const over = (a: { id: number; goed: Grondstof; rest: number }) => ruim.get(a.id) ?? a.rest - handGrens(a);
+  const over = (a: { id: number; max: number; rest: number }) => ruim.get(a.id) ?? a.rest - handGrens(a);
   for (const w of s.werkers) {
     if ((w.taak !== 'naarBron' && w.taak !== 'graven') || w.lading) continue;
     const a = s.kaart.afzettingen[w.bron];

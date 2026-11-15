@@ -1,4 +1,5 @@
 // Betalen uit de opslag. Klein hulpje voor bouwen en upgraden.
+import { goed } from '../kern/economie';
 import type { Voorraad } from '../kern/types';
 
 export function kanBetalen(v: Voorraad, kosten: Voorraad, keer = 1): boolean {
@@ -15,9 +16,8 @@ export function terug(v: Voorraad, kosten: Voorraad, keer = 1): void {
   for (const [g, n] of Object.entries(kosten)) v[g] = (v[g] ?? 0) + (n ?? 0) * keer;
 }
 
-// Namen in beeld (het spel is in het Engels; de code blijft Nederlands).
-export const NAAM: Record<string, string> = { schroot: 'SCRAP', hout: 'WOOD', kristal: 'CRYSTAL', plaat: 'PLATE', balk: 'BEAM' };
-export const naamVan = (g: string) => NAAM[g] ?? g.toUpperCase();
+// Namen in beeld (het spel is in het Engels; de code blijft Nederlands): zoals het goed heet in de economie van deze wereld.
+export const naamVan = (g: string) => goed(g).name;
 
 // "30S 10W" voor kleine plekken op het paneel; voluit: "30 SCRAP, 10 WOOD"
 export function kostTekst(kosten: Voorraad, voluit = false): string {

@@ -12,7 +12,7 @@ import type { Goed, Richting, Voorraad } from '../kern/types';
 import { PIXEL, type Stuk, type WereldBeeld } from '../kern/wereldbeeld';
 import { energie, verbruiker } from './energie';
 import {
-  aangesloten, blok2, DELEN, fabriekOp, PRIOS, stapelExtra, stapelOp, stapelPrio, stapelVoor, stapelVolgorde, getallen, GOEDEREN, industrie, kanBandOp, kanZetten, kiesRecept, legBand,
+  aangesloten, blok2, DELEN, fabriekOp, PRIOS, stapelExtra, stapelOp, stapelPrio, stapelVoor, stapelVolgorde, getallen, goederen, industrie, kanBandOp, kanZetten, kiesRecept, legBand,
   midden, opslagMax, RICHTINGEN, sloop, tegel, vast, zet, type Bouwsel, type Deel, type Maker, type Oordeel,
 } from './industrie';
 import { kanBetalen, kostTekst, naamVan } from './kosten';
@@ -197,14 +197,14 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
       txt(st.af ? 'BEING BUILT' : `TAKES ${naamVan(st.goed)}, +${stapelExtra(st)}`, 10, y, st.af ? KL.geel : KL.groen, SW - 20);
       y += 10;
       const bw = (SW - 14) / 2;
-      GOEDEREN.forEach((g, n) => {
+      goederen().forEach((g, n) => {
         const bx = 6 + (n % 2) * (bw + 4), by = y + Math.floor(n / 2) * 14;
         const m = vakken.length;
         knopVlak(bx, by, bw, 12, st.goed === g, wijst === m);
         txt(naamVan(g), bx + 4, by + 4, st.goed === g ? KL.groen : '#e8e4d4');
         vak(bx, by, bw, 12, () => stapelVoor(s, st, g), `THIS STOCKPILE TAKES ${naamVan(g)}`);
       });
-      y += Math.ceil(GOEDEREN.length / 2) * 14 + 2;
+      y += Math.ceil(goederen().length / 2) * 14 + 2;
       txt('PRIORITY', 10, y, KL.label);
       y += 8;
       const pw = (SW - 18) / 3;
@@ -375,7 +375,7 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
       gekozen = null;
     }
     if (t === 'R' && modus === 'band') draai = ({ O: 'Z', Z: 'W', W: 'N', N: 'O' } as const)[draai];
-    if (t === 'R' && (modus === 'stapel' || modus === 'kist')) stapelGoed = GOEDEREN[(GOEDEREN.indexOf(stapelGoed) + 1) % GOEDEREN.length];
+    if (t === 'R' && (modus === 'stapel' || modus === 'kist')) stapelGoed = goederen()[(goederen().indexOf(stapelGoed) + 1) % goederen().length];
   });
 
   // Testhaak voor de console en de rooktest
@@ -600,7 +600,7 @@ export function maakBouwen(staat: () => SpelStaat, beeld: WereldBeeld): { werk(s
         n++;
       }
     };
-    for (const [gi, g] of GOEDEREN.entries()) {
+    for (const [gi, g] of goederen().entries()) {
       // verdeeld op prio: stapels met HIGH eerst vol, dan het erf, dan de rest
       let rest = Math.ceil((s.voorraad[g] ?? 0) / G.hoop - 0.01);
       for (const p of stapelVolgorde(s, g)) {

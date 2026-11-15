@@ -1,4 +1,5 @@
 // De plaatjes van de muizen voor de kern: welke sprite hoort bij welke eenheid of welk gebouw.
+import { economieen } from '../kern/economie';
 import type { SoortBeeld, SpriteInfo } from '../kern/types';
 import { MUIZEN_SPRITES } from './sprites';
 
@@ -16,5 +17,8 @@ export function rattenBeeld(): SoortBeeld {
     if (!u) continue;
     sprites[naam] = { ...m, url: u, gloedUrl: m.gloed ? url(`${naam}-gloed`) : undefined };
   }
-  return { sprites, lading: { schroot: 'muis-schroot', hout: 'muis-hout', kristal: 'muis-kristal' } };
+  // Een rat met een bundel op de rug: voor elk goed waarvan er zo'n plaatje is (muis-<sprite>), anders de gewone rat.
+  const lading: Record<string, string> = {};
+  for (const e of economieen()) for (const g of e.goederen.values()) if (sprites[`muis-${g.sprite ?? g.id}`]) lading[g.id] = `muis-${g.sprite ?? g.id}`;
+  return { sprites, lading };
 }

@@ -11,6 +11,7 @@ import type { SpelStaat } from './spel';
 import { hoeken, hoogteOp, knikLinksRechts, TEGEL_LAND, tegelOnder, TEGEL_WATER } from './terrein';
 import { TerreinBewerker } from './terreinbewerker';
 import { hash01 } from './toeval';
+import { goed } from './economie';
 import type { SoortBeeld, SpriteInfo } from './types';
 import { CEL_B, CEL_H, CEL_X, CEL_Y, celLand, celSchuim, celWand, celWater, KOLOMMEN, SCHUIM_BEELDEN, TEGELSETS, VARIANTEN, WAND_B, WAND_H, WAND_KOLOMMEN, WAND_VARIANTEN, WAND_Y, WATER_BEELDEN, WATER_VARIANTEN, type TegelSet } from './tegels';
 import { WERELD_SPRITES } from './wereld-sprites';
@@ -162,8 +163,12 @@ export class WereldBeeld {
     this.afzettingen.clear();
     meet('build ground', () => this.bouwGrond(k));
     for (const a of k.afzettingen) {
-      const naam = `${a.goed}-${a.variant + 1}`;
-      const st = this.maak(naam);
+      // Het plaatje van de grondstof (assets/wereld/<sprite>-1 en -2). Is dat er nog niet, dan de schroothoop in de kleur
+      // van het goed: zo is een nieuwe economie speelbaar voordat er kunst is.
+      const soort = goed(a.goed);
+      const eigen = `${soort.sprite ?? a.goed}-${a.variant + 1}`;
+      const st = this.maak(this.sprites[eigen] ? eigen : `schroot-${a.variant + 1}`);
+      if (!this.sprites[eigen]) st.delen[0].tint = soort.color;
       this.zetAfzetting(st, a);
       this.afzettingen.set(a.id, st);
     }

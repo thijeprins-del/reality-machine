@@ -5,7 +5,8 @@
 //   (bij 100 hitte nog maar de helft, en dan springt hij terug naar NORMAAL). Niets gaat stuk.
 // - Verbruikers staan op volgorde: bij een tekort krijgen de bovensten eerst, de onderste valt uit.
 // Puur regels, geen tekenen en geen Math.random. Getallen in src/data/ratten.ts (RATTEN_ENERGIE).
-import type { EenheidSoort, Grondstof, Trucje, Voorraad } from '../kern/types';
+import { actieveEconomie, grondstoffenVan } from '../kern/economie';
+import type { EenheidSoort, Goed, Trucje, Voorraad } from '../kern/types';
 import type { SpelStaat } from '../kern/spel';
 import { industrieVraag } from './industrie';
 import { betaal, kostTekst, naamVan } from './kosten';
@@ -14,7 +15,7 @@ export interface BronData {
   id: string;
   naam: string;
   kort: string;
-  brandstof?: Grondstof; // wat hij stookt; geen = looprad (muizen rennen erin)
+  brandstof?: Goed; // wat hij stookt; geen = looprad (muizen rennen erin)
   renners?: [number, number, number]; // looprad: zoveel muizen nodig per stand voor volle stroom
   kleur: string;
   stroom: [number, number, number]; // kW per stand (laag, normaal, overladen)
@@ -62,9 +63,9 @@ export interface EnergieStaat {
   tekort: VerbruikerId | null; // wie als eerste te weinig kreeg
   hist: { a: number; v: number; h: number[] }[];
   histT: number;
-  trend: Record<Grondstof, number>;
+  trend: Record<Goed, number>; // per grondstof: erbij of eraf per seconde
   trendT: number;
-  vorige: Record<Grondstof, number>;
+  vorige: Record<Goed, number>;
   log: LogRegel[];
   gemist: number;
 }
@@ -75,7 +76,6 @@ let G: EnergieGetallen;
 export function energie(s: SpelStaat): EnergieStaat {
   let e = STATEN.get(s);
   if (!e) {
-    const v = s.voorraad;
     e = {
       bronnen: G.bronnen.map((b, i) => ({ ...b, aan: b.mk > 0, stand: 1, hitte: 0, levert: 0, rennen: 0, toets: i < 3 ? String(i + 1) : '' })),
       verbruikers: [
@@ -89,9 +89,9 @@ export function energie(s: SpelStaat): EnergieStaat {
       tekort: null,
       hist: [],
       histT: 0,
-      trend: { schroot: 0, hout: 0, kristal: 0 },
+      trend: {},
       trendT: 0,
-      vorige: { schroot: v.schroot ?? 0, hout: v.hout ?? 0, kristal: v.kristal ?? 0 },
+      vorige: {},
       log: [{ tekst: 'RATS ARE RUNNING IN THE WHEEL. CHOOSE WHAT GETS POWER', kleur: 'groen' }],
       gemist: s.gemist,
     };
@@ -106,7 +106,6 @@ export function log(e: EnergieStaat, tekst: string, kleur: LogRegel['kleur'] = '
   if (e.log.length > 40) e.log.pop();
 }
 
-const GRONDSTOFFEN: Grondstof[] = ['schroot', 'hout', 'kristal'];
 const rond = (n: number) => Math.round(n * 10) / 10;
 export const MAX_MK = 3;
 
@@ -183,8 +182,8 @@ export function stapEnergie(s: SpelStaat, sec: number, muis: EenheidSoort | unde
   // trend en geschiedenis voor het paneel
   e.trendT += sec;
   if (e.trendT >= 1) {
-    for (const g of GRONDSTOFFEN) {
-      e.trend[g] = ((v[g] ?? 0) - e.vorige[g]) / e.trendT;
+    for (const g of grondstoffenVan(actieveEconomie())) {
+      e.trend[g] = ((v[g] ?? 0) - (e.vorige[g] ?? v[g] ?? 0)) / e.trendT;
       e.vorige[g] = v[g] ?? 0;
     }
     e.trendT = 0;

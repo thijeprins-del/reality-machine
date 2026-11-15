@@ -1,10 +1,9 @@
 // Het contract tussen de kern en de soort die je speelt (de pack rats, src/ratten/). De kern kent alleen deze types.
 import type { SpelStaat } from './spel';
 
-// Goederen. Ruwe grondstoffen (uit dimensies) zijn voor beide facties dezelfde; tussenproducten en eindproducten
-// mag elke factie zelf verzinnen (gewoon een string, bv. 'tandwiel' of 'dambalk'). Goederen reizen over lopende banden.
-export type Grondstof = 'schroot' | 'hout' | 'kristal';
-export type Goed = Grondstof | (string & {});
+// Goederen: een goed is zijn id (een string). Welke er bestaan, hoe ze heten en welke op de kaart liggen staat in de
+// economie van een wereld (economies/*.json, kern/economie.ts). Goederen reizen over lopende banden.
+export type Goed = string;
 export type Voorraad = Partial<Record<Goed, number>>;
 
 // Een stap in een productieketen: een gebouw zet `in` om in `uit` in `sec` seconden.
@@ -142,7 +141,7 @@ export interface SpriteInfo {
 
 export interface SoortBeeld {
   sprites: Record<string, SpriteInfo>;
-  lading?: Partial<Record<Grondstof, string>>; // sprite van een eenheid die deze grondstof draagt
+  lading?: Partial<Record<Goed, string>>; // sprite van een eenheid die deze grondstof draagt
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -159,8 +158,8 @@ export type Archetype =
   | 'insecten' | 'monsters' | 'kuddes' // wildernis
   | 'reuzen' | 'aliens' | 'tentakelbeest'; // bijzonder
 
-// De vier gedeelde grondstoffen: niet elke dimensie heeft ze allemaal (minstens twee wel). Nog niet gekoppeld aan
-// `Grondstof` hierboven (schroot, hout, kristal): die omzetting is Lieuwes keuze en komt in een eigen PR.
+// De vier gedeelde grondstoffen van de generator: niet elke dimensie heeft ze allemaal (minstens twee wel). Nog niet
+// gekoppeld aan de economie: wat er echt op de kaart ligt bepaalt economies/*.json (later-lijst).
 export type GedeeldeGrondstof = 'metaal' | 'hout' | 'water' | 'steen';
 
 // Een grondstof die alleen in deze dimensie ligt (vuursteen, chitine, reuzenijzer). `id` is een vrije string.
