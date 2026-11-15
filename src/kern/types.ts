@@ -192,7 +192,8 @@ export interface Dimensie {
   naam: string; // gegenereerde naam ("Hive of Krel-Tak")
   familie: Familie;
   archetype: Archetype;
-  klimaat: Klimaat;
+  klimaat: Klimaat; // de tegelset van het wereldtype
+  wereldtype: string; // id van een bestand in worldtypes/: zo ziet de wereld eruit en dit is haar economie
   aanbod: GrondstofAanbod[]; // gedeelde (minstens twee) plus unieke grondstoffen
   uniek: UniekeGrondstof[]; // 1 of 2, alleen hier
   loot: DimensieLoot[];

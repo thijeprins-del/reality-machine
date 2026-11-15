@@ -1,4 +1,4 @@
-import { DIMENSIE_DUUR_SEC, zetKlimaatBron, MIST_ZICHT_MACHINE, MIST_ZICHT_MUIS, SPRONG_SEC } from '../data/dimensies';
+import { DIMENSIE_DUUR_SEC, zetWereldBron, MIST_ZICHT_MACHINE, MIST_ZICHT_MUIS, SPRONG_SEC } from '../data/dimensies';
 import { binnenRing, maakKaart, type Kaart } from './kaart';
 import { werkMist, type Kijker } from './mist';
 import { meet } from './prestatie';
@@ -49,8 +49,8 @@ function gerold(seed: number, nummer: number, type?: Archetype) {
 export function nieuwSpel(seed: number, f: Soort, start: Start = {}): SpelStaat {
   const s = { toeval: seed >>> 0 };
   const eerste = Math.max(1, Math.floor(start.shift ?? 1));
-  // De kaart en de kleuren volgen het klimaat van de gerolde dimensie; het type uit de URL geldt alleen voor de eerste.
-  zetKlimaatBron((n) => gerold(seed, n, n === eerste ? start.type : undefined).klimaat);
+  // De kaart, de kleuren en de economie volgen het wereldtype van de gerolde dimensie; het type uit de URL geldt alleen voor de eerste.
+  zetWereldBron((n) => gerold(seed, n, n === eerste ? start.type : undefined).wereldtype);
   const kaart = meet('generate map', () => maakKaart(seed, eerste));
   const werkers: Werker[] = [];
   for (const [soort, aantal] of Object.entries(f.startEenheden)) {

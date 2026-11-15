@@ -1,0 +1,52 @@
+{
+  "id": "vis",
+  "name": "Fishery",
+  "startingResources": { "smoked_fish": 20, "kelp_cord": 15, "fish_scales": 30 },
+  "settings": { "bufferSize": 10, "defaultStorage": 10, "warehouseStorage": 50 },
+  "resources": [
+    { "id": "raw_fish", "name": "RAW FISH", "color": "#5f8fb3", "volume": 2, "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAfUlEQVR42mNgIBIwInO0VRT+w9hX7zxAkWNBVmSSPRkhMzX3P0yxtorCf0ZkRQaaygwXrt+Fqz0zNRfOZoYp2tQUx8Cv7cBgoKnM8OLNewYGBgYGKTMvBikzL4Znp7czMGJYiQSQTYRbLeKWhaLoza5pDBhuRPcxNl9THwAAIYcwf+TMr2EAAAAASUVORK5CYII=", "onMap": true, "fields": { "count": 4, "tiles": [6, 10], "perTile": 150, "distance": [19, 27] } },
+    { "id": "kelp", "name": "KELP", "color": "#4d7a3a", "volume": 1, "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAUElEQVR42mNgIAfYZRv8xyXGhCxgaKuFoQhdDMM0u2yD//krov4TtBpdIxO6YlymoCg8NPUC4/nD17BqYsEVAoemXmBkYGD4TzCYsAUVUQAACPUism5n0TkAAAAASUVORK5CYII=", "onMap": true, "fields": { "count": 3, "tiles": [6, 10], "perTile": 150, "distance": [19, 27] } },
+    { "id": "salt", "name": "SALT", "color": "#f7f7f2", "volume": 1, "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAARUlEQVR42mNgGBxg1pSu/7OmdP0nqAgGYIoxNCIrQlaMohFd0Z07VzD4s6Z0/WeCmXr37lUGBgYGBmVlbax8RoKOJxUAANt7ZXb8AhCtAAAAAElFTkSuQmCC", "onMap": true, "fields": { "count": 3, "tiles": [6, 10], "perTile": 150, "distance": [19, 27] } },
+    { "id": "fillet", "name": "FILLET", "color": "#f2a38f", "volume": 1, "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAa0lEQVR42q2PwQmAMBAE54Ify/EpWIRoA1eaDVxIEYE8U47P+JBAFAUf7ut2dzhY+FtSj22eyhOgIQpAV6FlXS9AP4zsOQEUDVG6CjUFAHtO9MPIctri2qL9ds+chije7BXwZmiI8nnM/zoAACIrwYgtXBQAAAAASUVORK5CYII=" },
+    { "id": "fish_scales", "name": "FISH SCALES", "color": "#b7d8e8", "volume": 0.5, "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAbklEQVR42mNgIBIwwhheVRP+w9jb2goYsar2qprwf/uNF//f//r/f/uNF/+RNcEAEzLnxL2XKJqRNbAgWQUXzI2LYLBQEodp/L+trYCRCZfjkU2He8arasJ/ZFMmL1rBgO4xFlymoPuctOAhBgAAZYE5BJVygzcAAAAASUVORK5CYII=" },
+    { "id": "fish_bones", "name": "FISH BONES", "color": "#e8e0c8", "volume": 1, "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAANUlEQVR42mNgoAl48eDEf2w0MpuJGAMYGBgYGJE5uICEggUjk4SCBSOMg42GASZCJjEMPAAACq8YCM8OifcAAAAASUVORK5CYII=" },
+    { "id": "fish_oil", "name": "FISH OIL", "color": "#d9b13b", "volume": 1, "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAYUlEQVR42mNgIBdEWQn8j7IS+I8uzkS2ab9fLvh/c6M1hqmMyIrqy7UxNDd2XmVYduwDI1arlSxSMcRYsCm8d2I2nF1frs3A0Hn1P4rC8xcf4nQ/I7pnsCladuwDI9EhAgDYUiDhavMjqQAAAABJRU5ErkJggg==" },
+    { "id": "bone_meal", "name": "BONE MEAL", "color": "#cfc3a5", "volume": 1, "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAaklEQVR42mNgIBdU5Xj9r8rx+o8uzoKuyN7eDsb93zZlGyOGQpgieUU1BgYGBgZ7NMUs2BQxMDAwyCuqoShmQpZAB8hicIUP79/CUIgsxsLAwMAAdcd/ezSFBw8egskxMKL7GpmP7GuiAQCmGCh5A1LB3AAAAABJRU5ErkJggg==" },
+    { "id": "smoked_fish", "name": "SMOKED FISH", "color": "#9c5a2e", "volume": 1, "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAfElEQVR42mNgIBIwInO0VRT+w9hX7zxAkWNBVlRoxgeX6GdQ+A9TrK2i8J8RWZGaghjDrQevEIpPfYKzmWGK+nfdYlAT5mBQUxBjePvhKwMDAwODpTQ7g6U0O8OJpz8ZGNGtRAbIJsKtthf7haLo4Cs2Bgw3ovsYm6+pDwCx1y85zjN1cgAAAABJRU5ErkJggg==" },
+    { "id": "kelp_cord", "name": "KELP CORD", "color": "#6b8f3a", "volume": 1, "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAe0lEQVR42mNgIBIwwhh6XjL/sSm4tO0JIwMDAwMzTFFRWQgDC9cXhpAQVxT6J/P/hpe3PzWywHSePn+K4fDuRwyHdz9iYGBgYDi8+xGDrasc3GQmGMPU0AxuFcw6mBgDAwMDionoboWJoSiE6TY1NGM4ff4UnCbZ19QHAAkvMqLofkXYAAAAAElFTkSuQmCC" },
+    { "id": "fish_glue", "name": "FISH GLUE", "color": "#c9b98a", "volume": 1, "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAZElEQVR42mNgIBIwInOivLT+I/OXbbvGiKEjykvr/4dHG1AwskZGbCahg2XbrjGywDj5+QkYCtS0zRiy07IYGBgYGJhwmaKmbcZw6+opOJ8Fl0KYIohNC/4zkRw8+DyENZhwAQAFnikEQTkqBgAAAABJRU5ErkJggg==" },
+    { "id": "scale_plate", "name": "SCALE PLATE", "color": "#7fb6cf", "volume": 2, "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAY0lEQVR42mNgIBIwMjAwMOhHZf3Hp+jismmMLDBOQEwqQ4CFNsOGE1chfCh7w5LZDAwMDAxMyDphitDZGAoDLLSxsmljIiOMoR+V9T8gJhVFcsOS2QwXl01jRFGILZhgikgCAPZbJBAIV9cyAAAAAElFTkSuQmCC" },
+    { "id": "lantern", "name": "OIL LANTERN", "color": "#f5c542", "volume": 2, "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAWElEQVR42mNgQANeVgr/vawU/jPgA8gK0BUz4pKAgW3HHjAyMDAwsCALru5WQlEUWnoPzmZCN4FLNw+rs5iwCWJTzIIu8O3yJKwmsuByE06rYb7D5mOSAACL5RencSNLcwAAAABJRU5ErkJggg==" },
+    { "id": "shimmer_armor", "name": "SHIMMER ARMOR", "color": "#5ec2c9", "volume": 4, "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAdklEQVR42pWQsQmAMBBFX8Q5MoaQLnOkSqmtg9hqaeUcdoJjuMhZnUQTRF/5+e8OPvzBhig2RHnLaxui+LYDYAU5ltloKc1rtXvXXCGAbzt61zBsOwCZ/WSdRo5lNlUa6tUSt6K+KQlVyR62PSubdIqSpCt85gRAAit2vg3uYwAAAABJRU5ErkJggg==" }
+  ],
+  "recipes": [
+    { "id": "catch_fish", "name": "Catch fish", "time": 1.5, "inputs": {}, "outputs": { "raw_fish": 1 } },
+    { "id": "harvest_kelp", "name": "Harvest kelp", "time": 2, "inputs": {}, "outputs": { "kelp": 1 } },
+    { "id": "evaporate_salt", "name": "Evaporate salt", "time": 3, "inputs": {}, "outputs": { "salt": 1 } },
+    { "id": "gut_fish", "name": "Gut fish", "time": 2, "inputs": { "raw_fish": 1 }, "outputs": { "fillet": 1, "fish_scales": 2, "fish_bones": 1 } },
+    { "id": "render_oil", "name": "Render oil", "time": 3, "inputs": { "fish_bones": 2 }, "outputs": { "fish_oil": 1, "bone_meal": 1 } },
+    { "id": "boil_glue", "name": "Boil fish glue", "time": 3, "inputs": { "fish_scales": 2, "bone_meal": 1 }, "outputs": { "fish_glue": 1 } },
+    { "id": "smoke_fish", "name": "Smoke fish", "time": 4, "inputs": { "fillet": 2, "salt": 1 }, "outputs": { "smoked_fish": 2 } },
+    { "id": "twist_cord", "name": "Twist kelp cord", "time": 2, "inputs": { "kelp": 2 }, "outputs": { "kelp_cord": 1 } },
+    { "id": "make_lantern", "name": "Make oil lantern", "time": 4, "inputs": { "fish_oil": 1, "fish_scales": 1, "kelp_cord": 1 }, "outputs": { "lantern": 1 } },
+    { "id": "press_plate", "name": "Press scale plate", "time": 3, "inputs": { "fish_scales": 3, "fish_glue": 1 }, "outputs": { "scale_plate": 1 } },
+    { "id": "forge_armor", "name": "Lace shimmer armor", "time": 6, "inputs": { "scale_plate": 2, "kelp_cord": 1 }, "outputs": { "shimmer_armor": 1 } }
+  ],
+  "buildings": [
+    { "id": "fishing_dock", "name": "FISHING DOCK", "color": "#3f6f96", "storage": 10, "onDeposit": true, "cost": { "kelp_cord": 3, "smoked_fish": 2 }, "recipes": ["catch_fish"], "size": 2, "range": 3, "work": 8, "kW": 2 },
+    { "id": "kelp_farm", "name": "KELP FARM", "color": "#3e6b30", "storage": 10, "onDeposit": true, "cost": { "kelp_cord": 2 }, "recipes": ["harvest_kelp"], "size": 2, "range": 3, "work": 8, "kW": 2 },
+    { "id": "salt_pan", "name": "SALT PAN", "color": "#9aa7ad", "storage": 10, "onDeposit": true, "cost": { "fish_scales": 4 }, "recipes": ["evaporate_salt"], "size": 2, "range": 3, "work": 8, "kW": 2 },
+    { "id": "gutting_shed", "name": "GUTTING SHED", "color": "#b65a4a", "storage": 10, "cost": { "fish_scales": 4, "smoked_fish": 2 }, "recipes": ["gut_fish"], "size": 2, "insideRing": true, "work": 8, "kW": 2 },
+    { "id": "rendering_vat", "name": "RENDERING VAT", "color": "#a67c1f", "storage": 10, "cost": { "fish_scales": 6, "kelp_cord": 2 }, "recipes": ["render_oil", "boil_glue"], "size": 2, "insideRing": true, "work": 8, "kW": 2 },
+    { "id": "smokehouse", "name": "SMOKEHOUSE", "color": "#6e4a32", "storage": 10, "cost": { "fish_scales": 5, "smoked_fish": 3 }, "recipes": ["smoke_fish"], "size": 2, "insideRing": true, "work": 8, "kW": 2 },
+    { "id": "ropewalk", "name": "ROPEWALK", "color": "#5c7a35", "storage": 10, "cost": { "kelp_cord": 3, "fish_scales": 2 }, "recipes": ["twist_cord"], "size": 2, "insideRing": true, "work": 8, "kW": 2 },
+    { "id": "chandlery", "name": "CHANDLERY", "color": "#c79a1e", "storage": 10, "cost": { "fish_scales": 6, "kelp_cord": 3 }, "recipes": ["make_lantern"], "size": 2, "insideRing": true, "work": 8, "kW": 2 },
+    { "id": "scale_smith", "name": "SCALE SMITH", "color": "#3c8d96", "storage": 10, "cost": { "fish_scales": 10, "kelp_cord": 4, "smoked_fish": 4 }, "recipes": ["press_plate", "forge_armor"], "size": 2, "insideRing": true, "work": 8, "kW": 2 },
+    { "id": "warehouse", "name": "WAREHOUSE", "color": "#55606b", "storage": 200, "cost": { "kelp_cord": 4, "fish_scales": 6 }, "sink": true, "ports": 4, "size": 2, "insideRing": true, "work": 8 },
+    { "id": "incinerator", "name": "INCINERATOR", "color": "#7a3b32", "cost": { "fish_scales": 3 }, "trash": true, "ports": 2, "size": 1, "work": 8 },
+    { "id": "splitter", "name": "SPLITTER", "color": "#4d6478", "cost": { "kelp_cord": 2 }, "splitter": true, "ports": 3, "size": 1, "work": 2 },
+    { "id": "merger", "name": "MERGER", "color": "#6a5a80", "cost": { "kelp_cord": 2 }, "merger": true, "ports": 3, "size": 1, "work": 2 },
+    { "id": "band", "name": "BELT", "color": "#5b554b", "sprite": "band", "belt": true, "speed": 2, "kW": 0.05, "cost": { "kelp_cord": 1 }, "work": 1.2 },
+    { "id": "paal", "name": "POLE", "color": "#6a552d", "sprite": "mast", "pole": true, "link": 8, "reach": 5, "cost": { "kelp_cord": 1 }, "work": 3 }
+  ]
+}

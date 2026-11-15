@@ -1,0 +1,12 @@
+{
+  "id": "zoutzee",
+  "name": "SALT SEA",
+  "tileset": "zoutzee",
+  "economy": "schroot",
+  "ground": ["#c98aa5", "#d496b0", "#bf7f9b", "#dca2bb", "#c48aa3"],
+  "spot": "#fff0fa",
+  "spotChance": 0.1,
+  "edge": ["#7a4060", "#5c2f48"],
+  "water": ["#e8d4e0", "#f0dee8", "#dcc8d6"],
+  "hills": { "scale": 22, "height": 3.5, "base": -0.2, "cliffScale": 24, "cliffThreshold": 0.42, "cliffHeight": 2 }
+}

@@ -1,0 +1,14 @@
+{
+  "id": "magmaveld",
+  "name": "MAGMA FIELD",
+  "tileset": "magmaveld",
+  "economy": "schroot",
+  "ground": ["#1a1514", "#201917", "#161211", "#241c19", "#1c1614"],
+  "spot": "#ff6a1a",
+  "spotGlows": true,
+  "spotChance": 0.12,
+  "edge": ["#2a0d06", "#1e0904"],
+  "water": ["#ff5a12", "#ff7a1a", "#e8480c"],
+  "waterGlows": true,
+  "hills": { "scale": 8, "height": 7, "base": 1.2, "cliffScale": 10, "cliffThreshold": 0.12, "cliffHeight": 3 }
+}

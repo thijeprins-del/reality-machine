@@ -1,0 +1,28 @@
+{
+  "id": "schroot",
+  "name": "Junkyard",
+  "startingResources": { "schroot": 40, "hout": 40, "plaat": 4, "balk": 2 },
+  "settings": { "bufferSize": 6, "defaultStorage": 6, "warehouseStorage": 50 },
+  "resources": [
+    { "id": "schroot", "name": "SCRAP", "color": "#a8a49a", "volume": 1, "sprite": "schroot", "onMap": true, "fields": { "count": 3, "tiles": [8, 12], "perTile": 200, "distance": [19, 25] } },
+    { "id": "hout", "name": "WOOD", "color": "#b07a3c", "volume": 1, "sprite": "hout", "onMap": true, "fields": { "count": 3, "tiles": [6, 10], "perTile": 150, "distance": [19, 27] } },
+    { "id": "kristal", "name": "CRYSTAL", "color": "#4ef2ff", "volume": 1, "sprite": "kristal", "onMap": true, "fields": { "count": 2, "tiles": [4, 6], "perTile": 80, "distance": [23, 28] } },
+    { "id": "plaat", "name": "PLATE", "color": "#9aa3ad", "volume": 1 },
+    { "id": "balk", "name": "BEAM", "color": "#8a6a40", "volume": 1 }
+  ],
+  "recipes": [
+    { "id": "mijn_schroot", "name": "Mine scrap", "time": 0.5, "inputs": {}, "outputs": { "schroot": 1 } },
+    { "id": "mijn_hout", "name": "Cut wood", "time": 0.5, "inputs": {}, "outputs": { "hout": 1 } },
+    { "id": "mijn_kristal", "name": "Mine crystal", "time": 0.5, "inputs": {}, "outputs": { "kristal": 1 } },
+    { "id": "plaat", "name": "Press plate", "time": 3, "inputs": { "schroot": 2 }, "outputs": { "plaat": 2 } },
+    { "id": "balk", "name": "Saw beam", "time": 3, "inputs": { "hout": 2 }, "outputs": { "balk": 1 } }
+  ],
+  "buildings": [
+    { "id": "fabricator", "name": "FABRICATOR", "color": "#c8642d", "sprite": "pers", "size": 2, "insideRing": true, "cost": { "schroot": 15, "hout": 10 }, "work": 10, "kW": 2, "crew": 2, "storage": 6, "recipes": ["plaat", "balk"] },
+    { "id": "boor", "name": "DRILL", "color": "#7a5c48", "sprite": "boor", "size": 2, "onDeposit": true, "range": 3, "cost": { "plaat": 3, "balk": 1 }, "work": 8, "kW": 2, "storage": 12, "recipes": ["mijn_schroot", "mijn_hout", "mijn_kristal"] },
+    { "id": "band", "name": "BELT", "color": "#5b554b", "sprite": "band", "belt": true, "speed": 2, "kW": 0.05, "cost": { "plaat": 1 }, "work": 1.2 },
+    { "id": "paal", "name": "POLE", "color": "#6a552d", "sprite": "mast", "pole": true, "link": 8, "reach": 5, "cost": { "balk": 1 }, "work": 3 },
+    { "id": "stapel", "name": "STOCKPILE", "color": "#55606b", "sprite": "stapel", "sink": true, "storage": 150, "size": 2, "insideRing": true, "cost": { "balk": 4 }, "work": 6 },
+    { "id": "kist", "name": "SMALL PILE", "color": "#55606b", "sprite": "stapel-1", "sink": true, "storage": 40, "size": 1, "insideRing": true, "cost": { "balk": 1 }, "work": 2 }
+  ]
+}

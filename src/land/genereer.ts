@@ -2,6 +2,8 @@
 // Stappen (plan, "Procedural generation"): familie, archetype, klimaat, gedeelde grondstoffen, unieke grondstoffen,
 // naam. Native sites en shift-regels komen later. Geen DOM of Pixi: werkt ook in een los script of artifact.
 import type { Archetype, Dimensie, Familie, GedeeldeGrondstof, GrondstofAanbod, Klimaat } from '../kern/types';
+import { hash01 } from '../kern/toeval';
+import { wereldTypeVoor } from '../kern/wereldtypes';
 import { ARCHETYPES, KLIMAAT_KANS, KLIMATEN, NAAMDELEN, PER_FAMILIE } from './archetypes';
 
 // Wat de generator er bovenop geeft: aantal sites (dorpen, nesten, hopen) en een optionele regel voor deze dimensie.
@@ -123,6 +125,7 @@ function rol(seed: number, nummer: number, f: Familie, vermijd: Archetype[], ged
     familie: f,
     archetype,
     klimaat,
+    wereldtype: wereldTypeVoor(klimaat, hash01(dimSeed(seed, nummer))).id,
     aanbod,
     uniek,
     loot,

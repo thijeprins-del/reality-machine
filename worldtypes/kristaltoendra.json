@@ -1,0 +1,14 @@
+{
+  "id": "kristaltoendra",
+  "name": "CRYSTAL TUNDRA",
+  "tileset": "kristaltoendra",
+  "economy": "schroot",
+  "ground": ["#8fa6c8", "#9db3d3", "#8299bd", "#a8bddb", "#7f95b8"],
+  "spot": "#4ef2ff",
+  "spotGlows": true,
+  "spotChance": 0.04,
+  "edge": ["#4c5c80", "#3b4868"],
+  "water": ["#3f8fb8", "#4a9cc4", "#3684ad"],
+  "waterGlows": true,
+  "hills": { "scale": 9, "height": 5, "base": 0.8, "cliffScale": 12, "cliffThreshold": 0.2, "cliffHeight": 3 }
+}
