@@ -62,8 +62,13 @@ export function geefWrath(s: SpelStaat, n: number): void {
 }
 
 // Welke sprite hoort bij de bewoners van dit type (nu: stam en insecten, de rest leent de stam).
-export const overvallerSprites = (a: GerolDimensie['archetype']): string[] =>
-  a === 'insecten' ? ['kever', 'mier'] : ['speerwerper', 'knotsdrager'];
+const BEWONERS: Partial<Record<GerolDimensie['archetype'], string[]>> = {
+  insecten: ['kever', 'mier'],
+  oudheid: ['legionair', 'legionair', 'wagenmenner'],
+  middeleeuwen: ['ridder', 'boogschutter'],
+  industrieel: ['stoomsoldaat', 'stoommachine'],
+};
+export const overvallerSprites = (a: GerolDimensie['archetype']): string[] => BEWONERS[a] ?? ['speerwerper', 'knotsdrager'];
 
 // Een overval: `aantal` overvallers uit een hoek van de kaart, op lopend land, een eind buiten de ring.
 export function overval(s: SpelStaat, aantal: number): void {

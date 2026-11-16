@@ -23,6 +23,12 @@ export interface AanvalStijl {
 export const AANVAL: Partial<Record<Archetype, AanvalStijl>> = {
   // Een zwerm: veel kleine, snelle beestjes die samen knagen.
   insecten: { elke: 0.7, aantal: 2.5, hp: 0.35, snelheid: 1.6, schade: 0.5 },
+  // Oudheid: legioenen in formatie, veel man tegelijk, taai maar langzaam.
+  oudheid: { elke: 1.1, aantal: 1.6, hp: 1.6, snelheid: 0.9, schade: 0.8 },
+  // Middeleeuwen: ridders en boogschutters, minder maar sterker, belegeringen met pauzes.
+  middeleeuwen: { elke: 1.3, aantal: 0.9, hp: 2.2, snelheid: 1.0, schade: 1.4 },
+  // Industrieel: stoommachines, traag en zwaar, een paar tegelijk die veel schade doen.
+  industrieel: { elke: 1.2, aantal: 0.8, hp: 3, snelheid: 0.7, schade: 2 },
   // Een reus merkt je pas bij hoge Wrath; dan komt er één die alles plet.
   reuzen: { elke: 1.3, aantal: 1, hp: 12, snelheid: 0.4, schade: 8, stilTot: 55, vast: 1, sprites: ['reus'] },
 };
