@@ -33,5 +33,11 @@
     { "id": "industrieel-otter-1", "folder": "industrieel", "width": 96, "height": 96, "anchorX": 49, "anchorY": 84 },
     { "id": "industrieel-otter-2", "folder": "industrieel", "width": 96, "height": 96, "anchorX": 49, "anchorY": 84 },
     { "id": "industrieel-otter-3", "folder": "industrieel", "width": 96, "height": 96, "anchorX": 49, "anchorY": 84 }
+  ],
+  "buildings": [
+    { "id": "industrieel-huis", "folder": "industrieel", "width": 128, "height": 128, "anchorX": 64, "anchorY": 125 },
+    { "id": "industrieel-werk", "folder": "industrieel", "width": 128, "height": 128, "anchorX": 63, "anchorY": 126 },
+    { "id": "industrieel-opslag", "folder": "industrieel", "width": 128, "height": 128, "anchorX": 64, "anchorY": 124 },
+    { "id": "industrieel-baken", "folder": "industrieel", "width": 128, "height": 128, "anchorX": 64, "anchorY": 127 }
   ]
 }

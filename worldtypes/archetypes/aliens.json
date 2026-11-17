@@ -24,5 +24,11 @@
     { "id": "aliens-otter-1", "folder": "aliens", "width": 96, "height": 96, "anchorX": 47, "anchorY": 82 },
     { "id": "aliens-otter-2", "folder": "aliens", "width": 96, "height": 96, "anchorX": 48, "anchorY": 82 },
     { "id": "aliens-otter-3", "folder": "aliens", "width": 96, "height": 96, "anchorX": 49, "anchorY": 82 }
+  ],
+  "buildings": [
+    { "id": "aliens-huis", "folder": "aliens", "width": 128, "height": 128, "anchorX": 64, "anchorY": 126 },
+    { "id": "aliens-werk", "folder": "aliens", "width": 128, "height": 128, "anchorX": 64, "anchorY": 126 },
+    { "id": "aliens-opslag", "folder": "aliens", "width": 128, "height": 128, "anchorX": 64, "anchorY": 126 },
+    { "id": "aliens-baken", "folder": "aliens", "width": 128, "height": 128, "anchorX": 64, "anchorY": 127 }
   ]
 }

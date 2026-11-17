@@ -75,6 +75,10 @@ eigen otter, aangekleed bij het type (legionair-otter, ridder-otter, stoom-otter
 - Per type vier uitvoeringen: `assets/land/<type>/<type>-otter-0..3.png`, zodat een dorp niet uit klonen bestaat. Het type
   `steentijd` is de jager-otter (in de ontwerpmap `dier`), `insecten` de bug-otter, `reuzen` de reus-otter (136 px).
 - In `worldtypes/archetypes/<type>.json` staan ze onder `residents` (id, map, maat, anker = de voeten). `beeld.ts` leest ze mee.
+- **Gebouwen van het land**: vier per type (huis, werkplaats, opslag, baken) in `assets/land/<type>/<type>-huis|werk|opslag|baken.png`,
+  onder `buildings` in het archetype-bestand. Ze passen bij de familie (hutten van vacht, villa's, koepels, vleesnesten) maar staan op
+  dezelfde kleine donkere klinknagel-plaat als de gebouwen van de ratten (`assets/gebouwen/`), met een beetje neon, zodat de bouwstijl
+  één geheel blijft. Gemaakt met PixelLab met een rattengebouw als zwakke stijlreferentie (init_image_strength ~60; sterker kopieert het).
 - De overvallers (`enemy`) blijven apart: dat zijn de soldaten en beesten van de wereld. Bewoners en overvallers mogen later dezelfde
   otters hergebruiken (wacht, krijger), maar het plaatsen van bewoners op de kaart is nog niet gebouwd (plan: "Filling the worlds").
 

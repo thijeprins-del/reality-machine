@@ -32,5 +32,11 @@
     { "id": "monsters-otter-1", "folder": "monsters", "width": 128, "height": 128, "anchorX": 63, "anchorY": 101 },
     { "id": "monsters-otter-2", "folder": "monsters", "width": 128, "height": 128, "anchorX": 66, "anchorY": 97 },
     { "id": "monsters-otter-3", "folder": "monsters", "width": 128, "height": 128, "anchorX": 62, "anchorY": 104 }
+  ],
+  "buildings": [
+    { "id": "monsters-huis", "folder": "monsters", "width": 128, "height": 128, "anchorX": 64, "anchorY": 123 },
+    { "id": "monsters-werk", "folder": "monsters", "width": 128, "height": 128, "anchorX": 64, "anchorY": 126 },
+    { "id": "monsters-opslag", "folder": "monsters", "width": 128, "height": 128, "anchorX": 64, "anchorY": 125 },
+    { "id": "monsters-baken", "folder": "monsters", "width": 128, "height": 128, "anchorX": 62, "anchorY": 127 }
   ]
 }

@@ -32,5 +32,11 @@
     { "id": "oudheid-otter-1", "folder": "oudheid", "width": 96, "height": 96, "anchorX": 48, "anchorY": 82 },
     { "id": "oudheid-otter-2", "folder": "oudheid", "width": 96, "height": 96, "anchorX": 47, "anchorY": 82 },
     { "id": "oudheid-otter-3", "folder": "oudheid", "width": 96, "height": 96, "anchorX": 47, "anchorY": 82 }
+  ],
+  "buildings": [
+    { "id": "oudheid-huis", "folder": "oudheid", "width": 128, "height": 128, "anchorX": 64, "anchorY": 127 },
+    { "id": "oudheid-werk", "folder": "oudheid", "width": 128, "height": 128, "anchorX": 64, "anchorY": 126 },
+    { "id": "oudheid-opslag", "folder": "oudheid", "width": 128, "height": 128, "anchorX": 64, "anchorY": 127 },
+    { "id": "oudheid-baken", "folder": "oudheid", "width": 128, "height": 128, "anchorX": 64, "anchorY": 126 }
   ]
 }

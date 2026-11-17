@@ -34,5 +34,11 @@
     { "id": "modern-otter-1", "folder": "modern", "width": 96, "height": 96, "anchorX": 49, "anchorY": 82 },
     { "id": "modern-otter-2", "folder": "modern", "width": 96, "height": 96, "anchorX": 50, "anchorY": 82 },
     { "id": "modern-otter-3", "folder": "modern", "width": 96, "height": 96, "anchorX": 50, "anchorY": 82 }
+  ],
+  "buildings": [
+    { "id": "modern-huis", "folder": "modern", "width": 128, "height": 128, "anchorX": 64, "anchorY": 125 },
+    { "id": "modern-werk", "folder": "modern", "width": 128, "height": 128, "anchorX": 64, "anchorY": 126 },
+    { "id": "modern-opslag", "folder": "modern", "width": 128, "height": 128, "anchorX": 63, "anchorY": 126 },
+    { "id": "modern-baken", "folder": "modern", "width": 128, "height": 128, "anchorX": 63, "anchorY": 127 }
   ]
 }

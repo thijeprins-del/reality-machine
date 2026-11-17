@@ -33,5 +33,11 @@
     { "id": "insecten-otter-1", "folder": "insecten", "width": 96, "height": 96, "anchorX": 52, "anchorY": 82 },
     { "id": "insecten-otter-2", "folder": "insecten", "width": 96, "height": 96, "anchorX": 49, "anchorY": 84 },
     { "id": "insecten-otter-3", "folder": "insecten", "width": 96, "height": 96, "anchorX": 51, "anchorY": 82 }
+  ],
+  "buildings": [
+    { "id": "insecten-huis", "folder": "insecten", "width": 128, "height": 128, "anchorX": 63, "anchorY": 126 },
+    { "id": "insecten-werk", "folder": "insecten", "width": 128, "height": 128, "anchorX": 64, "anchorY": 127 },
+    { "id": "insecten-opslag", "folder": "insecten", "width": 128, "height": 128, "anchorX": 63, "anchorY": 126 },
+    { "id": "insecten-baken", "folder": "insecten", "width": 128, "height": 128, "anchorX": 64, "anchorY": 125 }
   ]
 }

@@ -6,6 +6,9 @@ neon alleen als accent op gloeiende delen. Nieuwe bewoners tekenen we in die sti
 **niet** grauw met `stijl.py`. `stijl.py` was voor de eerste PixelLab-overvallers en maakt alles te donker en te vlak voor mensen.
 Eerst kijken wat er al is voordat je nieuwe bewoners laat genereren.
 
+**Gebouwen van het land** (17 nov): PixelLab pixflux, 128 px, `view: low top-down`, prompt = gebouw + "isometric building on a small dark riveted metal base plate, grimy, weathered, cables, a little glowing neon accent, black outline", met `assets/gebouwen/groot/smederij.png` (op 128 px gezet) als `init_image` met `init_image_strength` 60. Hoger kopieert de smederij.
+Per type vier: huis, werk, opslag, baken. Niet door `stijl.py` halen.
+
 Hieronder de oude werkwijze voor overvallers en machines:
 
 Alle sprites van het land (en straks alles) volgen de muizen: grauw, donker, korrelig, zwarte rand, neon alleen als accent.

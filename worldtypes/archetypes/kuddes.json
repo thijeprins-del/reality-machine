@@ -33,5 +33,11 @@
     { "id": "kuddes-otter-1", "folder": "kuddes", "width": 96, "height": 96, "anchorX": 47, "anchorY": 84 },
     { "id": "kuddes-otter-2", "folder": "kuddes", "width": 96, "height": 96, "anchorX": 49, "anchorY": 82 },
     { "id": "kuddes-otter-3", "folder": "kuddes", "width": 96, "height": 96, "anchorX": 49, "anchorY": 82 }
+  ],
+  "buildings": [
+    { "id": "kuddes-huis", "folder": "kuddes", "width": 128, "height": 128, "anchorX": 64, "anchorY": 125 },
+    { "id": "kuddes-werk", "folder": "kuddes", "width": 128, "height": 128, "anchorX": 63, "anchorY": 126 },
+    { "id": "kuddes-opslag", "folder": "kuddes", "width": 128, "height": 128, "anchorX": 64, "anchorY": 123 },
+    { "id": "kuddes-baken", "folder": "kuddes", "width": 128, "height": 128, "anchorX": 64, "anchorY": 126 }
   ]
 }
