@@ -1,0 +1,22 @@
+{
+  "id": "scifi",
+  "name": "SCI-FI",
+  "family": "beschaving",
+  "map": [160, 160],
+  "resources": {
+    "unique": [
+      { "id": "plasmacel", "name": "Plasma cells" },
+      { "id": "legering", "name": "Alloy" }
+    ],
+    "sharedChance": { "metaal": 0.85, "hout": 0.2, "water": 0.6, "steen": 0.5 }
+  },
+  "loot": [
+    { "item": "schildgenerator", "weight": 3, "requires": "plasmacel" },
+    { "item": "drone-mijner", "weight": 2, "requires": "legering" },
+    { "item": "plasma-brander", "weight": 1, "requires": "plasmacel" }
+  ],
+  "nameStyle": "ster",
+  "nameForm": "Dome {n}",
+  "sees": "Domes, towers, drone pads",
+  "fights": "Drones that hunt power poles, EMP"
+}

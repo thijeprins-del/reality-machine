@@ -1,0 +1,12 @@
+{
+  "id": "aarde",
+  "name": "EARTH",
+  "tileset": "aarde",
+  "economy": "aarde",
+  "ground": ["#527e2f"],
+  "spot": "#2f4a1c",
+  "spotChance": 0.08,
+  "edge": ["#4a3a22", "#382b19"],
+  "water": ["#1f66ad"],
+  "hills": { "scale": 18, "height": 4.5, "base": 0.7, "cliffScale": 17, "cliffThreshold": 0.3, "cliffHeight": 2 }
+}

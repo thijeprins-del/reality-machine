@@ -1,0 +1,22 @@
+{
+  "id": "aliens",
+  "name": "ALIENS",
+  "family": "bijzonder",
+  "map": [200, 200],
+  "resources": {
+    "unique": [
+      { "id": "xenolegering", "name": "Xeno alloy" },
+      { "id": "gloeislijm", "name": "Glowing goo" }
+    ],
+    "sharedChance": { "metaal": 0.7, "hout": 0.3, "water": 0.5, "steen": 0.6 }
+  },
+  "loot": [
+    { "item": "tractorstraal", "weight": 3, "requires": "xenolegering" },
+    { "item": "slijmreactor", "weight": 2, "requires": "gloeislijm" },
+    { "item": "baken-ontvanger", "weight": 1 }
+  ],
+  "nameStyle": "vreemd",
+  "nameForm": "Crash site {n}",
+  "sees": "Crashed ship, beacons, crop circles",
+  "fights": "Beams that lift buildings away, shielded walkers"
+}

@@ -1,0 +1,29 @@
+{
+  "id": "reuzen",
+  "name": "GIANTS",
+  "family": "bijzonder",
+  "map": [200, 200],
+  "resources": {
+    "unique": [
+      { "id": "reuzenijzer", "name": "Giant iron" },
+      { "id": "reuzenhaar", "name": "Giant hair" }
+    ],
+    "sharedChance": { "metaal": 0.9, "hout": 0.8, "water": 0.6, "steen": 0.7 }
+  },
+  "loot": [
+    { "item": "reuzensmidse", "weight": 3, "requires": "reuzenijzer" },
+    { "item": "haarkabel", "weight": 2, "requires": "reuzenhaar" },
+    { "item": "spijker-mijn", "weight": 1, "requires": "reuzenijzer" }
+  ],
+  "nameStyle": "reus",
+  "nameForm": "Valley of {n}",
+  "sees": "A valley of giant tools, one or two giants walking slow loops",
+  "fights": "One footstep crushes a whole build; they only notice you at high Wrath",
+  "enemy": {
+    "raiders": ["reus"],
+    "sprites": [
+      { "id": "reus", "folder": "reuzen", "width": 128, "height": 128, "anchorX": 64, "anchorY": 118 }
+    ],
+    "attack": { "every": 1.3, "count": 1.0, "hp": 12.0, "speed": 0.4, "damage": 8.0, "quietUntil": 55, "fixed": 1 }
+  }
+}

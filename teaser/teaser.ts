@@ -2,7 +2,7 @@
 // Een zwevend stuk muizenindustrie werkt door, tot de stream komt: dan springt alles naar de volgende dimensie.
 // Gewoon canvas 2D (geen Pixi): de pagina moet licht zijn, ook als kaartje in een iframe op thijeprins.nl.
 // ?kaart = compacte versie voor in een kaart, ?og = stilstaand beeld voor de og-image (scripts/teaser-og.mjs).
-import { MUIZEN_SPRITES } from '../src/muizen/sprites';
+import { MUIZEN_SPRITES } from '../src/ratten/sprites';
 import { WERELD_SPRITES } from '../src/kern/wereld-sprites';
 
 type Naam = keyof typeof MUIZEN_SPRITES | keyof typeof WERELD_SPRITES;

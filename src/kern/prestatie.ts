@@ -98,7 +98,7 @@ export function maakOverlay(): { zet(aan: boolean): void } {
       `logic ${r.logicaMs} ms per frame (worst of last 180: ${r.logicaMaxMs} ms)`,
       `load: renderer ${l['renderer ready'] ?? '?'} · assets+ground ${l['world ready'] ?? '?'} · ui ${l['ui ready'] ?? '?'} · first frame ${l['first frame'] ?? '?'} ms`,
       `generate map ${m['generate map']?.laatsteMs ?? '?'} ms · build ground ${m['build ground']?.laatsteMs ?? '?'} ms`,
-      `map ${r.kaart ?? '?'} · chunks drawn ${r.brokken ?? '?'} · mice ${r.muizen ?? '?'}`,
+      `map ${r.kaart ?? '?'} · chunks drawn ${r.brokken ?? '?'} · rats ${r.muizen ?? '?'}`,
       `heap ${r.heapMB ?? '?'} MB`,
       r.overschrijdingen.length ? 'SLOW: ' + r.overschrijdingen.join('; ') : 'within budget',
     ];

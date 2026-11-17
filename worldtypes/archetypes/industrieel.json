@@ -1,0 +1,31 @@
+{
+  "id": "industrieel",
+  "name": "INDUSTRIAL",
+  "family": "beschaving",
+  "map": [160, 160],
+  "resources": {
+    "unique": [
+      { "id": "steenkool", "name": "Coal" },
+      { "id": "olie", "name": "Oil" },
+      { "id": "staal", "name": "Steel" }
+    ],
+    "sharedChance": { "metaal": 0.9, "hout": 0.5, "water": 0.8, "steen": 0.7 }
+  },
+  "loot": [
+    { "item": "stoomketel", "weight": 3, "requires": "steenkool" },
+    { "item": "rail-band", "weight": 2, "requires": "staal" },
+    { "item": "olielamp-generator", "weight": 1, "requires": "olie" }
+  ],
+  "nameStyle": "fabriek",
+  "nameForm": "{n} Works",
+  "sees": "Factories, rails, smokestacks",
+  "fights": "Steam tanks, artillery",
+  "enemy": {
+    "raiders": ["stoomsoldaat", "stoommachine"],
+    "sprites": [
+      { "id": "stoomsoldaat", "folder": "industrieel", "width": 19, "height": 25, "anchorX": 9, "anchorY": 24 },
+      { "id": "stoommachine", "folder": "industrieel", "width": 17, "height": 24, "anchorX": 8, "anchorY": 23 }
+    ],
+    "attack": { "every": 1.2, "count": 0.8, "hp": 3.0, "speed": 0.7, "damage": 2.0 }
+  }
+}

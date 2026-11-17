@@ -1,23 +1,34 @@
 // De gegevens per archetype en klimaat voor de dimensiegenerator. Alleen getallen en namen, geen regels.
+// Elk archetype is één JSON-bestand in worldtypes/archetypes/ (naam, grondstoffen, loot, vijand); dit bestand leest en controleert ze.
 // Zie DESIGN.md "Het land" en het plan (Procedural generation).
+import { ARCHETYPE_BESTANDEN } from '../../worldtypes/archetypes/index';
+import type { AanvalStijl } from '../data/run';
 import type { Archetype, Familie, GedeeldeGrondstof, Klimaat, UniekeGrondstof } from '../kern/types';
+
+// Een plaatje van een overvaller: de map in assets/land/ en de maat. anker = de voeten.
+export interface VijandSprite { id: string; map: string; w: number; h: number; ankerX: number; ankerY: number }
+export interface Vijand {
+  overvallers: string[]; // sprite-id's; komt een id vaker voor, dan is hij vaker
+  sprites: VijandSprite[];
+  aanval?: AanvalStijl; // zonder: gewone overvallers uit het Wrath-stadium
+}
 
 export interface ArchetypeInfo {
   familie: Familie;
   naam: string; // zo heet het type in beeld ("STONE AGE")
   uniek: UniekeGrondstof[]; // hieruit komen er 1 of 2
-  // kans (0..1) dat een gedeelde grondstof bestaat, bovenop het klimaat
-  kans: Record<GedeeldeGrondstof, number>;
-  loot: { vondst: string; kans: number; vereist?: string }[]; // 3 bouwplannen per type (muizenversie)
+  kans: Record<GedeeldeGrondstof, number>; // kans (0..1) dat een gedeelde grondstof bestaat, bovenop het klimaat
+  aliassen: Partial<Record<GedeeldeGrondstof, string>>; // andere naam voor een gedeeld goed in dit type
+  loot: { vondst: string; kans: number; vereist?: string }[];
   kaart: [number, number];
   beginWrathPlekken: { plek: string; wrath: [number, number]; gewicht: number }[];
   naamStijl: 'stam' | 'oud' | 'riddersland' | 'fabriek' | 'stad' | 'ster' | 'nest' | 'hol' | 'trek' | 'reus' | 'vreemd' | 'vlees';
   naamVorm: string; // sjabloon, {n} = gegenereerde naam
   ziet: string; // wat je ziet (korte omschrijving voor galerij en hulp)
   vecht: string; // waarmee het land terugvecht
+  vijand?: Vijand; // zonder: de stam leent zijn overvallers uit
 }
 
-const U = (id: string, naam: string): UniekeGrondstof => ({ id, naam });
 const PLEKKEN = [
   { plek: 'wilderness, far from anyone', wrath: [0, 10] as [number, number], gewicht: 4 },
   { plek: 'edge of their territory', wrath: [15, 30] as [number, number], gewicht: 3 },
@@ -25,56 +36,83 @@ const PLEKKEN = [
   { plek: 'in the middle of it', wrath: [50, 70] as [number, number], gewicht: 1 },
 ];
 
-export const ARCHETYPES: Record<Archetype, ArchetypeInfo> = {
-  steentijd: { familie: 'beschaving', naam: 'STONE AGE', uniek: [U('vuursteen', 'Flint'), U('bot', 'Bone'), U('vacht', 'Hide')],
-    kans: { metaal: 0.15, hout: 0.9, water: 0.7, steen: 0.9 },
-    loot: [{ vondst: 'bot-boorkop', kans: 3, vereist: 'bot' }, { vondst: 'vuurkuil-brander', kans: 2, vereist: 'vuursteen' }, { vondst: 'totem-baken', kans: 1 }],
-    kaart: [160, 160], beginWrathPlekken: PLEKKEN, naamStijl: 'stam', naamVorm: 'Tribe of {n}', ziet: 'Huts, fires, totems, mammoth riders', vecht: 'Spear mobs, fire on your belts' },
-  oudheid: { familie: 'beschaving', naam: 'ANTIQUITY', uniek: [U('brons', 'Bronze'), U('marmer', 'Marble')],
-    kans: { metaal: 0.55, hout: 0.7, water: 0.7, steen: 0.9 },
-    loot: [{ vondst: 'schroot-katapult', kans: 3, vereist: 'brons' }, { vondst: 'brons-tandwielen', kans: 2, vereist: 'brons' }, { vondst: 'marmeren-fundering', kans: 1, vereist: 'marmer' }],
-    kaart: [160, 160], beginWrathPlekken: PLEKKEN, naamStijl: 'oud', naamVorm: 'Republic of {n}', ziet: 'Temples, walls, chariots', vecht: 'Legions in formation, catapults' },
-  middeleeuwen: { familie: 'beschaving', naam: 'MEDIEVAL', uniek: [U('ijzererts', 'Iron ore'), U('steenkool', 'Coal')],
-    kans: { metaal: 0.8, hout: 0.8, water: 0.7, steen: 0.8 },
-    loot: [{ vondst: 'trebuchet-toren', kans: 3, vereist: 'ijzererts' }, { vondst: 'windmolen-stroom', kans: 2 }, { vondst: 'smidse', kans: 2, vereist: 'steenkool' }],
-    kaart: [160, 160], beginWrathPlekken: PLEKKEN, naamStijl: 'riddersland', naamVorm: 'Kingdom of {n}', ziet: 'Castles, villages, windmills', vecht: 'Knights, trebuchets, sieges' },
-  industrieel: { familie: 'beschaving', naam: 'INDUSTRIAL', uniek: [U('steenkool', 'Coal'), U('olie', 'Oil'), U('staal', 'Steel')],
-    kans: { metaal: 0.9, hout: 0.5, water: 0.8, steen: 0.7 },
-    loot: [{ vondst: 'stoomketel', kans: 3, vereist: 'steenkool' }, { vondst: 'rail-band', kans: 2, vereist: 'staal' }, { vondst: 'olielamp-generator', kans: 1, vereist: 'olie' }],
-    kaart: [160, 160], beginWrathPlekken: PLEKKEN, naamStijl: 'fabriek', naamVorm: '{n} Works', ziet: 'Factories, rails, smokestacks', vecht: 'Steam tanks, artillery' },
-  modern: { familie: 'beschaving', naam: 'MODERN', uniek: [U('beton', 'Concrete'), U('koper', 'Copper'), U('brandstof', 'Fuel'), U('elektronica', 'Electronics')],
-    kans: { metaal: 0.9, hout: 0.4, water: 0.8, steen: 0.6 },
-    loot: [{ vondst: 'centrale-generator', kans: 3, vereist: 'brandstof' }, { vondst: 'bouwkraan', kans: 2 }, { vondst: 'autowrak-pantser', kans: 2, vereist: 'koper' }],
-    kaart: [160, 160], beginWrathPlekken: PLEKKEN, naamStijl: 'stad', naamVorm: 'City of {n}', ziet: 'City blocks, highways, power plants', vecht: 'Police, then army: tanks, helicopters, artillery on your disc' },
-  scifi: { familie: 'beschaving', naam: 'SCI-FI', uniek: [U('plasmacel', 'Plasma cells'), U('legering', 'Alloy')],
-    kans: { metaal: 0.85, hout: 0.2, water: 0.6, steen: 0.5 },
-    loot: [{ vondst: 'schildgenerator', kans: 3, vereist: 'plasmacel' }, { vondst: 'drone-mijner', kans: 2, vereist: 'legering' }, { vondst: 'plasma-brander', kans: 1, vereist: 'plasmacel' }],
-    kaart: [160, 160], beginWrathPlekken: PLEKKEN, naamStijl: 'ster', naamVorm: 'Dome {n}', ziet: 'Domes, towers, drone pads', vecht: 'Drones that hunt power poles, EMP' },
-  insecten: { familie: 'wildernis', naam: 'BUGS', uniek: [U('chitine', 'Chitin'), U('honing', 'Honey'), U('hars', 'Resin')],
-    kans: { metaal: 0.2, hout: 0.85, water: 0.7, steen: 0.6 },
-    loot: [{ vondst: 'chitine-pantser', kans: 3, vereist: 'chitine' }, { vondst: 'honing-brandstof', kans: 2, vereist: 'honing' }, { vondst: 'harslijm-band', kans: 1, vereist: 'hars' }],
-    kaart: [160, 160], beginWrathPlekken: PLEKKEN, naamStijl: 'nest', naamVorm: 'Hive of {n}', ziet: 'Hives, egg fields, chewed tunnels', vecht: 'Swarms of small bugs that chew belts and cables' },
-  monsters: { familie: 'wildernis', naam: 'MONSTERS', uniek: [U('monsterbot', 'Monster bone'), U('gif', 'Venom')],
-    kans: { metaal: 0.3, hout: 0.7, water: 0.6, steen: 0.8 },
-    loot: [{ vondst: 'gifkoeling', kans: 3, vereist: 'gif' }, { vondst: 'botten-frame', kans: 2, vereist: 'monsterbot' }, { vondst: 'klauwenval', kans: 1 }],
-    kaart: [160, 160], beginWrathPlekken: PLEKKEN, naamStijl: 'hol', naamVorm: 'Lair of {n}', ziet: 'Lairs, bone piles, claw marks', vecht: 'Few large predators that hunt drills' },
-  kuddes: { familie: 'wildernis', naam: 'HORDES', uniek: [U('huid', 'Hide'), U('hoorn', 'Horn'), U('mest', 'Dung')],
-    kans: { metaal: 0.15, hout: 0.5, water: 0.9, steen: 0.6 },
-    loot: [{ vondst: 'mestbrander', kans: 3, vereist: 'mest' }, { vondst: 'hoorn-sirene', kans: 2, vereist: 'hoorn' }, { vondst: 'huid-dak', kans: 1, vereist: 'huid' }],
-    kaart: [160, 160], beginWrathPlekken: PLEKKEN, naamStijl: 'trek', naamVorm: 'Herd of {n}', ziet: 'Herds, migration trails, watering holes', vecht: 'Stampedes along trails that flatten anything in the way' },
-  reuzen: { familie: 'bijzonder', naam: 'GIANTS', uniek: [U('reuzenijzer', 'Giant iron'), U('reuzenhaar', 'Giant hair')],
-    kans: { metaal: 0.9, hout: 0.8, water: 0.6, steen: 0.7 },
-    loot: [{ vondst: 'reuzensmidse', kans: 3, vereist: 'reuzenijzer' }, { vondst: 'haarkabel', kans: 2, vereist: 'reuzenhaar' }, { vondst: 'spijker-mijn', kans: 1, vereist: 'reuzenijzer' }],
-    kaart: [200, 200], beginWrathPlekken: PLEKKEN, naamStijl: 'reus', naamVorm: 'Valley of {n}', ziet: 'A valley of giant tools, one or two giants walking slow loops', vecht: 'One footstep crushes a whole build; they only notice you at high Wrath' },
-  aliens: { familie: 'bijzonder', naam: 'ALIENS', uniek: [U('xenolegering', 'Xeno alloy'), U('gloeislijm', 'Glowing goo')],
-    kans: { metaal: 0.7, hout: 0.3, water: 0.5, steen: 0.6 },
-    loot: [{ vondst: 'tractorstraal', kans: 3, vereist: 'xenolegering' }, { vondst: 'slijmreactor', kans: 2, vereist: 'gloeislijm' }, { vondst: 'baken-ontvanger', kans: 1 }],
-    kaart: [200, 200], beginWrathPlekken: PLEKKEN, naamStijl: 'vreemd', naamVorm: 'Crash site {n}', ziet: 'Crashed ship, beacons, crop circles', vecht: 'Beams that lift buildings away, shielded walkers' },
-  tentakelbeest: { familie: 'bijzonder', naam: 'TENTACLE BEAST', uniek: [U('inkt', 'Ink'), U('ichor', 'Ichor')],
-    kans: { metaal: 0.2, hout: 0.3, water: 0.9, steen: 0.4 },
-    loot: [{ vondst: 'inktreactor', kans: 3, vereist: 'inkt' }, { vondst: 'vleesband', kans: 2, vereist: 'ichor' }, { vondst: 'aderpols', kans: 1 }],
-    kaart: [256, 256], beginWrathPlekken: PLEKKEN, naamStijl: 'vlees', naamVorm: '{n}, the Living Ground', ziet: 'Breathing ground, eyes in lakes, pulsing veins', vecht: 'Tentacles erupt where you dig deepest; the map is its body' },
-};
+
+type Obj = Record<string, unknown>;
+const isObj = (v: unknown): v is Obj => !!v && typeof v === 'object' && !Array.isArray(v);
+const GEDEELDE: GedeeldeGrondstof[] = ['metaal', 'hout', 'water', 'steen'];
+const FAMILIES: Familie[] = ['beschaving', 'wildernis', 'bijzonder'];
+const NAAMSTIJLEN: ArchetypeInfo['naamStijl'][] = ['stam', 'oud', 'riddersland', 'fabriek', 'stad', 'ster', 'nest', 'hol', 'trek', 'reus', 'vreemd', 'vlees'];
+const AANVAL_GETALLEN = { every: 'elke', count: 'aantal', hp: 'hp', speed: 'snelheid', damage: 'schade' } as const;
+
+function lees(bron: unknown, fouten: string[]): [string, ArchetypeInfo] | null {
+  if (!isObj(bron) || typeof bron.id !== 'string' || !bron.id) { fouten.push('worldtypes/archetypes: a file without a string "id"'); return null; }
+  const id = bron.id;
+  const fout = (t: string) => { fouten.push(`worldtypes/archetypes/${id}.json: ${t}`); };
+  const tekst = (k: string): string => { const v = bron[k]; if (typeof v === 'string' && v) return v; fout(`"${k}" must be text`); return ''; };
+  const getal = (v: unknown, k: string): number => { if (typeof v === 'number' && Number.isFinite(v)) return v; fout(`"${k}" must be a number`); return 0; };
+  if (!FAMILIES.includes(bron.family as Familie)) fout(`"family" must be one of ${FAMILIES.join(', ')}`);
+  if (!NAAMSTIJLEN.includes(bron.nameStyle as never)) fout(`"nameStyle" must be one of ${NAAMSTIJLEN.join(', ')}`);
+  const kaart = bron.map;
+  if (!(Array.isArray(kaart) && kaart.length === 2 && kaart.every((n) => Number.isInteger(n) && n > 0))) fout('"map" must be [width, depth] in tiles');
+  const res = isObj(bron.resources) ? bron.resources : {};
+  const uniek = (Array.isArray(res.unique) ? res.unique : []).map((u): UniekeGrondstof => {
+    if (!isObj(u) || typeof u.id !== 'string' || typeof u.name !== 'string') { fout('"resources.unique" needs { "id", "name" } entries'); return { id: '', naam: '' }; }
+    return { id: u.id, naam: u.name };
+  });
+  if (!uniek.length) fout('"resources.unique" needs at least one entry');
+  const kans = {} as Record<GedeeldeGrondstof, number>;
+  const kansBron = isObj(res.sharedChance) ? res.sharedChance : {};
+  for (const g of GEDEELDE) kans[g] = getal(kansBron[g], `resources.sharedChance.${g}`);
+  const aliassen: ArchetypeInfo['aliassen'] = {};
+  if (isObj(res.aliases)) for (const [g, n] of Object.entries(res.aliases)) {
+    if (!GEDEELDE.includes(g as GedeeldeGrondstof) || typeof n !== 'string') fout(`"resources.aliases": "${g}" must be one of ${GEDEELDE.join(', ')} with a text name`);
+    else aliassen[g as GedeeldeGrondstof] = n;
+  }
+  const loot = (Array.isArray(bron.loot) ? bron.loot : []).map((l) => {
+    if (!isObj(l) || typeof l.item !== 'string') { fout('"loot" needs { "item", "weight" } entries'); return { vondst: '', kans: 0 }; }
+    if (l.requires !== undefined && !uniek.some((u) => u.id === l.requires)) fout(`loot "${l.item}": "requires" must be one of this type's unique resources`);
+    return { vondst: l.item, kans: getal(l.weight, `loot.${l.item}.weight`), ...(typeof l.requires === 'string' ? { vereist: l.requires } : {}) };
+  });
+  if (!loot.length) fout('"loot" needs at least one entry');
+  let vijand: Vijand | undefined;
+  if (bron.enemy !== undefined) {
+    const e = isObj(bron.enemy) ? bron.enemy : {};
+    const sprites = (Array.isArray(e.sprites) ? e.sprites : []).map((x): VijandSprite => {
+      if (!isObj(x) || typeof x.id !== 'string' || typeof x.folder !== 'string') { fout('"enemy.sprites" needs { "id", "folder", "width", "height", "anchorX", "anchorY" }'); return { id: '', map: '', w: 0, h: 0, ankerX: 0, ankerY: 0 }; }
+      return { id: x.id, map: x.folder, w: getal(x.width, `enemy.sprites.${x.id}.width`), h: getal(x.height, `enemy.sprites.${x.id}.height`), ankerX: getal(x.anchorX, `enemy.sprites.${x.id}.anchorX`), ankerY: getal(x.anchorY, `enemy.sprites.${x.id}.anchorY`) };
+    });
+    const overvallers = Array.isArray(e.raiders) ? e.raiders.map(String) : [];
+    if (!overvallers.length) fout('"enemy.raiders" needs at least one sprite id');
+    for (const r of overvallers) if (!sprites.some((x) => x.id === r)) fout(`"enemy.raiders": "${r}" is not in "enemy.sprites"`);
+    let aanval: AanvalStijl | undefined;
+    if (e.attack !== undefined) {
+      const a = isObj(e.attack) ? e.attack : {};
+      aanval = { elke: 0, aantal: 0, hp: 0, snelheid: 0, schade: 0 };
+      for (const [en, nl] of Object.entries(AANVAL_GETALLEN)) aanval[nl] = getal(a[en], `enemy.attack.${en}`);
+      if (a.quietUntil !== undefined) aanval.stilTot = getal(a.quietUntil, 'enemy.attack.quietUntil');
+      if (a.fixed !== undefined) aanval.vast = getal(a.fixed, 'enemy.attack.fixed');
+    }
+    vijand = { overvallers, sprites, ...(aanval ? { aanval } : {}) };
+  }
+  return [id, {
+    familie: bron.family as Familie, naam: tekst('name'), uniek, kans, aliassen, loot, kaart: kaart as [number, number],
+    beginWrathPlekken: PLEKKEN, naamStijl: bron.nameStyle as ArchetypeInfo['naamStijl'], naamVorm: tekst('nameForm'), ziet: tekst('sees'), vecht: tekst('fights'), vijand,
+  }];
+}
+
+export const ARCHETYPES = {} as Record<Archetype, ArchetypeInfo>;
+{
+  const fouten: string[] = [];
+  for (const bron of ARCHETYPE_BESTANDEN) {
+    const r = lees(bron, fouten);
+    if (!r) continue;
+    if (r[0] in ARCHETYPES) fouten.push(`worldtypes/archetypes: two files with id "${r[0]}"`);
+    ARCHETYPES[r[0] as Archetype] = r[1];
+  }
+  for (const a of ['steentijd', 'oudheid', 'middeleeuwen', 'industrieel', 'modern', 'scifi', 'insecten', 'monsters', 'kuddes', 'reuzen', 'aliens', 'tentakelbeest'] as Archetype[])
+    if (!ARCHETYPES[a]) fouten.push(`worldtypes/archetypes: no file for "${a}"`);
+  if (fouten.length) throw new Error('Archetype files are wrong:\n' + fouten.join('\n'));
+}
 
 export const PER_FAMILIE: Record<Familie, Archetype[]> = {
   beschaving: ['steentijd', 'oudheid', 'middeleeuwen', 'industrieel', 'modern', 'scifi'],

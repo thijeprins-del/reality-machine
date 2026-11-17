@@ -1,0 +1,22 @@
+{
+  "id": "tentakelbeest",
+  "name": "TENTACLE BEAST",
+  "family": "bijzonder",
+  "map": [256, 256],
+  "resources": {
+    "unique": [
+      { "id": "inkt", "name": "Ink" },
+      { "id": "ichor", "name": "Ichor" }
+    ],
+    "sharedChance": { "metaal": 0.2, "hout": 0.3, "water": 0.9, "steen": 0.4 }
+  },
+  "loot": [
+    { "item": "inktreactor", "weight": 3, "requires": "inkt" },
+    { "item": "vleesband", "weight": 2, "requires": "ichor" },
+    { "item": "aderpols", "weight": 1 }
+  ],
+  "nameStyle": "vlees",
+  "nameForm": "{n}, the Living Ground",
+  "sees": "Breathing ground, eyes in lakes, pulsing veins",
+  "fights": "Tentacles erupt where you dig deepest; the map is its body"
+}

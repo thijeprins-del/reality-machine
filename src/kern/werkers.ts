@@ -3,7 +3,7 @@
 import { afzettingOp, type Afzetting, type Kaart } from './kaart';
 import { dichtstbijVrij, routePunt, vrijOp } from './routes';
 import { hash01, volgende } from './toeval';
-import type { EenheidSoort, Grondstof, Voorraad } from './types';
+import type { EenheidSoort, Goed, Voorraad } from './types';
 
 export type Taak = 'rust' | 'lopen' | 'naarBron' | 'graven' | 'naarOpslag';
 
@@ -17,7 +17,7 @@ export interface Werker {
   via: { x: number; y: number } | null; // het volgende punt op de route; null = rechtdoor naar het doel
   taak: Taak;
   bron: number; // id van de afzetting, -1 = geen
-  lading: { goed: Grondstof; n: number } | null;
+  lading: { goed: Goed; n: number } | null;
   klok: number;
   kijkt: 1 | -1; // 1 = naar rechts op het scherm
 }

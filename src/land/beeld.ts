@@ -1,21 +1,17 @@
 // De plaatjes van de overvallers voor de kern. Alleen de bewoners die hier al een sprite hebben; de rest leent de stam.
 import type { SpriteInfo } from '../kern/types';
+import { ARCHETYPES, type VijandSprite } from './archetypes';
 
-const bestanden = import.meta.glob('../../assets/land/{steentijd,insecten,reuzen}/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
+const bestanden = import.meta.glob('../../assets/land/*/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 const url = (map: string, naam: string) => Object.entries(bestanden).find(([k]) => k.endsWith(`/${map}/${naam}.png`))?.[1];
 
-// anker = de voeten
-const LIJST: Record<string, { map: string; w: number; h: number; ankerX: number; ankerY: number }> = {
-  speerwerper: { map: 'steentijd', w: 16, h: 24, ankerX: 8, ankerY: 23 },
-  knotsdrager: { map: 'steentijd', w: 16, h: 24, ankerX: 8, ankerY: 23 },
-  kever: { map: 'insecten', w: 30, h: 20, ankerX: 15, ankerY: 17 },
-  reus: { map: 'reuzen', w: 128, h: 128, ankerX: 64, ankerY: 118 },
-  mier: { map: 'insecten', w: 26, h: 16, ankerX: 13, ankerY: 14 },
-};
+// De plaatjes en hun maat staan bij de vijand van elk type (worldtypes/archetypes/*.json, "enemy.sprites"). anker = de voeten.
+const LIJST = new Map<string, VijandSprite>();
+for (const a of Object.values(ARCHETYPES)) for (const sp of a.vijand?.sprites ?? []) LIJST.set(sp.id, sp);
 
 export function landSprites(): Record<string, SpriteInfo> {
   const uit: Record<string, SpriteInfo> = {};
-  for (const [naam, m] of Object.entries(LIJST)) {
+  for (const [naam, m] of LIJST) {
     const u = url(m.map, naam);
     if (!u) continue;
     const gloed = url(m.map, `${naam}-gloed`);

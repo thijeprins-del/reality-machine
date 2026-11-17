@@ -1,0 +1,30 @@
+{
+  "id": "steentijd",
+  "name": "STONE AGE",
+  "family": "beschaving",
+  "map": [160, 160],
+  "resources": {
+    "unique": [
+      { "id": "vuursteen", "name": "Flint" },
+      { "id": "bot", "name": "Bone" },
+      { "id": "vacht", "name": "Hide" }
+    ],
+    "sharedChance": { "metaal": 0.15, "hout": 0.9, "water": 0.7, "steen": 0.9 }
+  },
+  "loot": [
+    { "item": "bot-boorkop", "weight": 3, "requires": "bot" },
+    { "item": "vuurkuil-brander", "weight": 2, "requires": "vuursteen" },
+    { "item": "totem-baken", "weight": 1 }
+  ],
+  "nameStyle": "stam",
+  "nameForm": "Tribe of {n}",
+  "sees": "Huts, fires, totems, mammoth riders",
+  "fights": "Spear mobs, fire on your belts",
+  "enemy": {
+    "raiders": ["speerwerper", "knotsdrager"],
+    "sprites": [
+      { "id": "speerwerper", "folder": "steentijd", "width": 16, "height": 24, "anchorX": 8, "anchorY": 23 },
+      { "id": "knotsdrager", "folder": "steentijd", "width": 16, "height": 24, "anchorX": 8, "anchorY": 23 }
+    ]
+  }
+}

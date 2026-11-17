@@ -1,0 +1,30 @@
+{
+  "id": "oudheid",
+  "name": "ANTIQUITY",
+  "family": "beschaving",
+  "map": [160, 160],
+  "resources": {
+    "unique": [
+      { "id": "brons", "name": "Bronze" },
+      { "id": "marmer", "name": "Marble" }
+    ],
+    "sharedChance": { "metaal": 0.55, "hout": 0.7, "water": 0.7, "steen": 0.9 }
+  },
+  "loot": [
+    { "item": "schroot-katapult", "weight": 3, "requires": "brons" },
+    { "item": "brons-tandwielen", "weight": 2, "requires": "brons" },
+    { "item": "marmeren-fundering", "weight": 1, "requires": "marmer" }
+  ],
+  "nameStyle": "oud",
+  "nameForm": "Republic of {n}",
+  "sees": "Temples, walls, chariots",
+  "fights": "Legions in formation, catapults",
+  "enemy": {
+    "raiders": ["legionair", "legionair", "wagenmenner"],
+    "sprites": [
+      { "id": "legionair", "folder": "oudheid", "width": 22, "height": 28, "anchorX": 11, "anchorY": 27 },
+      { "id": "wagenmenner", "folder": "oudheid", "width": 21, "height": 24, "anchorX": 10, "anchorY": 23 }
+    ],
+    "attack": { "every": 1.1, "count": 1.6, "hp": 1.6, "speed": 0.9, "damage": 0.8 }
+  }
+}

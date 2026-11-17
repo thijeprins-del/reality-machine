@@ -15,15 +15,17 @@ Nog een skelet. Werk dit bij bij elke grote regelwijziging.
 - **Stream gemist** (2 nov): heeft de machine op dat moment geen volle stroom, dan springt er niets (rode flits, vonken)
   en begint de dimensie opnieuw. Volgens het plan verlies je dan; voorlopig vergevingsgezind om mee te spelen.
 - Om de stream te halen heeft de reality machine genoeg energie en heelheid nodig. Haal je hem niet: verloren.
-- Tech alleen uit loot: vondsten inbouwen of ontleden tot bouwplan. Geen techboom.
+- Tech: elke economie heeft een kleine techboom. In het laboratorium maak je research packs uit grondstoffen en
+  daarmee koop je in het bouwmenu gebouwen en recepten van een hoger tier vrij (Lieuwe, 15 nov; was: "alleen uit loot,
+  geen techboom"). Loot kan daar later bovenop komen.
 - **Het spel draait om industrie:** een zo groot mogelijke fabriek met lange productieketens op je eiland.
   Gevechten zijn bijzaak en kort.
 - Ketens: ruwe grondstof uit de dimensie → tussenproducten → eindproduct dat de machine voedt (`streamKosten`).
   Nieuwe gebouwen en recepten komen alleen uit loot, zo groeit de keten per dimensie.
 - **Logistiek: lopende banden** (keuze Thije, 2 nov). Gebouwen nemen invoer van een band die erin loopt en zetten
   uitvoer op een band die eruit wijst. De indeling van je eiland is de puzzel.
-  Klein houden: één goed per bandtegel, rechtdoor en bochten, geen splitsers, bruggen of sorteerders (later-lijst).
-  Bandmechaniek zit in de kern; per factie verschilt alleen `BandSoort` (snelheid, kosten).
+  Klein houden: één goed per bandtegel, rechtdoor en bochten; splitter en merger zijn gebouwen van één tegel.
+  Geen bruggen of sorteerders (later-lijst). De band is zelf een gebouw uit de economie (snelheid, kosten).
 - Winnen: de tegenstander zo meppen dat zijn machine de volgende stream niet haalt, vooral door zijn keten te breken.
 
 ## Kaart en grondstoffen (basis, 2 nov)
@@ -31,10 +33,12 @@ Nog een skelet. Werk dit bij bij elke grote regelwijziging.
   Elke wereld kan een eigen maat hebben (`kaart` in `DIMENSIES`, minstens 48), ook niet-vierkant; om te proberen: `?kaart=256x64`
   of `?kaart=256x64,128x128` om de beurt. Een grotere wereld heeft meer velden, over de hele kaart verspreid.
 - In het midden de reality machine (4x4 tegels) en de opslag (2x2), binnen de gele ring (bouwgrond, geen grondstoffen).
-- Velden met ruwe grondstoffen eromheen: schroot (7 velden, 30 per tegel), hout (6, 25), kristal (3, 15, verder weg).
+- Velden met ruwe grondstoffen eromheen. Welke er liggen, hoeveel velden en hoeveel per tegel staat in de economie van
+  de wereld (`economies/*.json`, `"onMap"` en `"fields"`).
 - Werkers (eenheden met `werk`) graven een lading, sjouwen die naar de opslag en gaan terug, tot het veld op is;
   dan zoeken ze binnen 8 tegels verder. Rechte lijnen, alleen om de machine heen. Geen botsingen tussen werkers.
-- Start: menu met factiekeuze. Een factie zonder data staat er wel, maar is niet te kiezen.
+- Start: geen menu. Je speelt de pack rats en begint met de machine, het magazijn en het startkapitaal van de economie
+  van de eerste wereld.
 
 ## Terrein (Lieuwe, 5 nov)
 - Elke wereld krijgt heuvels uit Perlin-ruis (`src/kern/terrein.ts`), met per dimensie eigen getallen (`heuvels` in
@@ -64,24 +68,79 @@ Nog een skelet. Werk dit bij bij elke grote regelwijziging.
   water: bruin op Roestduin, gloeiend op Magmaveld, blauw op Aarde (de zesde dimensie).
 - Terreinbewerker (F2, testgereedschap): BLOK tilt tegels los van hun buren (wand), HEUVEL neemt de buren mee (helling).
 
-## Samenwerking facties
-Zelfde spelregels, ander gereedschap. De kern weet niets van muizen of otters; een factie is data plus één trucje.
+## Eén soort, een economie per wereld (Lieuwe, 15 nov)
+Er is één soort: de **pack rats**, hamsterende ratten (voorheen de muizen; de otters zijn vervallen). Wat verschilt is de
+wereld. Het spel leest twee mappen met JSON-bestanden, zodat je kunt schaven zonder code:
 
-- **Vast (contract, `src/kern/types.ts`):** machine (energie, heelheid), ruwe grondstoffen (`schroot`, `hout`, `kristal`),
-  vorm van recepten, banden, gebouwen, vondsten, loot-tabel en eenheden, en de haken van het trucje (`opTik`, `opStream`).
-  Wijzigen: kleine aparte PR, de ander kijkt binnen 12 uur.
-- **Vrij per factie:** de eigen ketens (tussenproducten, recepten, wat de machine eet), gebouwen, eenheden,
-  alle getallen, de loot-tabel, het trucje. Asymmetrie zit vooral in de vorm van de ketens. Code in `src/<factie>/`,
-  getallen in `src/data/<factie>.ts`.
-- **Balans:** bovenaan elk databestand drie balansknoppen (bv. oogstopbrengst, receptduur, streamKosten).
-  Van de ander alleen voorstellen, niet zelf aanpassen. Vanaf week 3: AI tegen AI op vaste seeds via `window.SPEL`;
-  mikpunt ongeveer 50/50 winst, en in een rustige run halen beide de stream met speling.
-- **Beslissingen:** elk schrijft alleen zijn eigen factiekopje hieronder. Raakt iets de ander: PR of issue.
-  Eén keer per week een kwartier bellen, bij de weekgrens van de planning.
+- **`worldtypes/<id>.json`**: een wereldtype: naam, tegelset (`tileset`, een van de sets in `src/kern/tegels.ts`),
+  kleuren, heuvels en de economie (`economy`). De generator rolt een tegelset en kiest een wereldtype met die tegelset.
+- **`economies/<id>.json`**: een economie, in het formaat van de sandbox (`tools/economy.html`):
+  - `resources`: goederen met `id`, `name`, `color`, `volume`, optioneel `sprite`. Met `"onMap": true` ligt het goed als
+    veld op de kaart (`fields`: aantal velden, tegels per veld, hoeveelheid per tegel, afstand tot de machine).
+  - `recipes`: `inputs` → `outputs` in `time` seconden. Zonder invoer is het een winning.
+  - `buildings`: wat je kunt bouwen. Het gedrag komt uit de soort: productie (met `recipes`), winning (`onDeposit`: staat
+    bij een veld en draait het recept dat dat veld geeft), magazijn (`sink`), vernietiger (`trash`), `splitter`,
+    `merger`, band (`belt`) en paal (`pole`). Verder kosten, bouwtijd (`work`), maat (`size` 1 of 2), stroom (`kW`),
+    ploeg (`crew`), `insideRing` en `sprite`. Nieuw gedrag vraagt code; een nieuw gebouw niet.
+  - `startingResources`: het startkapitaal. `settings.warehouseStorage`: het volume van het magazijn waarmee je begint.
+- **Lezen en controleren**: `src/kern/economie.ts` en `src/kern/wereldtypes.ts`, bij het laden van het spel. Een fout
+  (onbekend recept, onbekende tegelset) laat `npm test` falen met de melding. Een nieuw bestand moet ook in de lijst in
+  `economies/index.ts` of `worldtypes/index.ts`.
+- **Een goed is zijn id.** Naam, kleur en plaatje horen bij de economie. Twee economieën mogen hetzelfde id anders
+  aankleden ("water" hier, "Murky water" daar): elk recept dat `water` vraagt neemt beide. Alleen `volume` moet gelijk zijn.
+- **Aansluitpunten** (`poortenVan` in `src/ratten/industrie.ts`), zoals in de sandbox: eerst invoer links, uitvoer rechts; met R draai je ze een kwartslag (`draai` op het gebouw). In
+  beeld is links de zuid- en de westkant van het gebouw, rechts de oost- en de noordkant. Elk goed van het recept krijgt om
+  de beurt een tegel: een band levert alleen af op de ingang van zijn goed, en een band die op een uitgang begint draagt
+  alleen dat product. Een winningsgebouw geeft af aan alle kanten (het staat tegen zijn veld). De punten staan altijd in
+  beeld als pijlen in de kleur van het goed. Ratten sjouwen alleen wat geen band heeft.
+- **Opslag**: één voorraad, gemeten in volume. Het magazijn van het begin plus elk gebouwd magazijn geeft ruimte voor
+  alles. Ratten graven een grondstof met de hand tot haar deel van de opslag (ruimte gedeeld door het aantal goederen).
+- **De sprong**: de voorraad blijft, gebouwen binnen de ring blijven staan en werken door (een gebouw onthoudt uit welke
+  economie het komt), alles buiten de ring wordt ingepakt. Het bouwmenu toont de gebouwen van de nieuwe wereld. De eerste
+  keer in een economie krijg je haar startkapitaal erbij, één keer per run.
+- **Tiers en onderzoek** (15 nov). Gebouwen en recepten hebben een `tier` (standaard 1) en, boven tier 1, een prijs
+  `unlock` in research packs. Tier 1 is vrij: mijnen en oogsters, branders, band, paal, magazijnen, de werkplaats en de
+  basisfabrieken met hun eerste recepten. Daarboven koop je elk gebouw en elk recept apart vrij in het bouwmenu; iets
+  van tier N kan pas als er iets van tier N-1 vrij is. Nu op slot: splitter en merger (12 packs), de grijper (10 packs), de tweede routes
+  (8 packs) en per economie één gebouw voor geavanceerde fabricage (20 packs) dat twee platen en een lokale grondstof
+  hardt tot een **pantserplaat** (`pantserplaat`, overal hetzelfde id, per wereld een eigen naam): temper forge
+  (roestduin, koolstof), blast furnace (aarde, biomassa), autoclave (gifwoud, hars), quench tower (magmaveld, basalt),
+  cryo temperer (toendra, ijs) en brine bath (zoutzee, zout). De pantserplaat is bedoeld voor latere gebouwen die
+  pantser maken; nu is ze alleen te onderzoeken (2 stuks geven 4 packs).
+  Het **laboratorium** (LABORATORY in beeld; `"workshop": true` in het bestand) is een productiegebouw zonder eigen recepten: de lader maakt er een
+  voor elk goed met `"research": { "per": 4, "packs": 1 }` (4 stuks geven 1 pack; diepere goederen geven er meer). Je
+  kiest wat je onderzoekt zoals je een recept kiest. Het **research pack** (`onderzoek`) bestaat in elke economie en
+  heeft `"vaporizes": true`: het verdampt bij de sprong, uit de voorraad, van de banden en uit de gebouwen. Wat je
+  hebt vrijgekocht blijft per economie de hele run; in een nieuwe economie begin je weer bij tier 1. De lader eist per
+  economie een werkplaats, het goed `onderzoek` en minstens één goed met `research`.
+- **Grijper** (`"grabber": true`, 16 nov): een gebouw van één tegel met een arm. Hij pakt een goed van de bandtegel
+  achter zich en legt het op de bandtegel voor zich; `speed` is het aantal zwaaien per seconde (heen en terug is één
+  goed), `draai` op het gebouw bepaalt waar hij heen wijst (R). Alleen van band naar band; in of uit een gebouw pakt hij
+  niet. In beeld: een vaste voet met de arm er los op, in zestien getekende standen (`scripts/pixel/muizen.mjs`).
+- **Nog geen kunst?** Een gebouw of goed zonder eigen plaatje krijgt een bestaand plaatje in zijn kleur.
+- **Stroom** (15 nov): het looprad hoort bij de machine; alle andere stroom komt van **generatoren**, en dat zijn gewone
+  productiegebouwen met een recept dat stroom levert: `{ "inputs": { "biomassa": 1 }, "time": 5, "power": 5 }` geeft 5 kW
+  zolang het recept draait. Twee brandstoffen bestaan overal, `koolstof` en `biomassa`; elke economie heeft eigen
+  recepten om er een van te maken en één brander die haar stookt. Een nieuw soort generator is een regel in het bestand.
+  De oude vaste bronnen (houtbrander, dynamo, reactor) en de MK-upgrades zijn vervallen: meer stroom = meer generatoren.
+  Overladen bestaat alleen nog voor het looprad.
+- **De zes economieën** (één per wereldtype). Overal bouw je met dezelfde twee materialen, `plaat` en `balk`, maar
+  hoe je eraan komt verschilt, en niet elke wereld heeft elke grondstof:
+  | wereld | economie | ligt er | plaat | balk | brandstof | bijzonder |
+  |---|---|---|---|---|---|---|
+  | roestduin | `schroot` Junkyard | schroot, oude banden | 2 schroot → 2 | 3 schroot → 1 | koolstof: 2 banden → 2 | geen hout |
+  | aarde | `aarde` Homestead | hout, steen, ijzererts | 2 erts + 1 hout → 2 | 2 hout → 1 | biomassa: 1 hout → 2 | geen schroot; magazijn kost steen |
+  | gifwoud | `gifwoud` Rotwood Grove | rothout, hars, sporen | 2 hout + 1 hars → 2 | 2 hout → 1 | biomassa: 1 hout → 2, of 2 sporen → 4 | geen metaal |
+  | magmaveld | `magmaveld` Foundry | magma-erts, basalt | 2 erts → 2 (+ 1 slak) | 3 basalt → 1 | koolstof: 2 slak → 1, of 3 basalt → 1 | smederij vraagt geen stroom |
+  | kristaltoendra | `kristaltoendra` Crystal Tundra | kristal, ijs, één wrak | 2 kristal → 1 | 4 ijs + 1 kristal → 1, of 3 wrak → 1 | koolstof: 2 kristal → 1 | geen hout |
+  | zoutzee | `zoutzee` Salt Flats | zout, kelp, wat drijfhout | 3 zout + 1 kelp → 2 | 4 kelp → 1, of 2 drijfhout → 1 | biomassa: 1 kelp → 2 | bijna geen hout |
+  Banden, palen, magazijnen, splitter en merger kosten overal plaat en balk, dus wat je meeneemt blijft bruikbaar.
+  De viseconomie uit de sandbox was een voorbeeld en zit niet in het spel (wel nog in `tools/economy.html`).
 
-## Facties
-### Muizen (Thije)
-Cyberpunk/dieselpunk, tech-heavy. Getallen in `src/data/muizen.ts`.
+## Pack rats (voorheen muizen)
+De industriegetallen in dit hoofdstuk (kosten, recepten, boor, band, paal, stapel) staan sinds 15 nov in
+`economies/schroot.json`; de opslag is één voorraad in volume in plaats van 50 per goed.
+Cyberpunk/dieselpunk, tech-heavy. Getallen in `src/data/ratten.ts`.
 
 Een zwerm muizen (start: **60**), en je krijgt er **nooit** nieuwe bij. Ze minen zelf: elke muis draagt 2 per keer
 en graaft 2,5 s. Je selecteert ze in massa (slepen, dubbelklik).
@@ -97,22 +156,21 @@ mech 3x3 en ruim tien keer zo hoog als een muis). Mechs menselijk van bouw, wape
 `scripts/pixel/muizen.mjs`; bekijk ze samen met `?proto=muizen`.
 
 **Taal (5 nov):** alle tekst in het spel is Engels; code, docs en commits blijven Nederlands. Paneel en bouwmenu zijn
-pixelart, maar de letters worden scherp getekend met een echt lettertype (`src/muizen/letters.ts`).
+pixelart, maar de letters worden scherp getekend met een echt lettertype (`src/ratten/letters.ts`).
 
-**Stroomnet (trucje van de muizen, herzien 3 nov):** alleen de muizen beheren stroom; de otters krijgen iets anders.
+**Stroomnet (herzien 3 nov):** de ratten beheren stroom.
 Energie gaat om keuzes, niet om alles overeind houden. Er is geen zekering en geen storing meer.
 - **Looprad (WHEEL, 5 nov):** de eerste bron is een gigantisch hamsterrad. Geen brandstof: muizen rennen erin (3/6/10
   muizen voor laag/normaal/overladen, 2/4/7 kW). Te weinig renners = minder stroom. Muizen die rennen graven en bouwen niet.
-- Bronnen verbranden grondstof uit de opslag (in beeld: WOOD BURNER, DYNAMO, REACTOR): houtbrander (hout, 2/4/7 kW per stand laag/normaal/overladen), dynamo
-  (schroot, 3/5/9), reactor (kristal, 6/10/16). Je begint met het looprad. Houtbrander (4 platen + 4 balken) en dynamo (5 platen + 2 balken) moet je
-  eerst bouwen; de reactor komt alleen uit loot. Per MK meer stroom (x1, 1,7, 2,5) en meer brandstof.
+- Bronnen: het looprad (2/4/7 kW per stand laag/normaal/overladen; 3, 6 of 10 ratten) en de generatoren uit de economie
+  (zie "Eén soort, een economie per wereld"). De houtbrander, dynamo, reactor en de MK-upgrades zijn vervallen (15 nov).
 - **Overladen** mag altijd: veel stroom, maar de bron wordt heet. Daarna is hij tijdelijk zwakker (tot 50% bij volle
   hitte) tot hij is afgekoeld. Koeling laat sneller afkoelen.
 - Verbruikers staan op volgorde van voorrang: machine (4 kW, precies wat het looprad op normaal geeft), industrie (fabricator, boren, banden), lampen (2 kW,
   muizen graven sneller), koeling (1 kW). Wat niet past krijgt niets; met **^** schuif je iets omhoog. Het paneel
   noemt de eerste die tekort komt. Je kiest dus wat je nu wilt: de machine voeden, of eerst je industrie laten draaien.
-- Bediening via een pixelart-paneel linksonder (`src/muizen/paneel.ts`), regels in `src/muizen/energie.ts`,
-  getallen in `MUIZEN_ENERGIE` (`src/data/muizen.ts`).
+- Bediening via een pixelart-paneel linksonder (`src/ratten/paneel.ts`), regels in `src/ratten/energie.ts`,
+  getallen in `RATTEN_ENERGIE` (`src/data/muizen.ts`).
 
 **Industrie (economische lus, 3 nov):** de muizen werken zelf, de speler zet neer en kiest.
 - **Onderdelen en fabricators (5 nov):** bouwen kost onderdelen uit de opslag: platen (2 schroot geeft 2) en balken
@@ -146,12 +204,8 @@ Energie gaat om keuzes, niet om alles overeind houden. Er is geen zekering en ge
 - **Opslag**: hooguit 50 per goed (ook platen en balken). **Stapel** (2x2, binnen de ring) hoort bij één grondstof en geeft +150 daarvan.
   Muizen en banden brengen een grondstof naar zijn eigen stapel. Je ziet de voorraad als bergen (1 hoop = 15).
 - **Stream**: alles buiten de ring blijft achter; je krijgt de bouwkosten terug. Binnen de ring blijft alles staan.
-- Slopen geeft de bouwkosten terug. Regels in `src/muizen/industrie.ts` en `src/muizen/werk.ts`, beeld en bouwbalk in
-  `src/muizen/bouwen.ts`, getallen in `MUIZEN_INDUSTRIE`. De band zit nu in de muizenmap; naar de kern (K5) zodra de
-  otters ook banden willen.
-
-### Otters (Lieuwe)
-Getallen in `src/data/otters.ts` (nog te maken).
+- Slopen geeft de bouwkosten terug. Regels in `src/ratten/industrie.ts` en `src/ratten/werk.ts`, beeld en bouwbalk in
+  `src/ratten/bouwen.ts`, getallen in `economies/schroot.json`.
 
 ## Open
 - Tegen de computer (aanname) of tweespeler op één scherm?

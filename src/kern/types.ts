@@ -1,13 +1,9 @@
-// Het contract tussen kern en facties. De kern kent alleen deze types, nooit muizen- of ottercode.
-// Nieuw veld nodig? Kleine aparte PR op dit bestand, de ander kijkt mee. Zie DESIGN.md, "Samenwerking facties".
+// Het contract tussen de kern en de soort die je speelt (de pack rats, src/ratten/). De kern kent alleen deze types.
 import type { SpelStaat } from './spel';
 
-export type FactieId = 'muizen' | 'otters';
-
-// Goederen. Ruwe grondstoffen (uit dimensies) zijn voor beide facties dezelfde; tussenproducten en eindproducten
-// mag elke factie zelf verzinnen (gewoon een string, bv. 'tandwiel' of 'dambalk'). Goederen reizen over lopende banden.
-export type Grondstof = 'schroot' | 'hout' | 'kristal';
-export type Goed = Grondstof | (string & {});
+// Goederen: een goed is zijn id (een string). Welke er bestaan, hoe ze heten en welke op de kaart liggen staat in de
+// economie van een wereld (economies/*.json, kern/economie.ts). Goederen reizen over lopende banden.
+export type Goed = string;
 export type Voorraad = Partial<Record<Goed, number>>;
 
 // Een stap in een productieketen: een gebouw zet `in` om in `uit` in `sec` seconden.
@@ -94,17 +90,11 @@ export interface Trucje {
   opStream?: (s: SpelStaat) => void;
 }
 
-// Alles wat een factie aan de kern geeft. Getallen staan in src/data/<factie>.ts.
-export interface Factie {
-  id: FactieId;
+// Alles wat de soort aan de kern geeft. Getallen staan in src/data/ratten.ts. Gebouwen, recepten en startkapitaal
+// gaan naar de economie van een wereld (economies/), niet naar de soort.
+export interface Soort {
   naam: string;
   startMachine: Machine;
-  startVoorraad: Voorraad;
-  streamKosten: Voorraad; // wat de machine per stream verbruikt: het eind van de lange keten
-  gebouwen: GebouwSoort[];
-  recepten: Recept[];
-  band: BandSoort;
-  startRecepten: string[]; // recept-id's die je vanaf het begin kent; de rest komt uit loot
   eenheden: EenheidSoort[];
   startEenheden: Partial<Record<string, number>>; // soort -> aantal bij de start (bv. honderden muizen)
   vondsten: VondstSoort[];
@@ -114,7 +104,6 @@ export interface Factie {
 
 // Dingen op het veld.
 export interface Eenheid {
-  factie: FactieId;
   soort: string;
   hp: number;
   x: number;
@@ -122,7 +111,6 @@ export interface Eenheid {
 }
 
 export interface Gebouw {
-  factie: FactieId;
   soort: string;
   hp: number;
   x: number;
@@ -150,9 +138,9 @@ export interface SpriteInfo {
   tegels: number; // 0 = eenheid, anders breedte in tegels
 }
 
-export interface FactieBeeld {
+export interface SoortBeeld {
   sprites: Record<string, SpriteInfo>;
-  lading?: Partial<Record<Grondstof, string>>; // sprite van een eenheid die deze grondstof draagt
+  lading?: Partial<Record<Goed, string>>; // sprite van een eenheid die deze grondstof draagt
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -169,8 +157,8 @@ export type Archetype =
   | 'insecten' | 'monsters' | 'kuddes' // wildernis
   | 'reuzen' | 'aliens' | 'tentakelbeest'; // bijzonder
 
-// De vier gedeelde grondstoffen: niet elke dimensie heeft ze allemaal (minstens twee wel). Nog niet gekoppeld aan
-// `Grondstof` hierboven (schroot, hout, kristal): die omzetting is Lieuwes keuze en komt in een eigen PR.
+// De vier gedeelde grondstoffen van de generator: niet elke dimensie heeft ze allemaal (minstens twee wel). Nog niet
+// gekoppeld aan de economie: wat er echt op de kaart ligt bepaalt economies/*.json (later-lijst).
 export type GedeeldeGrondstof = 'metaal' | 'hout' | 'water' | 'steen';
 
 // Een grondstof die alleen in deze dimensie ligt (vuursteen, chitine, reuzenijzer). `id` is een vrije string.
@@ -202,7 +190,8 @@ export interface Dimensie {
   naam: string; // gegenereerde naam ("Hive of Krel-Tak")
   familie: Familie;
   archetype: Archetype;
-  klimaat: Klimaat;
+  klimaat: Klimaat; // de tegelset van het wereldtype
+  wereldtype: string; // id van een bestand in worldtypes/: zo ziet de wereld eruit en dit is haar economie
   aanbod: GrondstofAanbod[]; // gedeelde (minstens twee) plus unieke grondstoffen
   uniek: UniekeGrondstof[]; // 1 of 2, alleen hier
   loot: DimensieLoot[];

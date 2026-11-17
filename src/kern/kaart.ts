@@ -1,17 +1,18 @@
 // De kaart van een dimensie: de machine en de opslag in het midden, velden met grondstoffen eromheen.
-import { dimensieHeuvels, dimensieKaart, KAART_MIN, RING_STRAAL, SCHIJF_HOOGTE, VELDEN } from '../data/dimensies';
+import { dimensieHeuvels, dimensieKaart, economieVan, KAART_MIN, RING_STRAAL, SCHIJF_HOOGTE } from '../data/dimensies';
 import type { Doorgang } from './routes';
 import { maakTerrein, openRanden, tegelSoorten, type Terrein } from './terrein';
 import { hash01, volgende } from './toeval';
 import { maakMist, type Mist } from './mist';
-import type { Grondstof } from './types';
+import type { Goed } from './types';
 
 export interface Afzetting {
   id: number;
-  goed: Grondstof;
+  goed: Goed;
   x: number; // tegel
   y: number;
   rest: number; // wat er nog te halen valt; 0 = op
+  max: number; // wat er lag toen de wereld nieuw was
   variant: number; // welk plaatje
 }
 
@@ -52,7 +53,7 @@ function stroomVoor(seed: number, dimensie: number, soort: number): { toeval: nu
   return { toeval: (Math.imul(seed >>> 0, 0x9e3779b1) ^ Math.imul(dimensie, 0x85ebca6b) ^ Math.imul(soort, 0xc2b2ae35)) >>> 0 };
 }
 
-// Het aantal velden in VELDEN is voor een kaart van 64 x 64; een grotere kaart krijgt er naar verhouding meer bij.
+// Het aantal velden ("fields" in de economie) is voor een kaart van 64 x 64; een grotere kaart krijgt er naar verhouding meer bij.
 const VELD_BASIS = 64 * 64;
 
 // De maat van een wereld: uit het adres (?kaart=256x64, of ?kaart=256x64,128x128 om de beurt per wereld), anders uit de data.
@@ -116,25 +117,28 @@ export function maakKaart(seed: number, dimensie: number): Kaart {
   const afzettingen: Afzetting[] = [];
   const veldStroom = stroomVoor(seed, dimensie, 2);
   const r = () => volgende(veldStroom);
-  for (const goed of Object.keys(VELDEN) as Grondstof[]) {
-    const v = VELDEN[goed];
+  // Wat er ligt bepaalt de economie van deze wereld: elke grondstof met "onMap" krijgt haar velden.
+  for (const soort of economieVan(dimensie).goederen.values()) {
+    const v = soort.fields;
+    if (!v) continue;
+    const goed = soort.id;
     // Een grotere wereld heeft ook meer velden, verspreid over de hele kaart; de eerste liggen altijd om de schijf heen.
-    const extra = Math.max(0, Math.round(v.aantal * ((breed * diep) / VELD_BASIS - 1)));
-    for (let n = 0; n < v.aantal + extra; n++) {
+    const extra = Math.max(0, Math.round(v.count * ((breed * diep) / VELD_BASIS - 1)));
+    for (let n = 0; n < v.count + extra; n++) {
       // zoek een vrije plek voor het hart van het veld, op de goede afstand
       let hart: { x: number; y: number } | null = null;
       // (lukt dat niet, omdat er bijvoorbeeld een meer ligt, dan langzaam verder weg: elk veld moet er komen)
       for (let poging = 0; poging < 400 && !hart; poging++) {
         const hoek = r() * Math.PI * 2;
-        const af = v.afstand[0] + r() * (v.afstand[1] - v.afstand[0]) + Math.max(0, poging - 60) * 0.05;
-        const ver = n >= v.aantal;
+        const af = v.distance[0] + r() * (v.distance[1] - v.distance[0]) + Math.max(0, poging - 60) * 0.05;
+        const ver = n >= v.count;
         const x = ver ? 1 + Math.floor(r() * (breed - 2)) : Math.round(midden.x + Math.cos(hoek) * af);
         const y = ver ? 1 + Math.floor(r() * (diep - 2)) : Math.round(midden.y + Math.sin(hoek) * af);
         if (vrij(x, y)) hart = { x, y };
       }
       if (!hart) continue;
       // groei het veld tegel voor tegel vanuit het hart
-      const doel = v.tegels[0] + Math.floor(r() * (v.tegels[1] - v.tegels[0] + 1));
+      const doel = v.tiles[0] + Math.floor(r() * (v.tiles[1] - v.tiles[0] + 1));
       const veld = [hart];
       bezet[hart.y * breed + hart.x] = 1;
       for (let poging = 0; poging < doel * 8 && veld.length < doel; poging++) {
@@ -146,7 +150,7 @@ export function maakKaart(seed: number, dimensie: number): Kaart {
         veld.push({ x, y });
       }
       for (const t of veld)
-        afzettingen.push({ id: afzettingen.length, goed, x: t.x, y: t.y, rest: v.perTegel, variant: Math.floor(r() * 2) });
+        afzettingen.push({ id: afzettingen.length, goed, x: t.x, y: t.y, rest: v.perTile, max: v.perTile, variant: Math.floor(r() * 2) });
     }
   }
   return { ...terrein, soort, lopen, afzettingen, machine, opslag, ring, mist: maakMist(breed, diep) };

@@ -1,13 +1,13 @@
 # Reality Machine
 
 Ons spel voor GitHub Game Off 2026 (thema SHIFT). Je stukje land springt met een reality machine van dimensie naar
-dimensie. Muizen tegen otters. Strategie en economie, isometrisch.
+dimensie. Je speelt de pack rats, een volk van hamsterende ratten, tegen het land zelf. Strategie en economie, isometrisch.
 
 - DEV (elke merge op `dev`): https://thijeprins.nl/reality-machine/dev/
 - RELEASE (`main`, op Thijes woord): https://thijeprins.nl/reality-machine/
 - Welke versie waar staat: https://thijeprins.nl/reality-machine/versies.txt
 
-Team: Thije (muizen, kern) en Lieuwe (otters). Werkafspraken: [CLAUDE.md](CLAUDE.md). Ontwerp: [DESIGN.md](DESIGN.md).
+Team: Thije en Lieuwe. Werkafspraken: [CLAUDE.md](CLAUDE.md). Ontwerp: [DESIGN.md](DESIGN.md).
 Taken: [TAKEN.md](TAKEN.md).
 
 ## Teaser

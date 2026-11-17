@@ -1,0 +1,12 @@
+{
+  "id": "roestduin",
+  "name": "RUST DUNES",
+  "tileset": "roestduin",
+  "economy": "schroot",
+  "ground": ["#5a2a12", "#6b3316", "#4f240f", "#733a1a", "#62301a"],
+  "spot": "#2a1208",
+  "spotChance": 0.15,
+  "edge": ["#3a1a0a", "#2a1207"],
+  "water": ["#4a3a1c", "#54421f", "#40331a"],
+  "hills": { "scale": 16, "height": 4.5, "base": 0.8, "cliffScale": 19, "cliffThreshold": 0.28, "cliffHeight": 2 }
+}

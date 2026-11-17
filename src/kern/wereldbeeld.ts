@@ -1,5 +1,5 @@
 // Tekent de spelstaat: grond, grondstoffen, gebouwen en eenheden, met een gloedlaag voor het neon.
-// De factie levert de plaatjes (FactieBeeld); de kern weet niet welke factie het is.
+// De factie levert de plaatjes (SoortBeeld); de kern weet niet welke factie het is.
 import { Assets, BlurFilter, ColorMatrixFilter, Container, Graphics, Matrix, Rectangle, Sprite, Texture } from 'pixi.js';
 import { naarScherm, TEGEL_B, TEGEL_H } from './iso';
 import { dimensieKleur, DIMENSIE_DUUR_SEC, hoogteTint, HOOGTE_MIN, HOOGTE_PX, SCHIJF_HOOGTE, SPRONG_SEC, THUIS, type DimensieWereld } from '../data/dimensies';
@@ -11,7 +11,8 @@ import type { SpelStaat } from './spel';
 import { hoeken, hoogteOp, knikLinksRechts, TEGEL_LAND, tegelOnder, TEGEL_WATER } from './terrein';
 import { TerreinBewerker } from './terreinbewerker';
 import { hash01 } from './toeval';
-import type { FactieBeeld, SpriteInfo } from './types';
+import { goed } from './economie';
+import type { SoortBeeld, SpriteInfo } from './types';
 import { CEL_B, CEL_H, CEL_X, CEL_Y, celLand, celSchuim, celWand, celWater, KOLOMMEN, SCHUIM_BEELDEN, TEGELSETS, VARIANTEN, WAND_B, WAND_H, WAND_KOLOMMEN, WAND_VARIANTEN, WAND_Y, WATER_BEELDEN, WATER_VARIANTEN, type TegelSet } from './tegels';
 import { WERELD_SPRITES } from './wereld-sprites';
 
@@ -24,6 +25,9 @@ const wereldBestanden = import.meta.glob('../../assets/wereld/*.png', { eager: t
   string,
   string
 >;
+// Velden van grondstoffen uit assets/goederen/veld-<sprite>-<n>.png: zelfde maat en anker als de velden in assets/wereld.
+const veldBestanden = import.meta.glob('../../assets/goederen/veld-*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
+const VELD = { w: 40, h: 56, ankerX: 20, ankerY: 34, tegels: 1 };
 const wereldUrl = (naam: string) => Object.entries(wereldBestanden).find(([k]) => k.endsWith(`/${naam}.png`))?.[1];
 
 function wereldSprites(): Record<string, SpriteInfo> {
@@ -32,6 +36,7 @@ function wereldSprites(): Record<string, SpriteInfo> {
     const u = wereldUrl(naam);
     if (u) uit[naam] = { ...m, url: u, gloedUrl: m.gloed ? wereldUrl(`${naam}-gloed`) : undefined };
   }
+  for (const [pad, u] of Object.entries(veldBestanden)) uit[pad.slice(pad.lastIndexOf('/veld-') + 6, -4)] = { ...VELD, url: u };
   return uit;
 }
 
@@ -72,7 +77,7 @@ export class WereldBeeld {
 
   constructor(
     private staat: SpelStaat,
-    private beeld: FactieBeeld,
+    private beeld: SoortBeeld,
   ) {
     this.sprites = { ...wereldSprites(), ...beeld.sprites };
   }
@@ -162,8 +167,15 @@ export class WereldBeeld {
     this.afzettingen.clear();
     meet('build ground', () => this.bouwGrond(k));
     for (const a of k.afzettingen) {
-      const naam = `${a.goed}-${a.variant + 1}`;
-      const st = this.maak(naam);
+      // Het plaatje van de grondstof (assets/wereld/<sprite>-1 en -2). Is dat er nog niet, dan de schroothoop in de kleur
+      // van het goed (of het plaatje van zijn id in die kleur: drijfhout is hout): zo is een nieuwe economie speelbaar
+      // voordat er kunst is.
+      const soort = goed(a.goed);
+      // (is er maar één plaatje van, dan krijgen beide varianten dat: het spiegelen hieronder geeft al afwisseling)
+      const basis = soort.sprite ?? a.goed;
+      const eigen = this.sprites[`${basis}-${a.variant + 1}`] ? `${basis}-${a.variant + 1}` : `${basis}-1`;
+      const st = this.maak(this.sprites[eigen] ? eigen : this.sprites[`${a.goed}-${a.variant + 1}`] ? `${a.goed}-${a.variant + 1}` : `schroot-${a.variant + 1}`);
+      if (!this.sprites[eigen]) st.delen[0].tint = soort.color;
       this.zetAfzetting(st, a);
       this.afzettingen.set(a.id, st);
     }
@@ -663,6 +675,11 @@ export class WereldBeeld {
     const tex = await Assets.load<Texture>(url);
     tex.source.scaleMode = 'nearest';
     this.texturen.set(naam, tex);
+  }
+
+  // Is er een plaatje met deze naam? (Voor gebouwen en goederen uit een economie die nog geen eigen kunst hebben.)
+  heeft(naam: string): boolean {
+    return !!this.sprites[naam];
   }
 
   // Even schudden (bv. als er iets zwaars neerploft).

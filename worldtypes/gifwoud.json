@@ -1,0 +1,14 @@
+{
+  "id": "gifwoud",
+  "name": "POISON WOODS",
+  "tileset": "gifwoud",
+  "economy": "gifwoud",
+  "ground": ["#1f3a14", "#24431a", "#1a3311", "#2a4b1d", "#203d16"],
+  "spot": "#9dff2e",
+  "spotGlows": true,
+  "spotChance": 0.06,
+  "edge": ["#142410", "#0e1a0b"],
+  "water": ["#3f7a12", "#4a8a16", "#366b10"],
+  "waterGlows": true,
+  "hills": { "scale": 12, "height": 4, "base": 1, "cliffScale": 15, "cliffThreshold": 0.3, "cliffHeight": 2 }
+}

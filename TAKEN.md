@@ -14,7 +14,7 @@ Pak je een taak op: zet eerst je naam erachter in je PR. Klaar: `- [x] … (#PR)
 - [ ] K9 Terrein stap 3: tekenscript voor tegelsets per dimensie, met eigen water en dimensie Aarde (Lieuwe, alle zes staan erin)
 - [ ] K10 Kaartgroottes: 256x64, 128x128 enzovoort, ook niet-vierkant (Lieuwe; werkt, nog geen wereld gebruikt het)
 
-## Muizen (Thije)
+## Pack rats (voorheen muizen; Thije)
 - [x] M0 Speelbare basis: startmenu met factiekeuze, kaart met grondstoffen, opslag en machine, 300 muizen
   in massa selecteren en laten graven (Thije)
 - [x] M0 Visuele proto: muizen, mech, fabriek, machines en kabels als sprites, scène op `?proto=muizen`
@@ -22,9 +22,18 @@ Pak je een taak op: zet eerst je naam erachter in je PR. Klaar: `- [x] … (#PR)
 - [ ] M1b Economische lus: boor gooien, lompe band, fabricator (te bouwen, recepten), onderdelen, bouwmenu, palen met kabels, stapel per grondstof, muizen werken zelf, energie als keuze, Engels in beeld (Thije)
 - [ ] M2 4 eenheden, loot-tabel, inbouwen/ontleden
 
-## Otters (Lieuwe)
-- [ ] O1 Otters op papier: 4 eenheden, 3 gebouwen, eigen trucje
-- [ ] O2 Otters in de kern, simpele otter-AI
+## Economie (Lieuwe)
+De otters zijn vervallen (O1, O2): er is één soort, de pack rats, en elke wereld heeft een eigen economie.
+- [ ] E1 Eén soort: factiekeuze weg, `src/muizen` → `src/ratten`, grotere rattensprite (Lieuwe, branch `lieuwe/economy`)
+- [ ] E2 Wereldtypes en economieën als JSON (`worldtypes/`, `economies/`), lader met controle (Lieuwe, zelfde branch)
+- [ ] E3 Generieke gebouwen uit de economie: productie, winning, magazijn, splitter, merger, band, paal; opslag in volume (Lieuwe, zelfde branch)
+- [ ] E4 Economie per wereld bij de sprong, startkapitaal per economie (Lieuwe, zelfde branch)
+- [ ] E5 Zes economieën, één per wereldtype: elke wereld een eigen weg naar platen en balken (Lieuwe, zelfde branch)
+- [ ] E6 Stroom uit de economie: generatoren als gebouwen (koolstof- en biomassabrander), oude bronnen en upgrades weg (Lieuwe, zelfde branch)
+- [ ] E7 Knutselwerkplaats, research packs en tiers: vrijkopen per gebouw en recept, packs verdampen bij de sprong (Lieuwe, zelfde branch)
+- [ ] E8 Per economie een tier 2-gebouw voor geavanceerde fabricage dat pantserplaat maakt (Lieuwe, zelfde branch)
+- [ ] E9 Grijper: een arm die van de ene band pakt en op de andere legt, tier 2 (Lieuwe, zelfde branch)
+- [ ] E10 Balans van de zes economieën en de onderzoeksprijzen; langere ketens per wereld met complexe producten op hogere tiers
 
 ## Planning
 - Week 1 (t/m 8 nov): repo, uitrol, iso-veld met eiland, één dimensie, streamtimer
@@ -34,6 +43,15 @@ Pak je een taak op: zet eerst je naam erachter in je PR. Klaar: `- [x] … (#PR)
 - 30 nov–1 dec: buffer, alleen inleveren (deadline 1 dec 22:37)
 
 ## Later-lijst (niet bouwen tenzij alles af is)
-- Splitsers, bruggen en sorteerders voor banden
+- Bruggen en sorteerders voor banden
+- De grijper ook uit en in gebouwen en magazijnen laten pakken; een filter per grijper
+- Gebouwen die pantser maken uit pantserplaat (tier 3); een eigen plaatje van de pantserplaat per wereld
+- Plaatjes voor koolstof en biomassa, en eigen plaatjes voor de twee branders (nu de oude houtbrander en dynamo)
+- Een generator die stilvalt als er geen vraag is (nu stookt hij altijd door)
+- De grondstoffen die de generator rolt (`aanbod`: metaal, hout, water, steen) koppelen aan `onMap` in de economie
+- Plaatjes: elk goed heeft een hoopje, een brokje en (als het op de kaart ligt) een veld in `assets/goederen/` (PixelLab,
+  30 generaties). De nieuwe gebouwen staan in `assets/gebouwen/` (40 generaties).
+  Nog te maken: de rat met een lading op de rug voor elk goed;
+- Voorrang en een filter per magazijn (de stapel per goed met prioriteit is vervallen)
 - Boten of veerponten over water
 - Online tweespeler, meer dan twee facties, opslaan midden in een run, verhaal

@@ -1,5 +1,5 @@
 // Tekenscript voor de muizen-sprites. Draai: node scripts/pixel/muizen.mjs
-// Schrijft PNG's naar assets/muizen/ (plus <naam>-gloed.png voor neon) en de ankers naar src/muizen/sprites.ts.
+// Schrijft PNG's naar assets/muizen/ (plus <naam>-gloed.png voor neon) en de ankers naar src/ratten/sprites.ts.
 // Stijl: grauwe, duistere industrie. Muizen klein en pluizig (en vuil); hun machines gigantisch, hoekig en semi-3D.
 // Bruin, staal en legergroen, roest, olie, veel te veel kabels. Neon is het enige felle, en dat gloeit echt.
 import { Doek, ruis } from './pixel.mjs';
@@ -109,32 +109,53 @@ const MUIS_KAART = [
   '.mLLmt',
   '..p.p.',
 ];
+// PACK RAT: de rat die over het eiland loopt. Hij loopt rechtop op twee poten, als een klein mannetje: kop met een lange
+// spitse snuit en een roze neus, rond oor, neonbril (gloeit groen), een arm naar voren en een kale staart achter zich.
+// Groter en grauwer dan de muisjes in de voertuigen. Kijkt naar rechts. De sprites heten nog 'muis' (zo kent de code hem).
+const RAT_KAART = [
+  '....oo......',
+  '...opo......',
+  '...LLLL.....',
+  '..LLLgLLL...',
+  '..LLLLLLLLn.',
+  '..LLLLhhh...',
+  '...LLLh.....',
+  '..dLLhhL....',
+  '..dLLhhLL...',
+  '..dLLhh.....',
+  '.tdLLLh.....',
+  't..LLLL.....',
+  't..m..m.....',
+  '.t.m..m.....',
+  '..tmm.mm....',
+];
 function tekenMuis(naam, variant) {
-  const d = new Doek(11, 10);
+  const d = new Doek(16, 17);
   const v = T.vacht;
-  const kleur = { o: v[3], L: v[4], h: v[5], m: v[3], n: K.neus, t: K.neus, p: K.oorBinnen ?? K.neus, g: v[4] };
-  const ox = 1, oy = 1;
-  MUIS_KAART.forEach((regel, y) => [...regel].forEach((c, x) => { if (c !== '.') d.zet(ox + x, oy + y, kleur[c]); }));
+  const kleur = { o: v[2], L: v[2], d: v[1], h: v[4], m: v[1], n: K.neus, t: K.neus, p: K.oorBinnen, g: v[3] };
+  const ox = 2, oy = 1;
+  RAT_KAART.forEach((regel, y) => {
+    if (regel.length !== 12) throw new Error('RAT_KAART: regel ' + y + ' is niet 12 breed');
+    [...regel].forEach((c, x) => { if (c !== '.') d.zet(ox + x, oy + y, kleur[c]); });
+  });
   if (variant === 'monteur') {
-    // te grote moersleutel
-    d.lijn(ox + 5, oy + 6, ox + 8, oy + 3, T.staal[6]);
-    d.zet(ox + 9, oy + 2, T.staal[5]); d.zet(ox + 8, oy + 2, T.staal[5]);
+    // te grote moersleutel in de hand
+    d.lijn(ox + 8, oy + 8, ox + 10, oy + 6, T.staal[6]);
+    d.zet(ox + 10, oy + 5, T.staal[5]); d.zet(ox + 11, oy + 6, T.staal[5]);
   }
-  // met lading: een bundeltje op de rug (links, want de muis kijkt naar rechts)
+  // met lading: een bundel op de rug
   const lading = {
     schroot: [T.staal[5], T.staal[3], T.roest[4], T.staal[6]],
     hout: [T.bruin[6], T.bruin[4], T.bruin[3], T.bruin[7]],
     kristal: [T.glas[4], T.glas[3], T.glas[5], T.glas[5]],
   }[variant];
   if (lading) {
-    for (let j = 0; j < 3; j++) for (let i = 0; i < 2; i++) d.zet(ox - 1 + i, oy + 3 + j, lading[(i + j) % 3]);
-    d.zet(ox, oy + 2, lading[3]);
-    if (variant === 'kristal') d.licht(ox - 1, oy + 3, N.magenta);
+    for (let j = 0; j < 4; j++) for (let i = 0; i < 3; i++) d.zet(ox - 1 + i, oy + 5 + j, lading[(i + j) % 3]);
+    d.zet(ox, oy + 4, lading[3]); d.zet(ox + 1, oy + 4, lading[3]);
+    if (variant === 'kristal') d.licht(ox - 1, oy + 5, N.magenta);
   }
-  // geen buitenlijn: net als de piloten, simpel en zacht
-  d.licht(ox + 2, oy + 2, N.gif);
-  d.licht(ox + 4, oy + 2, N.gif);
-  bewaar(naam, d, ox + 3, oy + 7, 0);
+  d.licht(ox + 5, oy + 3, N.gif);
+  bewaar(naam, d, ox + 4, oy + 14, 0);
 }
 
 
@@ -542,6 +563,85 @@ function tekenBandLeeg() {
   bewaar('band-leeg', d, ax, ay, 1);
 }
 
+// HOEKSTUK van de loopband (1 tegel): de band gaat de bocht om, van de ene rand van de tegel naar een rand ernaast.
+// Zelfde bouw als de rechte band: een stalen bak met rubberen lamellen. Twee stukken in een L: `lang` loopt van een
+// rand tot voorbij het midden, `kort` van de andere rand tot tegen het lange stuk. Elk stuk is [kol, rij, u, v] in
+// stappen (een tegel is 8 x 8 stappen, de band is 4 breed) en 'kol' of 'rij': de kant waarlangs het loopt.
+// Drie stukken volstaan: boven (west en noord), onder (oost en zuid) en rechts (oost en noord); links is rechts gespiegeld.
+function tekenBandHoek(naam, zaad, stukken) {
+  const d = new Doek(40, 30);
+  const r = ruis(zaad);
+  const ax = 22, ay = 13;
+  const g = isoPunt(ax, ay);
+  // van achter naar voor, zodat het voorste stuk over het achterste valt
+  const volgorde = [...stukken].sort((a, b) => a[0] + a[1] - (b[0] + b[1]));
+  for (const [k, rij, u, v] of volgorde) d.blokS(...g(k, rij, 0), u, v, 4, T.staal, { r });
+  for (const [k, rij, u, v, langs] of volgorde) {
+    // lamellen dwars op de looprichting
+    if (langs === 'kol') for (let s = 0; s < u; s++) streep(d, g(k + s, rij, 4), v, 'rij', (k + s) % 2 ? T.rubber[1] : T.rubber[4]);
+    else for (let s = 0; s < v; s++) streep(d, g(k, rij + s, 4), u, 'kol', (rij + s) % 2 ? T.rubber[1] : T.rubber[4]);
+  }
+  d.omlijn(K.lijn);
+  d.vuil(0.08, K.olie, 0.45, r);
+  const [nx, ny] = g(4, 4, 6);
+  d.neon(nx, ny, N.gif, 1);
+  bewaar(naam, d, ax, ay, 1);
+}
+
+// GRIJPER (1 tegel): een voet met een draaikrans, en een arm die het spel er los op zet. De arm is getekend in zestien
+// standen rond (elke 22,5 graden, 0 = naar het oosten, met de klok mee over zuid), in het vlak van de tegels, zodat
+// hij in het isometrische beeld echt ronddraait. De hand reikt tot het midden van de tegel ernaast.
+const GRIJPER_STANDEN = 16;
+function tekenGrijperVoet(d, g, r) {
+  d.blokS(...g(1.5, 1.5, 0), 5, 5, 2, T.staal, { r });
+  d.blokS(...g(2.5, 2.5, 2), 3, 3, 5, T.olijf, { r });
+  d.blokS(...g(3, 3, 7), 2, 2, 2, T.chroom, { r });
+}
+function tekenGrijperArm(d, g, r, stand) {
+  const a = (stand / GRIJPER_STANDEN) * Math.PI * 2;
+  const punt = (af, z) => g(4 + Math.cos(a) * af, 4 + Math.sin(a) * af, z);
+  // de giek: van de draaikrans schuin omhoog naar de elleboog en dan omlaag naar de hand
+  const [x0, y0] = punt(0, 11), [x1, y1] = punt(4, 15), [x2, y2] = punt(7.5, 9);
+  for (const dy of [0, 1]) {
+    d.lijn(x0, y0 + dy, x1, y1 + dy, dy ? T.roest[4] : T.roest[6]);
+    d.lijn(x1, y1 + dy, x2, y2 + dy, dy ? T.staal[4] : T.staal[7]);
+  }
+  d.blokS(...punt(-0.7, 9), 1.4, 1.4, 3, T.chroom, { r }); // schouder
+  const [ex, ey] = punt(4, 15);
+  d.zet(ex, ey, T.messing[6]); d.zet(ex, ey + 1, T.messing[4]); // elleboog
+  // de klauw: twee vingers die omlaag wijzen
+  const [hx, hy] = punt(7.5, 8);
+  for (const dx of [-2, 2]) { d.zet(hx + dx, hy, T.staal[6]); d.zet(hx + dx, hy + 1, T.staal[5]); d.zet(hx + dx, hy + 2, T.staal[3]); }
+  d.zet(hx - 1, hy - 1, T.staal[6]); d.zet(hx, hy - 1, T.staal[7]); d.zet(hx + 1, hy - 1, T.staal[6]);
+}
+function tekenGrijper() {
+  const maak = () => ({ d: new Doek(64, 48), r: ruis(61) });
+  const ax = 32, ay = 22;
+  const g = isoPunt(ax, ay);
+  { // de voet
+    const { d, r } = maak();
+    tekenGrijperVoet(d, g, r);
+    d.omlijn(K.lijn);
+    d.vuil(0.06, K.olie, 0.4, r);
+    d.neon(...g(4, 5.5, 5), N.natrium, 1);
+    bewaar('grijper-voet', d, ax, ay, 1);
+  }
+  for (let st = 0; st < GRIJPER_STANDEN; st++) { // de arm, los
+    const { d, r } = maak();
+    tekenGrijperArm(d, g, r, st);
+    d.omlijn(K.lijn);
+    bewaar(`grijper-arm-${st}`, d, ax, ay, 1);
+  }
+  { // voor het bouwmenu en het spook: voet met de arm naar voren
+    const { d, r } = maak();
+    tekenGrijperVoet(d, g, r);
+    tekenGrijperArm(d, g, r, 1);
+    d.omlijn(K.lijn);
+    d.neon(...g(4, 5.5, 5), N.natrium, 1);
+    bewaar('grijper', d, ax, ay, 1);
+  }
+}
+
 // LADING op de band: een brok schroot, een stuk hout of een kristal. Anker = midden onderaan.
 function tekenLading(goed) {
   const d = new Doek(18, 16);
@@ -554,6 +654,14 @@ function tekenLading(goed) {
     d.blokS(...g(-2.5, -1, 0), 5, 1, 2, T.bruin, { r });
     d.blokS(...g(-2, 0.2, 0), 5, 1, 2, T.bruin, { r });
     d.blokS(...g(-2.2, -0.4, 2), 5, 1, 2, T.bruin, { r });
+  } else if (goed === 'pantserplaat') {
+    // gehard: één dikke donkere plaat met klinknagels
+    d.blokS(...g(-2.5, -2, 0), 5, 4, 2.4, T.chroom, { r });
+    d.blokS(...g(-2.5, -2, 2.4), 5, 4, 0.6, T.staal, { r });
+  } else if (goed === 'onderzoek') {
+    // research pack: een messing kistje met een gloeiend buisje erop
+    d.blokS(...g(-2, -1.5, 0), 4, 3, 3, T.messing, { r });
+    d.blokS(...g(-0.5, -0.5, 3), 1, 1, 4, T.glas, { r });
   } else if (goed === 'plaat') {
     // onderdeel: twee geslepen stalen platen
     d.blokS(...g(-2.5, -2, 0), 5, 4, 1, T.staal, { r });
@@ -568,6 +676,7 @@ function tekenLading(goed) {
   }
   d.omlijn(K.lijn);
   if (goed === 'kristal') for (const [x, y] of [[9, 1], [9, 2], [9, 3], [8, 5]]) d.licht(x, y, N.cyaan);
+  if (goed === 'onderzoek') for (const dz of [4, 5, 6]) d.licht(...g(0, 0.5, dz), N.cyaan);
   bewaar(`last-${goed}`, d, 9, 13, 0);
 }
 
@@ -585,6 +694,15 @@ function tekenHoop(goed) {
   } else if (goed === 'hout') {
     for (let z = 0; z < 4; z++)
       for (let j = 0; j < 4 - z; j++) d.blokS(...g(-3 + z * 0.4, -2 + j * 1.2 + z * 0.6, z * 1.6), 6 - z * 0.5, 1, 1.6, T.bruin, { r });
+  } else if (goed === 'pantserplaat') {
+    for (let z = 0; z < 4; z++) {
+      d.blokS(...g(-3 + (z % 2) * 0.4, -2.5 + (z % 2) * 0.3, z * 2.6), 6, 5, 2, T.chroom, { r });
+      d.blokS(...g(-3 + (z % 2) * 0.4, -2.5 + (z % 2) * 0.3, z * 2.6 + 2), 6, 5, 0.6, T.staal, { r });
+    }
+  } else if (goed === 'onderzoek') {
+    // een stapeltje kistjes, elk met een buisje
+    for (const [k, rr, z] of [[-3, -2, 0], [0.5, -2.5, 0], [-2.5, 0.8, 0], [0.8, 0.5, 0], [-1.2, -1, 3]]) d.blokS(...g(k, rr, z), 3, 2.4, 3, T.messing, { r });
+    for (const [k, rr, z] of [[-1.8, -1, 3], [1.6, -1.6, 3], [-1.4, 1.6, 3], [0, 0, 6]]) d.blokS(...g(k, rr, z), 0.8, 0.8, 3, T.glas, { r });
   } else if (goed === 'plaat') {
     for (let z = 0; z < 6; z++) d.blokS(...g(-3 + (z % 2) * 0.3, -2.5 + (z % 3) * 0.2, z * 1.1), 6, 5, 1, T.staal, { r });
   } else if (goed === 'balk') {
@@ -600,6 +718,7 @@ function tekenHoop(goed) {
   d.omlijn(K.lijn);
   d.vuil(0.05, K.olie, 0.4, r);
   if (goed === 'kristal') for (const [x, y] of [[13, 3], [13, 4], [15, 7], [12, 7], [14, 9]]) d.licht(x, y, N.cyaan);
+  if (goed === 'onderzoek') for (const [k, rr, z] of [[-1.4, -0.6, 5], [2, -1.2, 5], [-1, 2, 5], [0.4, 0.4, 8]]) d.licht(...g(k, rr, z), N.cyaan);
   bewaar(`hoop-${goed}`, d, 14, 19, 0);
 }
 
@@ -871,7 +990,11 @@ tekenKabels();
 tekenMachine();
 tekenOpslag();
 tekenBandLeeg();
-for (const g of ['schroot', 'hout', 'kristal', 'plaat', 'balk']) {
+tekenGrijper();
+tekenBandHoek('band-hoek-boven', 53, [[0, 2, 6, 4, 'kol'], [2, 0, 4, 2, 'rij']]); // west en noord
+tekenBandHoek('band-hoek-onder', 54, [[2, 2, 6, 4, 'kol'], [2, 6, 4, 2, 'rij']]); // oost en zuid
+tekenBandHoek('band-hoek-rechts', 55, [[2, 2, 6, 4, 'kol'], [2, 0, 4, 2, 'rij']]); // oost en noord
+for (const g of ['schroot', 'hout', 'kristal', 'plaat', 'balk', 'onderzoek', 'pantserplaat']) {
   tekenLading(g);
   tekenHoop(g);
 }
@@ -885,7 +1008,7 @@ const regels = Object.entries(ankers).map(
     `  '${n}': { w: ${a.w}, h: ${a.h}, ankerX: ${a.ankerX}, ankerY: ${a.ankerY}, tegels: ${a.tegels}, gloed: ${a.gloed} },`,
 );
 writeFileSync(
-  join(wortel, 'src', 'muizen', 'sprites.ts'),
+  join(wortel, 'src', 'ratten', 'sprites.ts'),
   `// Gegenereerd door scripts/pixel/muizen.mjs. Niet met de hand aanpassen.\n` +
     `// anker = pixel in de sprite die op de achterhoek van de tegel valt (voor muizen: de voeten).\n` +
     `// gloed = er is een <naam>-gloed.png met alleen de neonpixels, voor de gloedlaag.\n` +

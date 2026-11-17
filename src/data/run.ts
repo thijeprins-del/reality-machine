@@ -18,14 +18,8 @@ export interface AanvalStijl {
   schade: number; // maal OVERVAL_SCHADE
   stilTot?: number; // geen overvallen onder dit Wrath
   vast?: number; // altijd zoveel overvallers per overval, ongeacht het stadium
-  sprites?: string[];
 }
-export const AANVAL: Partial<Record<Archetype, AanvalStijl>> = {
-  // Een zwerm: veel kleine, snelle beestjes die samen knagen.
-  insecten: { elke: 0.7, aantal: 2.5, hp: 0.35, snelheid: 1.6, schade: 0.5 },
-  // Een reus merkt je pas bij hoge Wrath; dan komt er één die alles plet.
-  reuzen: { elke: 1.3, aantal: 1, hp: 12, snelheid: 0.4, schade: 8, stilTot: 55, vast: 1, sprites: ['reus'] },
-};
+// De aanvalsstijl per type staat bij de vijand in worldtypes/archetypes/<type>.json ("enemy.attack").
 
 // Winnen of verliezen
 export interface Uitkomst {
