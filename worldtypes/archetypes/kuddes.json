@@ -1,0 +1,31 @@
+{
+  "id": "kuddes",
+  "name": "HORDES",
+  "family": "wildernis",
+  "map": [160, 160],
+  "resources": {
+    "unique": [
+      { "id": "huid", "name": "Hide" },
+      { "id": "hoorn", "name": "Horn" },
+      { "id": "mest", "name": "Dung" }
+    ],
+    "sharedChance": { "metaal": 0.15, "hout": 0.5, "water": 0.9, "steen": 0.6 }
+  },
+  "loot": [
+    { "item": "mestbrander", "weight": 3, "requires": "mest" },
+    { "item": "hoorn-sirene", "weight": 2, "requires": "hoorn" },
+    { "item": "huid-dak", "weight": 1, "requires": "huid" }
+  ],
+  "nameStyle": "trek",
+  "nameForm": "Herd of {n}",
+  "sees": "Herds, migration trails, watering holes",
+  "fights": "Stampedes along trails that flatten anything in the way",
+  "enemy": {
+    "raiders": ["bizon", "antilope", "antilope"],
+    "sprites": [
+      { "id": "bizon", "folder": "kuddes", "width": 36, "height": 34, "anchorX": 18, "anchorY": 28 },
+      { "id": "antilope", "folder": "kuddes", "width": 26, "height": 19, "anchorX": 13, "anchorY": 16 }
+    ],
+    "attack": { "every": 1.6, "count": 3.0, "hp": 0.9, "speed": 1.9, "damage": 0.6 }
+  }
+}

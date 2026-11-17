@@ -1,0 +1,30 @@
+{
+  "id": "monsters",
+  "name": "MONSTERS",
+  "family": "wildernis",
+  "map": [160, 160],
+  "resources": {
+    "unique": [
+      { "id": "monsterbot", "name": "Monster bone" },
+      { "id": "gif", "name": "Venom" }
+    ],
+    "sharedChance": { "metaal": 0.3, "hout": 0.7, "water": 0.6, "steen": 0.8 }
+  },
+  "loot": [
+    { "item": "gifkoeling", "weight": 3, "requires": "gif" },
+    { "item": "botten-frame", "weight": 2, "requires": "monsterbot" },
+    { "item": "klauwenval", "weight": 1 }
+  ],
+  "nameStyle": "hol",
+  "nameForm": "Lair of {n}",
+  "sees": "Lairs, bone piles, claw marks",
+  "fights": "Few large predators that hunt drills",
+  "enemy": {
+    "raiders": ["klauwbeest", "slijmkruiper"],
+    "sprites": [
+      { "id": "klauwbeest", "folder": "monsters", "width": 44, "height": 32, "anchorX": 22, "anchorY": 28 },
+      { "id": "slijmkruiper", "folder": "monsters", "width": 26, "height": 16, "anchorX": 13, "anchorY": 13 }
+    ],
+    "attack": { "every": 1.5, "count": 0.6, "hp": 4.0, "speed": 1.3, "damage": 2.5 }
+  }
+}

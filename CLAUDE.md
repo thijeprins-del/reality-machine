@@ -13,6 +13,8 @@ Code-namen mogen Engels of Nederlands, maar per map consequent.
 - Eén soort: de pack rats (hamsterende ratten, cyberpunk/dieselpunk). De tegenstander is het land zelf.
 - Elke wereld heeft een wereldtype (`worldtypes/*.json`: tegelset, kleuren, economie) en een economie
   (`economies/*.json`: grondstoffen, recepten, gebouwen, startkapitaal). Schaven doe je in die bestanden.
+- Elk soort dimensie (Stone age, Bugs, Giants, ...) is een archetype: `worldtypes/archetypes/<id>.json` met naam, familie, kaartmaat,
+  grondstoffen (unique, sharedChance, optioneel aliases), loot en de vijand (`enemy`: raiders, sprites, attack). Nieuw bestand ook in `worldtypes/archetypes/index.ts`.
 
 ## Mappen en eigenaars (vermijdt conflicten)
 | map | eigenaar | inhoud |

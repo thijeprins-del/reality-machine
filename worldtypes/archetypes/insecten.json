@@ -1,0 +1,31 @@
+{
+  "id": "insecten",
+  "name": "BUGS",
+  "family": "wildernis",
+  "map": [160, 160],
+  "resources": {
+    "unique": [
+      { "id": "chitine", "name": "Chitin" },
+      { "id": "honing", "name": "Honey" },
+      { "id": "hars", "name": "Resin" }
+    ],
+    "sharedChance": { "metaal": 0.2, "hout": 0.85, "water": 0.7, "steen": 0.6 }
+  },
+  "loot": [
+    { "item": "chitine-pantser", "weight": 3, "requires": "chitine" },
+    { "item": "honing-brandstof", "weight": 2, "requires": "honing" },
+    { "item": "harslijm-band", "weight": 1, "requires": "hars" }
+  ],
+  "nameStyle": "nest",
+  "nameForm": "Hive of {n}",
+  "sees": "Hives, egg fields, chewed tunnels",
+  "fights": "Swarms of small bugs that chew belts and cables",
+  "enemy": {
+    "raiders": ["kever", "mier"],
+    "sprites": [
+      { "id": "kever", "folder": "insecten", "width": 30, "height": 20, "anchorX": 15, "anchorY": 17 },
+      { "id": "mier", "folder": "insecten", "width": 26, "height": 16, "anchorX": 13, "anchorY": 14 }
+    ],
+    "attack": { "every": 0.7, "count": 2.5, "hp": 0.35, "speed": 1.6, "damage": 0.5 }
+  }
+}

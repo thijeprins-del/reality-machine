@@ -1,33 +1,17 @@
 // De plaatjes van de overvallers voor de kern. Alleen de bewoners die hier al een sprite hebben; de rest leent de stam.
 import type { SpriteInfo } from '../kern/types';
+import { ARCHETYPES, type VijandSprite } from './archetypes';
 
-const bestanden = import.meta.glob('../../assets/land/{steentijd,insecten,reuzen,oudheid,middeleeuwen,industrieel,modern,monsters,kuddes}/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
+const bestanden = import.meta.glob('../../assets/land/*/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 const url = (map: string, naam: string) => Object.entries(bestanden).find(([k]) => k.endsWith(`/${map}/${naam}.png`))?.[1];
 
-// anker = de voeten
-const LIJST: Record<string, { map: string; w: number; h: number; ankerX: number; ankerY: number }> = {
-  speerwerper: { map: 'steentijd', w: 16, h: 24, ankerX: 8, ankerY: 23 },
-  knotsdrager: { map: 'steentijd', w: 16, h: 24, ankerX: 8, ankerY: 23 },
-  kever: { map: 'insecten', w: 30, h: 20, ankerX: 15, ankerY: 17 },
-  reus: { map: 'reuzen', w: 128, h: 128, ankerX: 64, ankerY: 118 },
-  legionair: { map: 'oudheid', w: 22, h: 28, ankerX: 11, ankerY: 27 },
-  wagenmenner: { map: 'oudheid', w: 21, h: 24, ankerX: 10, ankerY: 23 },
-  ridder: { map: 'middeleeuwen', w: 15, h: 24, ankerX: 7, ankerY: 23 },
-  boogschutter: { map: 'middeleeuwen', w: 17, h: 24, ankerX: 8, ankerY: 23 },
-  stoomsoldaat: { map: 'industrieel', w: 19, h: 25, ankerX: 9, ankerY: 24 },
-  stoommachine: { map: 'industrieel', w: 17, h: 24, ankerX: 8, ankerY: 23 },
-  agent: { map: 'modern', w: 14, h: 30, ankerX: 7, ankerY: 29 },
-  tank: { map: 'modern', w: 42, h: 33, ankerX: 21, ankerY: 27 },
-  klauwbeest: { map: 'monsters', w: 44, h: 32, ankerX: 22, ankerY: 28 },
-  slijmkruiper: { map: 'monsters', w: 26, h: 16, ankerX: 13, ankerY: 13 },
-  bizon: { map: 'kuddes', w: 36, h: 34, ankerX: 18, ankerY: 28 },
-  antilope: { map: 'kuddes', w: 26, h: 19, ankerX: 13, ankerY: 16 },
-  mier: { map: 'insecten', w: 26, h: 16, ankerX: 13, ankerY: 14 },
-};
+// De plaatjes en hun maat staan bij de vijand van elk type (worldtypes/archetypes/*.json, "enemy.sprites"). anker = de voeten.
+const LIJST = new Map<string, VijandSprite>();
+for (const a of Object.values(ARCHETYPES)) for (const sp of a.vijand?.sprites ?? []) LIJST.set(sp.id, sp);
 
 export function landSprites(): Record<string, SpriteInfo> {
   const uit: Record<string, SpriteInfo> = {};
-  for (const [naam, m] of Object.entries(LIJST)) {
+  for (const [naam, m] of LIJST) {
     const u = url(m.map, naam);
     if (!u) continue;
     const gloed = url(m.map, `${naam}-gloed`);

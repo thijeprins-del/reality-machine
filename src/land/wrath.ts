@@ -4,7 +4,6 @@ import {
   VERDEDIG_STRAAL, WRATH_KALMEER_PER_SEC, WRATH_MAX, WRATH_PER_GOED, WRATH_PER_OVERVALLER_WEG, WRATH_RUST_NA, WRATH_STADIA, WRATH_VLOER,
   type WrathStadium,
 } from '../data/wrath';
-import { AANVAL } from '../data/run';
 import { vrijOp } from '../kern/routes';
 import type { SpelStaat } from '../kern/spel';
 import { volgende } from '../kern/toeval';
@@ -61,23 +60,15 @@ export function geefWrath(s: SpelStaat, n: number): void {
   l.vloer = Math.min(l.vloer, l.wrath);
 }
 
-// Welke sprite hoort bij de bewoners van dit type (nu: stam en insecten, de rest leent de stam).
-const BEWONERS: Partial<Record<GerolDimensie['archetype'], string[]>> = {
-  insecten: ['kever', 'mier'],
-  oudheid: ['legionair', 'legionair', 'wagenmenner'],
-  middeleeuwen: ['ridder', 'boogschutter'],
-  industrieel: ['stoomsoldaat', 'stoommachine'],
-  modern: ['agent', 'agent', 'tank'],
-  monsters: ['klauwbeest', 'slijmkruiper'],
-  kuddes: ['bizon', 'antilope', 'antilope'],
-};
-export const overvallerSprites = (a: GerolDimensie['archetype']): string[] => BEWONERS[a] ?? ['speerwerper', 'knotsdrager'];
+// Welke sprites horen bij de bewoners van dit type (worldtypes/archetypes/*.json, "enemy"); wie er geen heeft leent de stam.
+export const overvallerSprites = (a: GerolDimensie['archetype']): string[] => (ARCHETYPES[a].vijand ?? ARCHETYPES.steentijd.vijand!).overvallers;
+const aanvalVan = (a: GerolDimensie['archetype']) => ARCHETYPES[a].vijand?.aanval;
 
 // Een overval: `aantal` overvallers uit een hoek van de kaart, op lopend land, een eind buiten de ring.
 export function overval(s: SpelStaat, aantal: number): void {
-  const l = s.land, k = s.kaart, stijl = AANVAL[l.dim.archetype];
+  const l = s.land, k = s.kaart, stijl = aanvalVan(l.dim.archetype);
   const hoek0 = volgende(s) * Math.PI * 2;
-  const sprites = stijl?.sprites ?? overvallerSprites(l.dim.archetype);
+  const sprites = overvallerSprites(l.dim.archetype);
   for (let i = 0; i < aantal; i++) {
     let x = k.ring.x, y = k.ring.y;
     for (let poging = 0; poging < 40; poging++) {
@@ -106,7 +97,7 @@ export function stapLand(s: SpelStaat, sec: number): void {
   if (l.rust > WRATH_RUST_NA) l.wrath = Math.max(l.vloer, l.wrath - WRATH_KALMEER_PER_SEC * sec);
 
   // overvallen volgens het stadium
-  const stijl = AANVAL[l.dim.archetype];
+  const stijl = aanvalVan(l.dim.archetype);
   const raid = l.wrath >= (stijl?.stilTot ?? 0) ? stadium(l.wrath).raid : null;
   if (raid) {
     l.raidIn -= sec;
