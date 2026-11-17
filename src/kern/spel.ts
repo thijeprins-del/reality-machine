@@ -111,6 +111,16 @@ export function stap(s: SpelStaat, f: Soort, sec: number): void {
   }
 }
 
+// Vroeg springen: de stream komt nu in plaats van aan het eind van de klok. Dezelfde regels als de gewone stream:
+// is de machine niet klaar, dan is de run voorbij. Tijdens de sprong zelf of na het eind doet het niets.
+export const kanVroegSpringen = (s: SpelStaat): boolean => !s.uitkomst && s.onderweg <= 0;
+export const machineKlaar = (s: SpelStaat): boolean => klaarVoorStream(s);
+export function vroegStream(s: SpelStaat): boolean {
+  if (!kanVroegSpringen(s)) return false;
+  s.tijd = DIMENSIE_DUUR_SEC; // de volgende stap handelt de stream af, met dezelfde controle als altijd
+  return true;
+}
+
 // De stream: alles binnen de gele ring springt naar de volgende dimensie. Daar liggen nieuwe grondstoffen.
 export function stream(s: SpelStaat, f?: Soort): void {
   s.dimensie += 1;

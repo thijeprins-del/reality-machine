@@ -5,7 +5,7 @@ import { maakBesturing } from './kern/besturing';
 import { versieTekst } from './kern/omgeving';
 import { beeldKlaar, markeer, maakOverlay, rapport, zetExtra } from './kern/prestatie';
 import { maakBalk } from './kern/scherm';
-import { nieuwSpel, restTijd, seedUitAdres, startUitAdres, stap, stream, type SpelStaat } from './kern/spel';
+import { nieuwSpel, kanVroegSpringen, machineKlaar, restTijd, seedUitAdres, startUitAdres, stap, stream, vroegStream, type SpelStaat } from './kern/spel';
 import { FINALE, RUN_SHIFTS } from './data/run';
 import { WRATH_MAX, WRATH_STADIA } from './data/wrath';
 import { landSprites } from './land/beeld';
@@ -78,6 +78,16 @@ async function start(): Promise<void> {
   );
   let eind: HTMLElement | null = null;
   const balk = maakBalk();
+  // SHIFT: spring nu al. Is de machine niet klaar, dan eerst een tweede klik (anders ben je de run kwijt).
+  const shift = document.createElement('button');
+  shift.id = 'shiftknop';
+  document.body.append(shift);
+  let gewapend = 0;
+  shift.addEventListener('click', () => {
+    if (!machineKlaar(staat) && performance.now() > gewapend) { gewapend = performance.now() + 3000; return; }
+    gewapend = 0;
+    vroegStream(staat);
+  });
   const paneel = (await import('./ratten/paneel')).maakPaneel(() => staat, beeld);
 
   markeer('ui ready');
@@ -91,6 +101,14 @@ async function start(): Promise<void> {
     beeld.werk(sec, besturing.selectie);
     paneel.werk(sec);
     const rest = Math.ceil(restTijd(staat));
+    const kan = kanVroegSpringen(staat);
+    const klaar = machineKlaar(staat);
+    const wapen = performance.now() < gewapend && !klaar;
+    shift.disabled = !kan;
+    shift.className = klaar ? '' : 'nietklaar';
+    shift.textContent = wapen ? 'NOT READY: CLICK AGAIN TO LOSE' : staat.dimensie >= FINALE ? 'SHIFT (END RUN)' : 'SHIFT NOW';
+    shift.title = 'Jump to the next dimension now instead of waiting for the stream. Same rules: the machine needs full power and enough integrity.';
+    shift.style.left = `${document.getElementById('balk')!.offsetWidth + 8}px`;
     const bezig = staat.werkers.filter((w) => w.taak !== 'rust').length;
     balk.zet([
       staat.dimensie >= FINALE ? '<b style="color:#ff3030">FINALE</b> · hold out until the machine charges one last time' : `Run: shift ${staat.dimensie} of ${RUN_SHIFTS} + finale`,
