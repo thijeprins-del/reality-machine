@@ -18,5 +18,11 @@
   "nameStyle": "vlees",
   "nameForm": "{n}, the Living Ground",
   "sees": "Breathing ground, eyes in lakes, pulsing veins",
-  "fights": "Tentacles erupt where you dig deepest; the map is its body"
+  "fights": "Tentacles erupt where you dig deepest; the map is its body",
+  "residents": [
+    { "id": "tentakelbeest-otter-0", "folder": "tentakelbeest", "width": 128, "height": 128, "anchorX": 58, "anchorY": 96 },
+    { "id": "tentakelbeest-otter-1", "folder": "tentakelbeest", "width": 128, "height": 128, "anchorX": 62, "anchorY": 102 },
+    { "id": "tentakelbeest-otter-2", "folder": "tentakelbeest", "width": 128, "height": 128, "anchorX": 59, "anchorY": 95 },
+    { "id": "tentakelbeest-otter-3", "folder": "tentakelbeest", "width": 128, "height": 128, "anchorX": 58, "anchorY": 98 }
+  ]
 }

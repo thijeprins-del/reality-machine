@@ -23,7 +23,8 @@ Pak je een taak op: zet eerst je naam erachter in je PR. Klaar: `- [x] … (#PR)
 - [ ] M2 4 eenheden, loot-tabel, inbouwen/ontleden
 
 ## Economie (Lieuwe)
-De otters zijn vervallen (O1, O2): er is één soort, de pack rats, en elke wereld heeft een eigen economie.
+De otters zijn vervallen als speelbare factie (O1, O2): er is één soort, de pack rats, en elke wereld heeft een eigen economie.
+De otters blijven wel de bewoners van het land (Thije, 17 nov), zie DESIGN.md "De bewoners van het land".
 - [ ] E1 Eén soort: factiekeuze weg, `src/muizen` → `src/ratten`, grotere rattensprite (Lieuwe, branch `lieuwe/economy`)
 - [ ] E2 Wereldtypes en economieën als JSON (`worldtypes/`, `economies/`), lader met controle (Lieuwe, zelfde branch)
 - [ ] E3 Generieke gebouwen uit de economie: productie, winning, magazijn, splitter, merger, band, paal; opslag in volume (Lieuwe, zelfde branch)

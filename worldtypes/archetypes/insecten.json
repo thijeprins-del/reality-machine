@@ -27,5 +27,11 @@
       { "id": "mier", "folder": "insecten", "width": 26, "height": 16, "anchorX": 13, "anchorY": 14 }
     ],
     "attack": { "every": 0.7, "count": 2.5, "hp": 0.35, "speed": 1.6, "damage": 0.5 }
-  }
+  },
+  "residents": [
+    { "id": "insecten-otter-0", "folder": "insecten", "width": 96, "height": 96, "anchorX": 47, "anchorY": 82 },
+    { "id": "insecten-otter-1", "folder": "insecten", "width": 96, "height": 96, "anchorX": 52, "anchorY": 82 },
+    { "id": "insecten-otter-2", "folder": "insecten", "width": 96, "height": 96, "anchorX": 49, "anchorY": 84 },
+    { "id": "insecten-otter-3", "folder": "insecten", "width": 96, "height": 96, "anchorX": 51, "anchorY": 82 }
+  ]
 }

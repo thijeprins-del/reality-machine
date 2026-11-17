@@ -27,5 +27,11 @@
       { "id": "antilope", "folder": "kuddes", "width": 26, "height": 19, "anchorX": 13, "anchorY": 16 }
     ],
     "attack": { "every": 1.6, "count": 3.0, "hp": 0.9, "speed": 1.9, "damage": 0.6 }
-  }
+  },
+  "residents": [
+    { "id": "kuddes-otter-0", "folder": "kuddes", "width": 96, "height": 96, "anchorX": 49, "anchorY": 82 },
+    { "id": "kuddes-otter-1", "folder": "kuddes", "width": 96, "height": 96, "anchorX": 47, "anchorY": 84 },
+    { "id": "kuddes-otter-2", "folder": "kuddes", "width": 96, "height": 96, "anchorX": 49, "anchorY": 82 },
+    { "id": "kuddes-otter-3", "folder": "kuddes", "width": 96, "height": 96, "anchorX": 49, "anchorY": 82 }
+  ]
 }

@@ -27,5 +27,11 @@
       { "id": "stoommachine", "folder": "industrieel", "width": 17, "height": 24, "anchorX": 8, "anchorY": 23 }
     ],
     "attack": { "every": 1.2, "count": 0.8, "hp": 3.0, "speed": 0.7, "damage": 2.0 }
-  }
+  },
+  "residents": [
+    { "id": "industrieel-otter-0", "folder": "industrieel", "width": 96, "height": 96, "anchorX": 49, "anchorY": 84 },
+    { "id": "industrieel-otter-1", "folder": "industrieel", "width": 96, "height": 96, "anchorX": 49, "anchorY": 84 },
+    { "id": "industrieel-otter-2", "folder": "industrieel", "width": 96, "height": 96, "anchorX": 49, "anchorY": 84 },
+    { "id": "industrieel-otter-3", "folder": "industrieel", "width": 96, "height": 96, "anchorX": 49, "anchorY": 84 }
+  ]
 }

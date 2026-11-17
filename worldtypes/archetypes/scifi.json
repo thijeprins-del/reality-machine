@@ -18,5 +18,11 @@
   "nameStyle": "ster",
   "nameForm": "Dome {n}",
   "sees": "Domes, towers, drone pads",
-  "fights": "Drones that hunt power poles, EMP"
+  "fights": "Drones that hunt power poles, EMP",
+  "residents": [
+    { "id": "scifi-otter-0", "folder": "scifi", "width": 96, "height": 96, "anchorX": 48, "anchorY": 86 },
+    { "id": "scifi-otter-1", "folder": "scifi", "width": 96, "height": 96, "anchorX": 48, "anchorY": 86 },
+    { "id": "scifi-otter-2", "folder": "scifi", "width": 96, "height": 96, "anchorX": 49, "anchorY": 85 },
+    { "id": "scifi-otter-3", "folder": "scifi", "width": 96, "height": 96, "anchorX": 48, "anchorY": 85 }
+  ]
 }

@@ -65,6 +65,8 @@ Code-namen mogen Engels of Nederlands, maar per map consequent.
 - Isometrisch, sprites op één pixelmaat, geen ronde hoeken in de interface.
 - Sprites: PixelLab (API, sleutel in `PIXELLAB_API_KEY`, nooit in de repo) is toegestaan (Thije, 12 nov: gameplay boven kunstprijzen). Tekenscripts in `scripts/pixel` blijven mogen.
   Meld AI-sprites op de itch-pagina. Geen AI-geluid zonder Thijes woord. Meld de kosten (generaties) vóór je er meer dan 15 uitgeeft.
+- Bewoners van de werelden zijn otters in de stijl van `land/pro-otters-alle-types.png` (Thije, 17 nov): `assets/land/<type>/<type>-otter-0..3.png`.
+  Geen nieuwe bewonerssprites in een andere stijl; zie `scripts/land/README.md` en DESIGN.md "De bewoners van het land".
 - Nieuwe sprite = nieuw bestand in `assets/...`, niet in code tekenen. Geen emoji in beeld.
 - Performance: alleen tekenen wat rond de camera zichtbaar is; streef naar ≤ 16 ms per beeld.
 

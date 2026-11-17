@@ -25,5 +25,11 @@
       { "id": "reus", "folder": "reuzen", "width": 128, "height": 128, "anchorX": 64, "anchorY": 118 }
     ],
     "attack": { "every": 1.3, "count": 1.0, "hp": 12.0, "speed": 0.4, "damage": 8.0, "quietUntil": 55, "fixed": 1 }
-  }
+  },
+  "residents": [
+    { "id": "reuzen-otter-0", "folder": "reuzen", "width": 136, "height": 136, "anchorX": 69, "anchorY": 122 },
+    { "id": "reuzen-otter-1", "folder": "reuzen", "width": 136, "height": 136, "anchorX": 69, "anchorY": 125 },
+    { "id": "reuzen-otter-2", "folder": "reuzen", "width": 136, "height": 136, "anchorX": 68, "anchorY": 121 },
+    { "id": "reuzen-otter-3", "folder": "reuzen", "width": 136, "height": 136, "anchorX": 68, "anchorY": 121 }
+  ]
 }

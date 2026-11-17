@@ -68,6 +68,16 @@ Nog een skelet. Werk dit bij bij elke grote regelwijziging.
   water: bruin op Roestduin, gloeiend op Magmaveld, blauw op Aarde (de zesde dimensie).
 - Terreinbewerker (F2, testgereedschap): BLOK tilt tegels los van hun buren (wand), HEUVEL neemt de buren mee (helling).
 
+## De bewoners van het land: otters (Thije, 17 nov)
+De bewoners van elke wereld zijn **otters**, in de stijl van de otter-ontwerpen (`land/pro-otters-alle-types.png`). Het zijn niet de
+tegenstanders-factie van vroeger (er blijft één speelbare soort: de pack rats) maar de mensen van het land: elke wereld heeft haar
+eigen otter, aangekleed bij het type (legionair-otter, ridder-otter, stoom-otter, soldaat-otter, astronaut-otter, sjamaan-otter, ...).
+- Per type vier uitvoeringen: `assets/land/<type>/<type>-otter-0..3.png`, zodat een dorp niet uit klonen bestaat. Het type
+  `steentijd` is de jager-otter (in de ontwerpmap `dier`), `insecten` de bug-otter, `reuzen` de reus-otter (136 px).
+- In `worldtypes/archetypes/<type>.json` staan ze onder `residents` (id, map, maat, anker = de voeten). `beeld.ts` leest ze mee.
+- De overvallers (`enemy`) blijven apart: dat zijn de soldaten en beesten van de wereld. Bewoners en overvallers mogen later dezelfde
+  otters hergebruiken (wacht, krijger), maar het plaatsen van bewoners op de kaart is nog niet gebouwd (plan: "Filling the worlds").
+
 ## Eén soort, een economie per wereld (Lieuwe, 15 nov)
 Er is één soort: de **pack rats**, hamsterende ratten (voorheen de muizen; de otters zijn vervallen). Wat verschilt is de
 wereld. Het spel leest twee mappen met JSON-bestanden, zodat je kunt schaven zonder code:
