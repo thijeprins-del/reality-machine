@@ -67,6 +67,9 @@ const BEWONERS: Partial<Record<GerolDimensie['archetype'], string[]>> = {
   oudheid: ['legionair', 'legionair', 'wagenmenner'],
   middeleeuwen: ['ridder', 'boogschutter'],
   industrieel: ['stoomsoldaat', 'stoommachine'],
+  modern: ['agent', 'agent', 'tank'],
+  monsters: ['klauwbeest', 'slijmkruiper'],
+  kuddes: ['bizon', 'antilope', 'antilope'],
 };
 export const overvallerSprites = (a: GerolDimensie['archetype']): string[] => BEWONERS[a] ?? ['speerwerper', 'knotsdrager'];
 

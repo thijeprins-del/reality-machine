@@ -29,6 +29,12 @@ export const AANVAL: Partial<Record<Archetype, AanvalStijl>> = {
   middeleeuwen: { elke: 1.3, aantal: 0.9, hp: 2.2, snelheid: 1.0, schade: 1.4 },
   // Industrieel: stoommachines, traag en zwaar, een paar tegelijk die veel schade doen.
   industrieel: { elke: 1.2, aantal: 0.8, hp: 3, snelheid: 0.7, schade: 2 },
+  // Modern: eerst de politie, dan het leger; veel agenten, af en toe een tank die hard slaat.
+  modern: { elke: 1.0, aantal: 1.3, hp: 1.8, snelheid: 1.1, schade: 1.3 },
+  // Monsters: een paar grote roofdieren, taai en snel, die hard bijten.
+  monsters: { elke: 1.5, aantal: 0.6, hp: 4, snelheid: 1.3, schade: 2.5 },
+  // Kuddes: een stormloop, heel veel dieren tegelijk, snel maar zacht, ze trappelen alles plat.
+  kuddes: { elke: 1.6, aantal: 3, hp: 0.9, snelheid: 1.9, schade: 0.6 },
   // Een reus merkt je pas bij hoge Wrath; dan komt er één die alles plet.
   reuzen: { elke: 1.3, aantal: 1, hp: 12, snelheid: 0.4, schade: 8, stilTot: 55, vast: 1, sprites: ['reus'] },
 };
