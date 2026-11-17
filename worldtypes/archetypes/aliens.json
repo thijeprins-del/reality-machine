@@ -18,5 +18,11 @@
   "nameStyle": "vreemd",
   "nameForm": "Crash site {n}",
   "sees": "Crashed ship, beacons, crop circles",
-  "fights": "Beams that lift buildings away, shielded walkers"
+  "fights": "Beams that lift buildings away, shielded walkers",
+  "residents": [
+    { "id": "aliens-otter-0", "folder": "aliens", "width": 96, "height": 96, "anchorX": 48, "anchorY": 82 },
+    { "id": "aliens-otter-1", "folder": "aliens", "width": 96, "height": 96, "anchorX": 47, "anchorY": 82 },
+    { "id": "aliens-otter-2", "folder": "aliens", "width": 96, "height": 96, "anchorX": 48, "anchorY": 82 },
+    { "id": "aliens-otter-3", "folder": "aliens", "width": 96, "height": 96, "anchorX": 49, "anchorY": 82 }
+  ]
 }

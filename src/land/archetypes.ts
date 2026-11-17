@@ -27,6 +27,7 @@ export interface ArchetypeInfo {
   ziet: string; // wat je ziet (korte omschrijving voor galerij en hulp)
   vecht: string; // waarmee het land terugvecht
   vijand?: Vijand; // zonder: de stam leent zijn overvallers uit
+  bewoners: VijandSprite[]; // de otters van dit type: vier uitvoeringen, om het land mee te bevolken
 }
 
 const PLEKKEN = [
@@ -74,13 +75,16 @@ function lees(bron: unknown, fouten: string[]): [string, ArchetypeInfo] | null {
     return { vondst: l.item, kans: getal(l.weight, `loot.${l.item}.weight`), ...(typeof l.requires === 'string' ? { vereist: l.requires } : {}) };
   });
   if (!loot.length) fout('"loot" needs at least one entry');
+  const spriteLijst = (v: unknown, waar: string): VijandSprite[] => (Array.isArray(v) ? v : []).map((x): VijandSprite => {
+    if (!isObj(x) || typeof x.id !== 'string' || typeof x.folder !== 'string') { fout(`"${waar}" needs { "id", "folder", "width", "height", "anchorX", "anchorY" }`); return { id: '', map: '', w: 0, h: 0, ankerX: 0, ankerY: 0 }; }
+    return { id: x.id, map: x.folder, w: getal(x.width, `${waar}.${x.id}.width`), h: getal(x.height, `${waar}.${x.id}.height`), ankerX: getal(x.anchorX, `${waar}.${x.id}.anchorX`), ankerY: getal(x.anchorY, `${waar}.${x.id}.anchorY`) };
+  });
+  const bewoners = spriteLijst(bron.residents, 'residents');
+  if (!bewoners.length) fout('"residents" needs at least one sprite (the otters of this type)');
   let vijand: Vijand | undefined;
   if (bron.enemy !== undefined) {
     const e = isObj(bron.enemy) ? bron.enemy : {};
-    const sprites = (Array.isArray(e.sprites) ? e.sprites : []).map((x): VijandSprite => {
-      if (!isObj(x) || typeof x.id !== 'string' || typeof x.folder !== 'string') { fout('"enemy.sprites" needs { "id", "folder", "width", "height", "anchorX", "anchorY" }'); return { id: '', map: '', w: 0, h: 0, ankerX: 0, ankerY: 0 }; }
-      return { id: x.id, map: x.folder, w: getal(x.width, `enemy.sprites.${x.id}.width`), h: getal(x.height, `enemy.sprites.${x.id}.height`), ankerX: getal(x.anchorX, `enemy.sprites.${x.id}.anchorX`), ankerY: getal(x.anchorY, `enemy.sprites.${x.id}.anchorY`) };
-    });
+    const sprites = spriteLijst(e.sprites, 'enemy.sprites');
     const overvallers = Array.isArray(e.raiders) ? e.raiders.map(String) : [];
     if (!overvallers.length) fout('"enemy.raiders" needs at least one sprite id');
     for (const r of overvallers) if (!sprites.some((x) => x.id === r)) fout(`"enemy.raiders": "${r}" is not in "enemy.sprites"`);
@@ -96,7 +100,7 @@ function lees(bron: unknown, fouten: string[]): [string, ArchetypeInfo] | null {
   }
   return [id, {
     familie: bron.family as Familie, naam: tekst('name'), uniek, kans, aliassen, loot, kaart: kaart as [number, number],
-    beginWrathPlekken: PLEKKEN, naamStijl: bron.nameStyle as ArchetypeInfo['naamStijl'], naamVorm: tekst('nameForm'), ziet: tekst('sees'), vecht: tekst('fights'), vijand,
+    beginWrathPlekken: PLEKKEN, naamStijl: bron.nameStyle as ArchetypeInfo['naamStijl'], naamVorm: tekst('nameForm'), ziet: tekst('sees'), vecht: tekst('fights'), vijand, bewoners,
   }];
 }
 

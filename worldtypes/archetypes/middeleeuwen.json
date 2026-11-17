@@ -26,5 +26,11 @@
       { "id": "boogschutter", "folder": "middeleeuwen", "width": 17, "height": 24, "anchorX": 8, "anchorY": 23 }
     ],
     "attack": { "every": 1.3, "count": 0.9, "hp": 2.2, "speed": 1.0, "damage": 1.4 }
-  }
+  },
+  "residents": [
+    { "id": "middeleeuwen-otter-0", "folder": "middeleeuwen", "width": 96, "height": 96, "anchorX": 47, "anchorY": 83 },
+    { "id": "middeleeuwen-otter-1", "folder": "middeleeuwen", "width": 96, "height": 96, "anchorX": 49, "anchorY": 84 },
+    { "id": "middeleeuwen-otter-2", "folder": "middeleeuwen", "width": 96, "height": 96, "anchorX": 47, "anchorY": 82 },
+    { "id": "middeleeuwen-otter-3", "folder": "middeleeuwen", "width": 96, "height": 96, "anchorX": 48, "anchorY": 82 }
+  ]
 }

@@ -26,5 +26,11 @@
       { "id": "speerwerper", "folder": "steentijd", "width": 16, "height": 24, "anchorX": 8, "anchorY": 23 },
       { "id": "knotsdrager", "folder": "steentijd", "width": 16, "height": 24, "anchorX": 8, "anchorY": 23 }
     ]
-  }
+  },
+  "residents": [
+    { "id": "steentijd-otter-0", "folder": "steentijd", "width": 96, "height": 96, "anchorX": 48, "anchorY": 79 },
+    { "id": "steentijd-otter-1", "folder": "steentijd", "width": 96, "height": 96, "anchorX": 47, "anchorY": 79 },
+    { "id": "steentijd-otter-2", "folder": "steentijd", "width": 96, "height": 96, "anchorX": 49, "anchorY": 78 },
+    { "id": "steentijd-otter-3", "folder": "steentijd", "width": 96, "height": 96, "anchorX": 50, "anchorY": 78 }
+  ]
 }

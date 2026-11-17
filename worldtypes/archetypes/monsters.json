@@ -26,5 +26,11 @@
       { "id": "slijmkruiper", "folder": "monsters", "width": 26, "height": 16, "anchorX": 13, "anchorY": 13 }
     ],
     "attack": { "every": 1.5, "count": 0.6, "hp": 4.0, "speed": 1.3, "damage": 2.5 }
-  }
+  },
+  "residents": [
+    { "id": "monsters-otter-0", "folder": "monsters", "width": 128, "height": 128, "anchorX": 66, "anchorY": 96 },
+    { "id": "monsters-otter-1", "folder": "monsters", "width": 128, "height": 128, "anchorX": 63, "anchorY": 101 },
+    { "id": "monsters-otter-2", "folder": "monsters", "width": 128, "height": 128, "anchorX": 66, "anchorY": 97 },
+    { "id": "monsters-otter-3", "folder": "monsters", "width": 128, "height": 128, "anchorX": 62, "anchorY": 104 }
+  ]
 }

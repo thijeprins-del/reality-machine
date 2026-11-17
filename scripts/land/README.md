@@ -1,5 +1,13 @@
 # Land-sprites: één huisstijl
 
+**Referentie (Thije, 17 nov): de otter-ontwerpen.** Mensen en bewoners van het land volgen `land/pro-otters-alle-types.png`
+(in de projectmap; in de repo `assets/land/<type>/<type>-otter-0..3.png`): gedetailleerde pixelart, zwarte rand, rijke kleuren,
+neon alleen als accent op gloeiende delen. Nieuwe bewoners tekenen we in die stijl, vier uitvoeringen per type, en we maken ze
+**niet** grauw met `stijl.py`. `stijl.py` was voor de eerste PixelLab-overvallers en maakt alles te donker en te vlak voor mensen.
+Eerst kijken wat er al is voordat je nieuwe bewoners laat genereren.
+
+Hieronder de oude werkwijze voor overvallers en machines:
+
 Alle sprites van het land (en straks alles) volgen de muizen: grauw, donker, korrelig, zwarte rand, neon alleen als accent.
 
 1. Maak met PixelLab (`create-image-pixflux`, 1 generatie, isometrisch, `no_background`) een sprite. Prompt: onderwerp + "single character standing alone, no ground, no base, no shadow".
