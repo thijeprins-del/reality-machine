@@ -391,7 +391,8 @@ export class WereldBeeld {
   // Mist: één pixel per tegel in een canvas, schuin over de wereld gelegd met dezelfde schuine as als het rooster.
   // Lineair uitgerekt, dus de randen lopen zacht. Alleen opnieuw tekenen als de mist veranderde.
   private mistLaag = new Container();
-  private mistAan = new URLSearchParams(location.search).get('mist') !== 'uit';
+  // Mist staat voorlopig uit (Thije, 17 nov), zodat je de werelden makkelijk ziet. Terug met ?fog=1 (of ?mist=aan).
+  private mistAan = ((q) => q.get('fog') === '1' || q.get('mist') === 'aan')(new URLSearchParams(location.search));
   private mistCanvas: HTMLCanvasElement | null = null;
   private mistTex: Texture | null = null;
   private mistVoor: object | null = null; // voor welke kaart het canvas gemaakt is

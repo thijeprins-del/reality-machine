@@ -101,6 +101,7 @@ wat je hebt, en zijn recepten met iconen. Klik op een gebouw in de wereld en het
 - Every dimension has a Wrath meter, 0 to 100, in 5 stages: CALM, WARY, HOSTILE, ENRAGED, WRATHFUL. The landing sets the starting value.
 - Taking resources from the land raises Wrath. Leave it alone for 10 seconds and it slowly calms down.
 - From WARY on, natives raid your machine. Rats close to a raider fight back, so sending every rat out to mine leaves the machine open. Raiders damage the machine; the stream needs at least 50% machine health.
+- Fog of war is off for now. `?fog=1` brings it back.
 - Test shortcuts in the address bar: `?world=zoutzee` (the world type of the first world: roestduin, kristaltoendra, gifwoud, magmaveld, zoutzee, aarde), `?type=stone` (also antiquity, medieval, industrial, modern, scifi, bugs, monsters, hordes, giants, aliens, tentacle), `?wrath=80`, `?shift=4` (start in dimension 4), `?seed=123`. Combine them: `?factie=ratten&type=stone&wrath=60`.
 - Civilizations with their own raiders: `?type=antiquity` (legionaries, charioteers), `?type=medieval` (knights, archers), `?type=industrial` (steam soldiers, steam machines). Add `&wrath=60` to see them quickly.
 - More raiders: `?type=modern` (police and tanks), `?type=monsters` (claw beasts, slime crawlers: few, tough, hard bites), `?type=hordes` (bison and antelope stampede: many, fast, soft).
