@@ -32,5 +32,11 @@
     { "id": "middeleeuwen-otter-1", "folder": "middeleeuwen", "width": 96, "height": 96, "anchorX": 49, "anchorY": 84 },
     { "id": "middeleeuwen-otter-2", "folder": "middeleeuwen", "width": 96, "height": 96, "anchorX": 47, "anchorY": 82 },
     { "id": "middeleeuwen-otter-3", "folder": "middeleeuwen", "width": 96, "height": 96, "anchorX": 48, "anchorY": 82 }
+  ],
+  "buildings": [
+    { "id": "middeleeuwen-huis", "folder": "middeleeuwen", "width": 128, "height": 128, "anchorX": 64, "anchorY": 125 },
+    { "id": "middeleeuwen-werk", "folder": "middeleeuwen", "width": 128, "height": 128, "anchorX": 64, "anchorY": 126 },
+    { "id": "middeleeuwen-opslag", "folder": "middeleeuwen", "width": 128, "height": 128, "anchorX": 64, "anchorY": 126 },
+    { "id": "middeleeuwen-baken", "folder": "middeleeuwen", "width": 128, "height": 128, "anchorX": 64, "anchorY": 127 }
   ]
 }

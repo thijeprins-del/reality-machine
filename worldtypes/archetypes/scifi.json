@@ -24,5 +24,11 @@
     { "id": "scifi-otter-1", "folder": "scifi", "width": 96, "height": 96, "anchorX": 48, "anchorY": 86 },
     { "id": "scifi-otter-2", "folder": "scifi", "width": 96, "height": 96, "anchorX": 49, "anchorY": 85 },
     { "id": "scifi-otter-3", "folder": "scifi", "width": 96, "height": 96, "anchorX": 48, "anchorY": 85 }
+  ],
+  "buildings": [
+    { "id": "scifi-huis", "folder": "scifi", "width": 128, "height": 128, "anchorX": 63, "anchorY": 127 },
+    { "id": "scifi-werk", "folder": "scifi", "width": 128, "height": 128, "anchorX": 64, "anchorY": 126 },
+    { "id": "scifi-opslag", "folder": "scifi", "width": 128, "height": 128, "anchorX": 64, "anchorY": 127 },
+    { "id": "scifi-baken", "folder": "scifi", "width": 128, "height": 128, "anchorX": 63, "anchorY": 121 }
   ]
 }

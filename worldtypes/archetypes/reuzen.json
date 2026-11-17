@@ -31,5 +31,11 @@
     { "id": "reuzen-otter-1", "folder": "reuzen", "width": 136, "height": 136, "anchorX": 69, "anchorY": 125 },
     { "id": "reuzen-otter-2", "folder": "reuzen", "width": 136, "height": 136, "anchorX": 68, "anchorY": 121 },
     { "id": "reuzen-otter-3", "folder": "reuzen", "width": 136, "height": 136, "anchorX": 68, "anchorY": 121 }
+  ],
+  "buildings": [
+    { "id": "reuzen-huis", "folder": "reuzen", "width": 128, "height": 128, "anchorX": 64, "anchorY": 124 },
+    { "id": "reuzen-werk", "folder": "reuzen", "width": 128, "height": 128, "anchorX": 64, "anchorY": 127 },
+    { "id": "reuzen-opslag", "folder": "reuzen", "width": 128, "height": 128, "anchorX": 64, "anchorY": 125 },
+    { "id": "reuzen-baken", "folder": "reuzen", "width": 128, "height": 128, "anchorX": 64, "anchorY": 123 }
   ]
 }

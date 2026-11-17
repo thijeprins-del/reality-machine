@@ -24,5 +24,11 @@
     { "id": "tentakelbeest-otter-1", "folder": "tentakelbeest", "width": 128, "height": 128, "anchorX": 62, "anchorY": 102 },
     { "id": "tentakelbeest-otter-2", "folder": "tentakelbeest", "width": 128, "height": 128, "anchorX": 59, "anchorY": 95 },
     { "id": "tentakelbeest-otter-3", "folder": "tentakelbeest", "width": 128, "height": 128, "anchorX": 58, "anchorY": 98 }
+  ],
+  "buildings": [
+    { "id": "tentakelbeest-huis", "folder": "tentakelbeest", "width": 128, "height": 128, "anchorX": 64, "anchorY": 126 },
+    { "id": "tentakelbeest-werk", "folder": "tentakelbeest", "width": 128, "height": 128, "anchorX": 64, "anchorY": 126 },
+    { "id": "tentakelbeest-opslag", "folder": "tentakelbeest", "width": 128, "height": 128, "anchorX": 63, "anchorY": 127 },
+    { "id": "tentakelbeest-baken", "folder": "tentakelbeest", "width": 128, "height": 128, "anchorX": 64, "anchorY": 126 }
   ]
 }

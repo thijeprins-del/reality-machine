@@ -32,5 +32,11 @@
     { "id": "steentijd-otter-1", "folder": "steentijd", "width": 96, "height": 96, "anchorX": 47, "anchorY": 79 },
     { "id": "steentijd-otter-2", "folder": "steentijd", "width": 96, "height": 96, "anchorX": 49, "anchorY": 78 },
     { "id": "steentijd-otter-3", "folder": "steentijd", "width": 96, "height": 96, "anchorX": 50, "anchorY": 78 }
+  ],
+  "buildings": [
+    { "id": "steentijd-huis", "folder": "steentijd", "width": 128, "height": 128, "anchorX": 64, "anchorY": 127 },
+    { "id": "steentijd-werk", "folder": "steentijd", "width": 128, "height": 128, "anchorX": 64, "anchorY": 127 },
+    { "id": "steentijd-opslag", "folder": "steentijd", "width": 128, "height": 128, "anchorX": 63, "anchorY": 127 },
+    { "id": "steentijd-baken", "folder": "steentijd", "width": 128, "height": 128, "anchorX": 64, "anchorY": 125 }
   ]
 }

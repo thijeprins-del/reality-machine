@@ -27,6 +27,7 @@ export interface ArchetypeInfo {
   ziet: string; // wat je ziet (korte omschrijving voor galerij en hulp)
   vecht: string; // waarmee het land terugvecht
   vijand?: Vijand; // zonder: de stam leent zijn overvallers uit
+  gebouwen: VijandSprite[]; // vier gebouwen van dit type: huis, werkplaats, opslag, baken (huis, werk, opslag, baken)
   bewoners: VijandSprite[]; // de otters van dit type: vier uitvoeringen, om het land mee te bevolken
 }
 
@@ -81,6 +82,8 @@ function lees(bron: unknown, fouten: string[]): [string, ArchetypeInfo] | null {
   });
   const bewoners = spriteLijst(bron.residents, 'residents');
   if (!bewoners.length) fout('"residents" needs at least one sprite (the otters of this type)');
+  const gebouwen = spriteLijst(bron.buildings, 'buildings');
+  if (gebouwen.length !== 4) fout('"buildings" needs 4 sprites: house, workshop, store, landmark');
   let vijand: Vijand | undefined;
   if (bron.enemy !== undefined) {
     const e = isObj(bron.enemy) ? bron.enemy : {};
@@ -100,7 +103,7 @@ function lees(bron: unknown, fouten: string[]): [string, ArchetypeInfo] | null {
   }
   return [id, {
     familie: bron.family as Familie, naam: tekst('name'), uniek, kans, aliassen, loot, kaart: kaart as [number, number],
-    beginWrathPlekken: PLEKKEN, naamStijl: bron.nameStyle as ArchetypeInfo['naamStijl'], naamVorm: tekst('nameForm'), ziet: tekst('sees'), vecht: tekst('fights'), vijand, bewoners,
+    beginWrathPlekken: PLEKKEN, naamStijl: bron.nameStyle as ArchetypeInfo['naamStijl'], naamVorm: tekst('nameForm'), ziet: tekst('sees'), vecht: tekst('fights'), vijand, bewoners, gebouwen,
   }];
 }
 
