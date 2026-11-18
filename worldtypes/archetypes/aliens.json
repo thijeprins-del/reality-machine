@@ -19,6 +19,15 @@
   "nameForm": "Crash site {n}",
   "sees": "Crashed ship, beacons, crop circles",
   "fights": "Beams that lift buildings away, shielded walkers",
+  "enemy": {
+    "raiders": ["grijs", "schotel", "tripod"],
+    "sprites": [
+      { "id": "schotel", "folder": "aliens", "width": 40, "height": 32, "anchorX": 20, "anchorY": 30 },
+      { "id": "grijs", "folder": "aliens", "width": 14, "height": 28, "anchorX": 7, "anchorY": 26 },
+      { "id": "tripod", "folder": "aliens", "width": 31, "height": 54, "anchorX": 15, "anchorY": 52 }
+    ],
+    "attack": { "every": 1.2, "count": 0.8, "hp": 2.5, "speed": 0.8, "damage": 1.8 }
+  },
   "residents": [
     { "id": "aliens-otter-0", "folder": "aliens", "width": 96, "height": 96, "anchorX": 48, "anchorY": 82 },
     { "id": "aliens-otter-1", "folder": "aliens", "width": 96, "height": 96, "anchorX": 47, "anchorY": 82 },
