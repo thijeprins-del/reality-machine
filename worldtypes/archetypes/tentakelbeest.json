@@ -19,6 +19,14 @@
   "nameForm": "{n}, the Living Ground",
   "sees": "Breathing ground, eyes in lakes, pulsing veins",
   "fights": "Tentacles erupt where you dig deepest; the map is its body",
+  "enemy": {
+    "raiders": ["ranken", "ranken", "oog"],
+    "sprites": [
+      { "id": "ranken", "folder": "tentakelbeest", "width": 34, "height": 44, "anchorX": 17, "anchorY": 42 },
+      { "id": "oog", "folder": "tentakelbeest", "width": 34, "height": 30, "anchorX": 17, "anchorY": 28 }
+    ],
+    "attack": { "every": 0.8, "count": 1.5, "hp": 1.1, "speed": 0.55, "damage": 1.5 }
+  },
   "residents": [
     { "id": "tentakelbeest-otter-0", "folder": "tentakelbeest", "width": 128, "height": 128, "anchorX": 58, "anchorY": 96 },
     { "id": "tentakelbeest-otter-1", "folder": "tentakelbeest", "width": 128, "height": 128, "anchorX": 62, "anchorY": 102 },
