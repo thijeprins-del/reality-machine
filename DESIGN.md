@@ -151,6 +151,22 @@ wereld. Het spel leest twee mappen met JSON-bestanden, zodat je kunt schaven zon
   Banden, palen, magazijnen, splitter en merger kosten overal plaat en balk, dus wat je meeneemt blijft bruikbaar.
   De viseconomie uit de sandbox was een voorbeeld en zit niet in het spel (wel nog in `tools/economy.html`).
 
+### Gestolen bouwplannen: drie per wereldsoort (Thije, 19 nov)
+Elk van de 12 archetypes heeft drie lootplannen (`worldtypes/archetypes/*.json`). Elk plan is nu een **tier 3-gebouw** in de
+economie die bij het archetype past (twee archetypes per economie, zes gebouwen per economie, 36 in totaal). Ze staan in het
+bouwmenu op slot (30 research packs, pas open als er iets van tier 2 vrij is) en hebben `"blueprint": "<lootnaam>"` in het
+bestand voor de koppeling met de loot. Ze zijn overal sterker dan het gewone gebouw, maar kosten pantserplaat: dat is de beloning voor de Wrath.
+Bestaande mechanieken, geen nieuwe code: generatoren (meer kW per brandstof), fabrieken (betere opbrengst), pantserpersen, oogsters
+met groot bereik, palen met groot bereik en grote magazijnen. Geen sprites: ze lenen het plaatje van hun soort.
+| economie | archetype: plan (gebouw) |
+|---|---|
+| schroot | industrieel: stoomketel (steam boiler), rail-band (rail mill), olielamp-generator; modern: centrale-generator (power plant), bouwkraan (crane press), autowrak-pantser (wreck armour press) |
+| aarde | steentijd: bot-boorkop (bone drill rig), vuurkuil-brander, totem-baken; middeleeuwen: trebuchet-toren (trebuchet rig), windmolen-stroom (gratis stroom), smidse (bellows forge) |
+| gifwoud | insecten: chitine-pantser, honing-brandstof, harslijm-band; monsters: gifkoeling (venom-cooled generator), botten-frame (warehouse), klauwenval (claw harvester) |
+| magmaveld | oudheid: schroot-katapult, brons-tandwielen, marmeren-fundering; reuzen: reuzensmidse, haarkabel, spijker-mijn |
+| kristaltoendra | scifi: schildgenerator, drone-mijner, plasma-brander; aliens: tractorstraal, slijmreactor, baken-ontvanger |
+| zoutzee | tentakelbeest: inktreactor, vleesband, aderpols; kuddes: mestbrander, hoorn-sirene (draait zonder bemanning), huid-dak |
+
 ## Pack rats (voorheen muizen)
 De industriegetallen in dit hoofdstuk (kosten, recepten, boor, band, paal, stapel) staan sinds 15 nov in
 `economies/schroot.json`; de opslag is één voorraad in volume in plaats van 50 per goed.

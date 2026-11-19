@@ -19,7 +19,13 @@
     { "id": "balk", "name": "Roll girder", "time": 4, "inputs": { "schroot": 3 }, "outputs": { "balk": 1 } },
     { "id": "koolstof", "name": "Shred tyres", "time": 3, "inputs": { "banden": 2 }, "outputs": { "koolstof": 2 } },
     { "id": "stook_koolstof", "name": "Burn carbon", "time": 6, "inputs": { "koolstof": 1 }, "power": 6 },
-    { "id": "pantserplaat", "name": "Temper plate", "time": 6, "inputs": { "plaat": 2, "koolstof": 1 }, "outputs": { "pantserplaat": 1 } }
+    { "id": "pantserplaat", "name": "Temper plate", "time": 6, "inputs": { "plaat": 2, "koolstof": 1 }, "outputs": { "pantserplaat": 1 } },
+    { "id": "stoom_koolstof", "name": "STEAM BOILER", "time": 8, "inputs": { "koolstof": 1 }, "power": 10, "tier": 3, "unlock": 30 },
+    { "id": "rail_balk", "name": "RAIL MILL", "time": 3, "inputs": { "schroot": 4 }, "outputs": { "balk": 4 }, "tier": 3, "unlock": 30 },
+    { "id": "stook_banden", "name": "LAMP-OIL GENERATOR", "time": 7, "inputs": { "banden": 1 }, "power": 7, "tier": 3, "unlock": 30 },
+    { "id": "centrale_koolstof", "name": "POWER PLANT", "time": 10, "inputs": { "koolstof": 2 }, "power": 24, "tier": 3, "unlock": 30 },
+    { "id": "prefab", "name": "CRANE PRESS", "time": 3, "inputs": { "schroot": 3 }, "outputs": { "plaat": 2, "balk": 1 }, "tier": 3, "unlock": 30 },
+    { "id": "wrak_pantser", "name": "WRECK ARMOUR PRESS", "time": 5, "inputs": { "banden": 1, "plaat": 2 }, "outputs": { "pantserplaat": 2 }, "tier": 3, "unlock": 30 }
   ],
   "buildings": [
     { "id": "fabricator", "name": "SCRAP PRESS", "color": "#c8642d", "sprite": "pers", "size": 2, "insideRing": true, "cost": { "schroot": 20 }, "work": 10, "kW": 2, "crew": 2, "storage": 8, "recipes": ["plaat", "balk", "koolstof"] },
@@ -33,6 +39,12 @@
     { "id": "kist", "name": "SMALL STORE", "color": "#55606b", "sprite": "stapel-1", "sink": true, "storage": 40, "size": 1, "insideRing": true, "cost": { "balk": 1 }, "work": 2 },
     { "id": "splitter", "name": "SPLITTER", "color": "#4d6478", "sprite": "splitter", "splitter": true, "ports": 3, "size": 1, "cost": { "plaat": 2 }, "work": 2, "tier": 2, "unlock": 12 },
     { "id": "merger", "name": "MERGER", "color": "#6a5a80", "sprite": "merger", "merger": true, "ports": 3, "size": 1, "cost": { "plaat": 2 }, "work": 2, "tier": 2, "unlock": 12 },
-    { "id": "grijper", "name": "GRABBER", "color": "#a8861c", "sprite": "grijper", "grabber": true, "size": 1, "cost": { "plaat": 2, "balk": 1 }, "work": 3, "kW": 0.3, "speed": 2, "tier": 2, "unlock": 10 }
+    { "id": "grijper", "name": "GRABBER", "color": "#a8861c", "sprite": "grijper", "grabber": true, "size": 1, "cost": { "plaat": 2, "balk": 1 }, "work": 3, "kW": 0.3, "speed": 2, "tier": 2, "unlock": 10 },
+    { "id": "stoomketel", "name": "STEAM BOILER", "color": "#b0763a", "blueprint": "stoomketel", "size": 2, "insideRing": true, "cost": { "plaat": 8, "balk": 6, "pantserplaat": 2 }, "work": 14, "kW": 0, "crew": 1, "storage": 12, "recipes": ["stoom_koolstof"], "tier": 3, "unlock": 30 },
+    { "id": "railwals", "name": "RAIL MILL", "color": "#8a8f96", "blueprint": "rail-band", "size": 2, "insideRing": true, "cost": { "plaat": 8, "balk": 6, "pantserplaat": 2 }, "work": 14, "kW": 3, "crew": 2, "storage": 12, "recipes": ["rail_balk"], "tier": 3, "unlock": 30 },
+    { "id": "lampolie", "name": "LAMP-OIL GENERATOR", "color": "#d9a441", "blueprint": "olielamp-generator", "size": 2, "insideRing": true, "cost": { "plaat": 8, "balk": 6, "pantserplaat": 2 }, "work": 14, "kW": 0, "crew": 1, "storage": 12, "recipes": ["stook_banden"], "tier": 3, "unlock": 30 },
+    { "id": "centrale", "name": "POWER PLANT", "color": "#7d8a96", "blueprint": "centrale-generator", "size": 2, "insideRing": true, "cost": { "plaat": 8, "balk": 6, "pantserplaat": 2 }, "work": 14, "kW": 0, "crew": 1, "storage": 12, "recipes": ["centrale_koolstof"], "tier": 3, "unlock": 30 },
+    { "id": "kraanpers", "name": "CRANE PRESS", "color": "#c8a02d", "blueprint": "bouwkraan", "size": 2, "insideRing": true, "cost": { "plaat": 8, "balk": 6, "pantserplaat": 2 }, "work": 14, "kW": 3, "crew": 2, "storage": 12, "recipes": ["prefab"], "tier": 3, "unlock": 30 },
+    { "id": "wrakpantser", "name": "WRECK ARMOUR PRESS", "color": "#5a6470", "blueprint": "autowrak-pantser", "size": 2, "insideRing": true, "cost": { "plaat": 8, "balk": 6, "pantserplaat": 2 }, "work": 14, "kW": 3, "crew": 2, "storage": 12, "recipes": ["wrak_pantser"], "tier": 3, "unlock": 30 }
   ]
 }
