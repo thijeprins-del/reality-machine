@@ -22,7 +22,12 @@
     { "id": "balk_hout", "name": "Saw driftwood", "time": 3, "inputs": { "hout": 2 }, "outputs": { "balk": 1 }, "tier": 2, "unlock": 8 },
     { "id": "biomassa", "name": "Dry kelp", "time": 2, "inputs": { "kelp": 1 }, "outputs": { "biomassa": 2 } },
     { "id": "stook_biomassa", "name": "Burn biomass", "time": 5, "inputs": { "biomassa": 1 }, "power": 5 },
-    { "id": "pantserplaat", "name": "Brine-harden plate", "time": 6, "inputs": { "plaat": 2, "zout": 2 }, "outputs": { "pantserplaat": 1 } }
+    { "id": "pantserplaat", "name": "Brine-harden plate", "time": 6, "inputs": { "plaat": 2, "zout": 2 }, "outputs": { "pantserplaat": 1 } },
+    { "id": "inkt_stroom", "name": "INK REACTOR", "time": 8, "inputs": { "kelp": 1 }, "power": 14, "tier": 3, "unlock": 30 },
+    { "id": "vlees_balk", "name": "FLESH CONVEYOR PRESS", "time": 3, "inputs": { "kelp": 4 }, "outputs": { "balk": 3 }, "tier": 3, "unlock": 30 },
+    { "id": "stook_mest", "name": "DUNG BURNER", "time": 7, "inputs": { "biomassa": 1 }, "power": 9, "tier": 3, "unlock": 30 },
+    { "id": "hoorn_plaat", "name": "HORN SIREN PRESS", "time": 3, "inputs": { "zout": 3, "kelp": 1 }, "outputs": { "plaat": 3 }, "tier": 3, "unlock": 30 },
+    { "id": "huid_pantser", "name": "HIDE-LAMINATE PRESS", "time": 5, "inputs": { "plaat": 2, "kelp": 1 }, "outputs": { "pantserplaat": 2 }, "tier": 3, "unlock": 30 }
   ],
   "buildings": [
     { "id": "zoutoven", "name": "SALT KILN", "color": "#c98aa5", "sprite": "zoutoven", "size": 2, "insideRing": true, "cost": { "zout": 20 }, "work": 10, "kW": 2, "crew": 2, "storage": 8, "recipes": ["plaat"] },
@@ -37,6 +42,12 @@
     { "id": "kist", "name": "SMALL STORE", "color": "#55606b", "sprite": "stapel-1", "sink": true, "storage": 40, "size": 1, "insideRing": true, "cost": { "balk": 1 }, "work": 2 },
     { "id": "splitter", "name": "SPLITTER", "color": "#4d6478", "sprite": "splitter", "splitter": true, "ports": 3, "size": 1, "cost": { "plaat": 2 }, "work": 2, "tier": 2, "unlock": 12 },
     { "id": "merger", "name": "MERGER", "color": "#6a5a80", "sprite": "merger", "merger": true, "ports": 3, "size": 1, "cost": { "plaat": 2 }, "work": 2, "tier": 2, "unlock": 12 },
-    { "id": "grijper", "name": "GRABBER", "color": "#a8861c", "sprite": "grijper", "grabber": true, "size": 1, "cost": { "plaat": 2, "balk": 1 }, "work": 3, "kW": 0.3, "speed": 2, "tier": 2, "unlock": 10 }
+    { "id": "grijper", "name": "GRABBER", "color": "#a8861c", "sprite": "grijper", "grabber": true, "size": 1, "cost": { "plaat": 2, "balk": 1 }, "work": 3, "kW": 0.3, "speed": 2, "tier": 2, "unlock": 10 },
+    { "id": "inktreactor", "name": "INK REACTOR", "color": "#3a2a6a", "blueprint": "inktreactor", "size": 2, "insideRing": true, "cost": { "plaat": 8, "balk": 6, "pantserplaat": 2 }, "work": 14, "kW": 0, "crew": 1, "storage": 12, "recipes": ["inkt_stroom"], "tier": 3, "unlock": 30 },
+    { "id": "vleespers", "name": "FLESH CONVEYOR PRESS", "color": "#a84a5a", "blueprint": "vleesband", "size": 2, "insideRing": true, "cost": { "plaat": 8, "balk": 6, "pantserplaat": 2 }, "work": 14, "kW": 3, "crew": 2, "storage": 12, "recipes": ["vlees_balk"], "tier": 3, "unlock": 30 },
+    { "id": "aderpaal", "name": "VEIN POLE", "color": "#8a2a4a", "blueprint": "aderpols", "pole": true, "link": 14, "reach": 8, "cost": { "balk": 4, "plaat": 3, "pantserplaat": 1 }, "work": 6, "tier": 3, "unlock": 30 },
+    { "id": "mestbrander", "name": "DUNG BURNER", "color": "#6a4a2a", "blueprint": "mestbrander", "size": 2, "insideRing": true, "cost": { "plaat": 8, "balk": 6, "pantserplaat": 2 }, "work": 14, "kW": 0, "crew": 1, "storage": 12, "recipes": ["stook_mest"], "tier": 3, "unlock": 30 },
+    { "id": "hoornpers", "name": "HORN SIREN PRESS", "color": "#d8c9a0", "blueprint": "hoorn-sirene", "size": 2, "insideRing": true, "cost": { "plaat": 8, "balk": 6, "pantserplaat": 2 }, "work": 14, "kW": 3, "crew": 0, "storage": 12, "recipes": ["hoorn_plaat"], "tier": 3, "unlock": 30 },
+    { "id": "huidpantser", "name": "HIDE-LAMINATE PRESS", "color": "#8a6a4a", "blueprint": "huid-dak", "size": 2, "insideRing": true, "cost": { "plaat": 8, "balk": 6, "pantserplaat": 2 }, "work": 14, "kW": 3, "crew": 2, "storage": 12, "recipes": ["huid_pantser"], "tier": 3, "unlock": 30 }
   ]
 }

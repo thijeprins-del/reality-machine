@@ -22,7 +22,10 @@
     { "id": "balk_wrak", "name": "Salvage beam", "time": 3, "inputs": { "schroot": 3 }, "outputs": { "balk": 1 }, "tier": 2, "unlock": 8 },
     { "id": "koolstof", "name": "Crack crystal", "time": 3, "inputs": { "kristal": 2 }, "outputs": { "koolstof": 1 } },
     { "id": "stook_koolstof", "name": "Burn carbon", "time": 6, "inputs": { "koolstof": 1 }, "power": 6 },
-    { "id": "pantserplaat", "name": "Freeze-temper plate", "time": 6, "inputs": { "plaat": 2, "ijs": 2 }, "outputs": { "pantserplaat": 1 } }
+    { "id": "pantserplaat", "name": "Freeze-temper plate", "time": 6, "inputs": { "plaat": 2, "ijs": 2 }, "outputs": { "pantserplaat": 1 } },
+    { "id": "schild_koolstof", "name": "SHIELD GENERATOR", "time": 6, "inputs": { "koolstof": 1 }, "power": 16, "tier": 3, "unlock": 30 },
+    { "id": "stook_plasma", "name": "PLASMA BURNER", "time": 6, "inputs": { "kristal": 1 }, "power": 14, "tier": 3, "unlock": 30 },
+    { "id": "slijm_stroom", "name": "SLIME REACTOR", "time": 8, "inputs": { "kristal": 1, "ijs": 1 }, "power": 30, "tier": 3, "unlock": 30 }
   ],
   "buildings": [
     { "id": "slijper", "name": "CRYSTAL CUTTER", "color": "#3aa8b8", "sprite": "slijper", "size": 2, "insideRing": true, "cost": { "kristal": 15 }, "work": 10, "kW": 2, "crew": 2, "storage": 8, "recipes": ["plaat", "koolstof"] },
@@ -37,6 +40,12 @@
     { "id": "kist", "name": "SMALL STORE", "color": "#55606b", "sprite": "stapel-1", "sink": true, "storage": 40, "size": 1, "insideRing": true, "cost": { "balk": 1 }, "work": 2 },
     { "id": "splitter", "name": "SPLITTER", "color": "#4d6478", "sprite": "splitter", "splitter": true, "ports": 3, "size": 1, "cost": { "plaat": 2 }, "work": 2, "tier": 2, "unlock": 12 },
     { "id": "merger", "name": "MERGER", "color": "#6a5a80", "sprite": "merger", "merger": true, "ports": 3, "size": 1, "cost": { "plaat": 2 }, "work": 2, "tier": 2, "unlock": 12 },
-    { "id": "grijper", "name": "GRABBER", "color": "#a8861c", "sprite": "grijper", "grabber": true, "size": 1, "cost": { "plaat": 2, "balk": 1 }, "work": 3, "kW": 0.3, "speed": 2, "tier": 2, "unlock": 10 }
+    { "id": "grijper", "name": "GRABBER", "color": "#a8861c", "sprite": "grijper", "grabber": true, "size": 1, "cost": { "plaat": 2, "balk": 1 }, "work": 3, "kW": 0.3, "speed": 2, "tier": 2, "unlock": 10 },
+    { "id": "schildgen", "name": "SHIELD GENERATOR", "color": "#4ef2ff", "blueprint": "schildgenerator", "size": 2, "insideRing": true, "cost": { "plaat": 8, "balk": 6, "pantserplaat": 2 }, "work": 14, "kW": 0, "crew": 1, "storage": 12, "recipes": ["schild_koolstof"], "tier": 3, "unlock": 30 },
+    { "id": "dronemijner", "name": "DRONE HARVESTER", "color": "#9ad7ff", "blueprint": "drone-mijner", "size": 2, "onDeposit": true, "range": 7, "cost": { "plaat": 10, "balk": 6 }, "work": 14, "kW": 3, "storage": 16, "speed": 2, "recipes": ["mijn_kristal", "mijn_ijs", "mijn_schroot"], "tier": 3, "unlock": 30 },
+    { "id": "plasmabrander", "name": "PLASMA BURNER", "color": "#c05aff", "blueprint": "plasma-brander", "size": 2, "insideRing": true, "cost": { "plaat": 8, "balk": 6, "pantserplaat": 2 }, "work": 14, "kW": 0, "crew": 1, "storage": 12, "recipes": ["stook_plasma"], "tier": 3, "unlock": 30 },
+    { "id": "tractoroogst", "name": "TRACTOR BEAM RIG", "color": "#7affb0", "blueprint": "tractorstraal", "size": 2, "onDeposit": true, "range": 10, "cost": { "plaat": 10, "balk": 6 }, "work": 14, "kW": 3, "storage": 16, "speed": 1.5, "recipes": ["mijn_kristal", "mijn_ijs"], "tier": 3, "unlock": 30 },
+    { "id": "slijmreactor", "name": "SLIME REACTOR", "color": "#7aff3a", "blueprint": "slijmreactor", "size": 2, "insideRing": true, "cost": { "plaat": 8, "balk": 6, "pantserplaat": 2 }, "work": 14, "kW": 0, "crew": 1, "storage": 12, "recipes": ["slijm_stroom"], "tier": 3, "unlock": 30 },
+    { "id": "bakenrelais", "name": "BEACON RELAY", "color": "#ff7ad9", "blueprint": "baken-ontvanger", "pole": true, "link": 20, "reach": 10, "cost": { "balk": 4, "plaat": 3, "pantserplaat": 1 }, "work": 6, "tier": 3, "unlock": 30 }
   ]
 }

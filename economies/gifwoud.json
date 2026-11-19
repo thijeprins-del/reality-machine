@@ -22,7 +22,11 @@
     { "id": "biomassa", "name": "Chip rotwood", "time": 2, "inputs": { "hout": 1 }, "outputs": { "biomassa": 2 } },
     { "id": "sporenkoek", "name": "Press spore cake", "time": 3, "inputs": { "sporen": 2 }, "outputs": { "biomassa": 4 }, "tier": 2, "unlock": 8 },
     { "id": "stook_biomassa", "name": "Burn biomass", "time": 5, "inputs": { "biomassa": 1 }, "power": 5 },
-    { "id": "pantserplaat", "name": "Cure lacquer plate", "time": 6, "inputs": { "plaat": 2, "hars": 1 }, "outputs": { "pantserplaat": 1 } }
+    { "id": "pantserplaat", "name": "Cure lacquer plate", "time": 6, "inputs": { "plaat": 2, "hars": 1 }, "outputs": { "pantserplaat": 1 } },
+    { "id": "chitine_pantser", "name": "CHITIN PLATING PRESS", "time": 5, "inputs": { "hars": 1, "plaat": 1 }, "outputs": { "pantserplaat": 2 }, "tier": 3, "unlock": 30 },
+    { "id": "stook_honing", "name": "HONEY FUEL CELL", "time": 7, "inputs": { "biomassa": 1 }, "power": 9, "tier": 3, "unlock": 30 },
+    { "id": "harslijm_balk", "name": "RESIN GLUE PRESS", "time": 3, "inputs": { "hout": 2, "hars": 1 }, "outputs": { "balk": 3 }, "tier": 3, "unlock": 30 },
+    { "id": "gif_stroom", "name": "VENOM-COOLED GENERATOR", "time": 8, "inputs": { "biomassa": 2 }, "power": 22, "tier": 3, "unlock": 30 }
   ],
   "buildings": [
     { "id": "zagerij", "name": "SAWMILL", "color": "#9a6b34", "sprite": "zagerij-2", "size": 2, "insideRing": true, "cost": { "hout": 15 }, "work": 10, "kW": 2, "crew": 2, "storage": 8, "recipes": ["balk", "biomassa"] },
@@ -37,6 +41,12 @@
     { "id": "kist", "name": "SMALL STORE", "color": "#55606b", "sprite": "stapel-1", "sink": true, "storage": 40, "size": 1, "insideRing": true, "cost": { "balk": 1 }, "work": 2 },
     { "id": "splitter", "name": "SPLITTER", "color": "#4d6478", "sprite": "splitter", "splitter": true, "ports": 3, "size": 1, "cost": { "plaat": 2 }, "work": 2, "tier": 2, "unlock": 12 },
     { "id": "merger", "name": "MERGER", "color": "#6a5a80", "sprite": "merger", "merger": true, "ports": 3, "size": 1, "cost": { "plaat": 2 }, "work": 2, "tier": 2, "unlock": 12 },
-    { "id": "grijper", "name": "GRABBER", "color": "#a8861c", "sprite": "grijper", "grabber": true, "size": 1, "cost": { "plaat": 2, "balk": 1 }, "work": 3, "kW": 0.3, "speed": 2, "tier": 2, "unlock": 10 }
+    { "id": "grijper", "name": "GRABBER", "color": "#a8861c", "sprite": "grijper", "grabber": true, "size": 1, "cost": { "plaat": 2, "balk": 1 }, "work": 3, "kW": 0.3, "speed": 2, "tier": 2, "unlock": 10 },
+    { "id": "chitinepers", "name": "CHITIN PLATING PRESS", "color": "#6a8a3a", "blueprint": "chitine-pantser", "size": 2, "insideRing": true, "cost": { "plaat": 8, "balk": 6, "pantserplaat": 2 }, "work": 14, "kW": 3, "crew": 2, "storage": 12, "recipes": ["chitine_pantser"], "tier": 3, "unlock": 30 },
+    { "id": "honingcel", "name": "HONEY FUEL CELL", "color": "#e0b030", "blueprint": "honing-brandstof", "size": 2, "insideRing": true, "cost": { "plaat": 8, "balk": 6, "pantserplaat": 2 }, "work": 14, "kW": 0, "crew": 1, "storage": 12, "recipes": ["stook_honing"], "tier": 3, "unlock": 30 },
+    { "id": "harslijmpers", "name": "RESIN GLUE PRESS", "color": "#b8863a", "blueprint": "harslijm-band", "size": 2, "insideRing": true, "cost": { "plaat": 8, "balk": 6, "pantserplaat": 2 }, "work": 14, "kW": 3, "crew": 2, "storage": 12, "recipes": ["harslijm_balk"], "tier": 3, "unlock": 30 },
+    { "id": "gifgenerator", "name": "VENOM-COOLED GENERATOR", "color": "#7acb3a", "blueprint": "gifkoeling", "size": 2, "insideRing": true, "cost": { "plaat": 8, "balk": 6, "pantserplaat": 2 }, "work": 14, "kW": 0, "crew": 1, "storage": 12, "recipes": ["gif_stroom"], "tier": 3, "unlock": 30 },
+    { "id": "bottenmagazijn", "name": "BONE-FRAME WAREHOUSE", "color": "#cbbf9a", "blueprint": "botten-frame", "sink": true, "size": 2, "insideRing": true, "storage": 400, "cost": { "balk": 8, "plaat": 4, "pantserplaat": 2 }, "work": 10, "tier": 3, "unlock": 30 },
+    { "id": "klauwoogst", "name": "CLAW HARVESTER", "color": "#8a6a40", "blueprint": "klauwenval", "size": 2, "onDeposit": true, "range": 4, "cost": { "plaat": 10, "balk": 6 }, "work": 14, "kW": 3, "storage": 16, "speed": 2, "recipes": ["mijn_hout", "mijn_hars", "mijn_sporen"], "tier": 3, "unlock": 30 }
   ]
 }
