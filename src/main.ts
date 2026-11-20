@@ -5,7 +5,8 @@ import { maakBesturing } from './kern/besturing';
 import { versieTekst } from './kern/omgeving';
 import { beeldKlaar, markeer, maakOverlay, rapport, zetExtra } from './kern/prestatie';
 import { maakBalk } from './kern/scherm';
-import { nieuwSpel, kanVroegSpringen, machineKlaar, restTijd, seedUitAdres, startUitAdres, stap, stream, vroegStream, type SpelStaat } from './kern/spel';
+import { maakKeuzescherm } from './kern/keuzescherm';
+import { nieuwSpel, kanVroegSpringen, machineKlaar, restTijd, seedUitAdres, startUitAdres, stap, stream, vroegStream, kies, type SpelStaat } from './kern/spel';
 import { FINALE, RUN_SHIFTS } from './data/run';
 import { WRATH_MAX, WRATH_STADIA } from './data/wrath';
 import { landSprites } from './land/beeld';
@@ -25,6 +26,7 @@ declare global {
       terrein: () => string;
       laadTerrein: (json: string) => void;
       stream: () => void;
+      kies: (i: number) => boolean; // kies een wereld bij de splitsing in het niets
       stuur: (ids: number[] | 'alle', kol: number, rij: number) => void;
     };
     PERF: { rapport: typeof rapport };
@@ -60,6 +62,7 @@ async function start(): Promise<void> {
       staat = nieuwSpel(seed, RATTEN, start);
     },
     stream: () => stream(staat, RATTEN),
+    kies: (i) => kies(staat, RATTEN, i),
     wrath: (n) => geefWrath(staat, n),
     overval: (n = 3) => overval(staat, n),
     terrein: () => beeld.bewerker.alsJson(),
@@ -88,6 +91,7 @@ async function start(): Promise<void> {
     gewapend = 0;
     vroegStream(staat);
   });
+  const toonKeuze = maakKeuzescherm((i) => kies(staat, RATTEN, i));
   const paneel = (await import('./ratten/paneel')).maakPaneel(() => staat, beeld);
 
   markeer('ui ready');
@@ -97,6 +101,7 @@ async function start(): Promise<void> {
     const t0 = performance.now();
     const sec = Math.min(0.1, t.deltaMS / 1000);
     stap(staat, RATTEN, sec);
+    toonKeuze(staat.keuze);
     besturing.werk(sec);
     beeld.werk(sec, besturing.selectie);
     paneel.werk(sec);
@@ -104,7 +109,7 @@ async function start(): Promise<void> {
     const kan = kanVroegSpringen(staat);
     const klaar = machineKlaar(staat);
     const wapen = performance.now() < gewapend && !klaar;
-    shift.disabled = !kan;
+    shift.disabled = !kan || !!staat.keuze;
     shift.className = klaar ? '' : 'nietklaar';
     shift.textContent = wapen ? 'NOT READY: CLICK AGAIN TO LOSE' : staat.dimensie >= FINALE ? 'SHIFT (END RUN)' : 'SHIFT NOW';
     shift.title = 'Jump to the next dimension now instead of waiting for the stream. Same rules: the machine needs full power and enough integrity.';
@@ -112,7 +117,9 @@ async function start(): Promise<void> {
     const bezig = staat.werkers.filter((w) => w.taak !== 'rust').length;
     balk.zet([
       staat.dimensie >= FINALE ? '<b style="color:#ff3030">FINALE</b> · hold out until the machine charges one last time' : `Run: shift ${staat.dimensie} of ${RUN_SHIFTS} + finale`,
-      staat.onderweg > 0
+      staat.keuze
+        ? 'The stream forks: choose your next world'
+        : staat.onderweg > 0
         ? `In the void · on the way to ${dimensieKleur(staat.dimensie).naam}`
         : `Dimension ${staat.dimensie} · ${dimensieKleur(staat.dimensie).naam} · stream in ${Math.floor(rest / 60)}:${String(rest % 60).padStart(2, '0')}`,
       wrathRegel(staat),

@@ -34,12 +34,14 @@ try {
   await run.goto('http://localhost:4317/?seed=7&power=free');
   await run.waitForFunction(() => window.SPEL !== undefined, null, { timeout: 15000 });
   const eind = await run.evaluate(() => {
-    const s = window.SPEL.staat, types = [];
-    for (let i = 0; i < 9 * 3200 && !s.uitkomst; i++) { s.machine.heelheid = 100; if (!types.length || types.at(-1) !== s.land.dim.archetype + s.dimensie) types.push(s.land.dim.archetype + s.dimensie); window.SPEL.stap(0.1); }
-    return { uitkomst: s.uitkomst, dimensie: s.dimensie, types };
+    const s = window.SPEL.staat, types = [], forks = [];
+    for (let i = 0; i < 9 * 3200 && !s.uitkomst; i++) { s.machine.heelheid = 100; if (s.keuze) { forks.push(s.keuze.opties.map((o) => o.profiel + ':' + o.archetype).join(' ')); window.SPEL.kies(i % 3); } if (!types.length || types.at(-1) !== s.land.dim.archetype + s.dimensie) types.push(s.land.dim.archetype + s.dimensie); window.SPEL.stap(0.1); }
+    return { uitkomst: s.uitkomst, dimensie: s.dimensie, types, forks };
   });
   console.log('run:', JSON.stringify(eind));
   if (!eind.uitkomst?.gewonnen || eind.dimensie !== 9) fouten.push('een hele run (8 shiften + finale) werd niet gewonnen');
+  // De splitsing in het niets: vijf keer, en de drie werelden zijn telkens van drie verschillende archetypes.
+  if (eind.forks.length !== 5 || eind.forks.some((f) => f.includes('tentakelbeest') || new Set(f.split(' ').map((x) => x.split(':')[1])).size !== 3)) fouten.push('splitsing: ' + JSON.stringify(eind.forks));
   if (!(await page.$('canvas'))) fouten.push('geen canvas');
   console.log('staat na 60 s:', JSON.stringify(staat));
 } finally {
