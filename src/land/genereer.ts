@@ -74,7 +74,7 @@ export function genereerDimensie(seed: number, nummer: number, opties: { familie
   return rol(seed, nummer, opties.familie ?? fam[nummer - 1], vorige.slice(-2), opties.archetype);
 }
 
-function rol(seed: number, nummer: number, f: Familie, vermijd: Archetype[], gedwongen?: Archetype, profiel: Profiel = 'normaal'): GerolDimensie {
+function rol(seed: number, nummer: number, f: Familie, vermijd: Archetype[], gedwongen?: Archetype, profiel: Profiel = 'normaal', uitsluit: Archetype[] = []): GerolDimensie {
   if (gedwongen) f = ARCHETYPES[gedwongen].familie;
   const r = stroom(dimSeed(seed, nummer));
 
@@ -82,6 +82,7 @@ function rol(seed: number, nummer: number, f: Familie, vermijd: Archetype[], ged
   const lijst = PER_FAMILIE[f];
   const diepte = Math.min(1, (nummer - 1) / 7);
   const archetype: Archetype = gedwongen ?? weeg(r, lijst, a => {
+    if (uitsluit.includes(a)) return 0;
     if (vermijd.includes(a) && lijst.length > vermijd.length) return 0;
     if (f !== 'beschaving') return 1;
     const i = lijst.indexOf(a) / (lijst.length - 1); // 0 = oudst, 1 = nieuwst
@@ -168,12 +169,13 @@ export function genereerRun(seed: number, aantal = 8): GerolDimensie[] {
 // Index 0 = veilig, 1 = normaal (precies wat de generator zonder keuze zou rollen), 2 = rijk. `huidig` = het type waar je nu staat.
 export const KEUZE_NORMAAL = 1;
 export function genereerKeuzes(seed: number, nummer: number, huidig?: Archetype): GerolDimensie[] {
-  const norm = genereerDimensie(seed, nummer);
+  let norm = genereerDimensie(seed, nummer);
+  if (norm.archetype === FINALE_TYPE) norm = rol(seed, nummer, norm.familie, huidig ? [huidig] : [], undefined, 'normaal', [FINALE_TYPE]); // de finale-vijand komt alleen als finale
   const anders = (['beschaving', 'wildernis', 'bijzonder'] as Familie[]).filter(f => f !== norm.familie);
   const vermijd: Archetype[] = [FINALE_TYPE, norm.archetype, ...(huidig ? [huidig] : [])]; // de finale-vijand komt alleen als finale
   const wissel = hash01(dimSeed(seed, nummer)) < 0.5;
   const [veiligFam, rijkFam] = wissel ? [anders[1], anders[0]] : [anders[0], anders[1]];
-  const veilig = rol(seed ^ 0x51ed270b, nummer, veiligFam, vermijd, undefined, 'veilig');
-  const rijk = rol(seed ^ 0x2545f491, nummer, rijkFam, [...vermijd, veilig.archetype], undefined, 'rijk');
+  const veilig = rol(seed ^ 0x51ed270b, nummer, veiligFam, vermijd, undefined, 'veilig', [FINALE_TYPE]);
+  const rijk = rol(seed ^ 0x2545f491, nummer, rijkFam, [...vermijd, veilig.archetype], undefined, 'rijk', [FINALE_TYPE]);
   return [veilig, norm, rijk];
 }

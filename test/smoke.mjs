@@ -41,7 +41,7 @@ try {
   console.log('run:', JSON.stringify(eind));
   if (!eind.uitkomst?.gewonnen || eind.dimensie !== 9) fouten.push('een hele run (8 shiften + finale) werd niet gewonnen');
   // De splitsing in het niets: vijf keer, en de drie werelden zijn telkens van drie verschillende archetypes.
-  if (eind.forks.length !== 5 || eind.forks.some((f) => new Set(f.split(' ').map((x) => x.split(':')[1])).size !== 3)) fouten.push('splitsing: ' + JSON.stringify(eind.forks));
+  if (eind.forks.length !== 5 || eind.forks.some((f) => f.includes('tentakelbeest') || new Set(f.split(' ').map((x) => x.split(':')[1])).size !== 3)) fouten.push('splitsing: ' + JSON.stringify(eind.forks));
   if (!(await page.$('canvas'))) fouten.push('geen canvas');
   console.log('staat na 60 s:', JSON.stringify(staat));
 } finally {
