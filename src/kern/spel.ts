@@ -4,7 +4,8 @@ import { binnenRing, maakKaart, type Kaart } from './kaart';
 import { werkMist, type Kijker } from './mist';
 import { meet } from './prestatie';
 import { HEEL_MIN_STREAM } from '../data/wrath';
-import { FINALE, FINALE_TYPE, FINALE_WRATH, KERN_DIMENSIES, type Uitkomst } from '../data/run';
+import { FINALE, FINALE_TYPE, FINALE_WRATH, KERN_DIMENSIES, BONUS_KAPITAAL, BONUS_REPARATIE, KEUZE_VANAF, RUN_SHIFTS, type Uitkomst } from '../data/run';
+import { genereerKeuzes, type GerolDimensie } from '../land/genereer';
 import { nieuwLand, rolDimensie, stapLand, typeUitTekst, type LandStaat } from '../land/wrath';
 import type { Archetype } from './types';
 import { hash01 } from './toeval';
@@ -28,8 +29,17 @@ export interface SpelStaat {
   economieen: string[]; // de economieën waarin je deze run al geland bent (elk geeft één keer haar startkapitaal)
   werkers: Werker[];
   uitkomst?: Uitkomst; // gezet als de run voorbij is: gewonnen (finale gehaald) of verloren
+  keuze?: Keuze; // gezet als de stream er is en de speler nog kiest in het niets: de tijd staat stil tot kies() is aangeroepen
+  gekozen: Record<number, GerolDimensie>; // wat de speler koos per dimensienummer (anders rolt de generator de normale wereld)
   land: LandStaat; // de gerolde dimensie, Wrath en de overvallers (src/land/wrath.ts)
 }
+
+// De keuze in het niets: drie werelden die echt anders zijn (veilig, normaal, rijk), zie genereerKeuzes.
+export interface Keuze {
+  nummer: number; // de dimensie waar je heen springt
+  opties: GerolDimensie[];
+}
+export const heeftKeuze = (nummer: number): boolean => nummer >= KEUZE_VANAF && nummer <= RUN_SHIFTS;
 
 // Wat de URL of een test mag vastleggen voor de start: ?type= ?wrath= ?shift= (zie startUitAdres).
 export interface Start {
@@ -41,7 +51,8 @@ export interface Start {
 }
 
 const dimCache = new Map<string, ReturnType<typeof rolDimensie>>();
-function gerold(seed: number, nummer: number, type?: Archetype) {
+function gerold(seed: number, nummer: number, type?: Archetype, gekozen?: Record<number, GerolDimensie>) {
+  if (gekozen?.[nummer] && !type) return gekozen[nummer];
   // De run: de drie kerndimensies staan vast, de finale ook; de rest rolt de generator.
   type ??= nummer === FINALE ? FINALE_TYPE : KERN_DIMENSIES[nummer - 1];
   const sleutel = `${seed}:${nummer}:${type ?? ''}`;
@@ -54,7 +65,8 @@ export function nieuwSpel(seed: number, f: Soort, start: Start = {}): SpelStaat 
   const s = { toeval: seed >>> 0 };
   const eerste = Math.max(1, Math.floor(start.shift ?? 1));
   // De kaart, de kleuren en de economie volgen het wereldtype van de gerolde dimensie; het type uit de URL geldt alleen voor de eerste.
-  zetWereldBron((n) => (n === eerste && start.wereld) || gerold(seed, n, n === eerste ? start.type : undefined).wereldtype);
+  const gekozen: Record<number, GerolDimensie> = {};
+  zetWereldBron((n) => (n === eerste && start.wereld) || gerold(seed, n, n === eerste ? start.type : undefined, gekozen).wereldtype);
   zetActieveEconomie(economieVan(eerste));
   const kaart = meet('generate map', () => maakKaart(seed, eerste));
   const werkers: Werker[] = [];
@@ -74,6 +86,7 @@ export function nieuwSpel(seed: number, f: Soort, start: Start = {}): SpelStaat 
     machine: { ...f.startMachine },
     voorraad: { ...economieVan(eerste).start }, // het startkapitaal van de economie van de eerste wereld
     economieen: [economieVan(eerste).id],
+    gekozen,
     werkers,
     land: undefined as unknown as LandStaat,
   };
@@ -90,6 +103,7 @@ export function verlies(s: SpelStaat, reden: string): void {
 
 export function stap(s: SpelStaat, f: Soort, sec: number): void {
   if (s.uitkomst) return; // de run is voorbij
+  if (s.keuze) { f.trucje.opTik?.(s, sec); return; } // de speler kiest waar de volgende sprong heen gaat
   if (s.onderweg > 0) {
     // in het niets: niemand loopt, de klok staat stil, alleen het trucje (stroomnet) draait
     s.onderweg = Math.max(0, s.onderweg - sec);
@@ -107,8 +121,19 @@ export function stap(s: SpelStaat, f: Soort, sec: number): void {
     // Alleen met volle stroom en genoeg heelheid op dat moment haal je de stream; anders is de run voorbij.
     if (!klaarVoorStream(s)) { s.gemist += 1; verlies(s, `The stream came at dimension ${s.dimensie} and the machine was not ready (power ${Math.floor(s.machine.energie)}/${s.machine.maxEnergie}, integrity ${Math.floor(s.machine.heelheid)}).`); return; }
     if (s.dimensie >= FINALE) { s.uitkomst = { gewonnen: true, reden: 'The last stream carried your disc out of the Hostile Land.' }; return; }
+    if (heeftKeuze(s.dimensie + 1)) { s.keuze = { nummer: s.dimensie + 1, opties: genereerKeuzes(s.seed, s.dimensie + 1, s.land.dim.archetype) }; return; }
     stream(s, f);
   }
+}
+
+// De speler kiest een van de werelden uit de keuze; dan springt de schijf er echt heen.
+export function kies(s: SpelStaat, f: Soort, index: number): boolean {
+  const k = s.keuze;
+  if (!k || !k.opties[index]) return false;
+  s.gekozen[k.nummer] = k.opties[index];
+  s.keuze = undefined;
+  stream(s, f);
+  return true;
 }
 
 // Vroeg springen: de stream komt nu in plaats van aan het eind van de klok. Dezelfde regels als de gewone stream:
@@ -134,10 +159,18 @@ export function stream(s: SpelStaat, f?: Soort): void {
     s.economieen.push(eco.id);
     for (const [g, n] of Object.entries(eco.start)) s.voorraad[g] = (s.voorraad[g] ?? 0) + (n ?? 0);
   }
-  s.land = nieuwLand(s, gerold(s.seed, s.dimensie), s.dimensie === FINALE ? FINALE_WRATH : undefined); // de landing zet het beginpunt van Wrath
+  s.land = nieuwLand(s, gerold(s.seed, s.dimensie, undefined, s.gekozen), s.dimensie === FINALE ? FINALE_WRATH : undefined); // de landing zet het beginpunt van Wrath
+  landingsBonus(s, eco.start);
   f?.trucje.opStream?.(s);
 }
 
+
+// Wat de gekozen wereld meegeeft: veilig repareert de machine, rijk laat een half startkapitaal extra neerdalen (ook al ken je de economie).
+export function landingsBonus(s: SpelStaat, start: Voorraad): void {
+  const p = s.land.dim.profiel;
+  if (p === 'veilig') s.machine.heelheid = Math.min(s.machine.maxHeelheid, s.machine.heelheid + BONUS_REPARATIE);
+  if (p === 'rijk') for (const [g, n] of Object.entries(start)) s.voorraad[g] = (s.voorraad[g] ?? 0) + Math.round((n ?? 0) * BONUS_KAPITAAL);
+}
 
 function verhuis(s: SpelStaat): void {
   const oud = s.kaart.machine;

@@ -2,6 +2,7 @@
 // Stappen (plan, "Procedural generation"): familie, archetype, klimaat, gedeelde grondstoffen, unieke grondstoffen,
 // naam. Native sites en shift-regels komen later. Geen DOM of Pixi: werkt ook in een los script of artifact.
 import type { Archetype, Dimensie, Familie, GedeeldeGrondstof, GrondstofAanbod, Klimaat } from '../kern/types';
+import { FINALE_TYPE } from '../data/run';
 import { hash01 } from '../kern/toeval';
 import { wereldTypeVoor } from '../kern/wereldtypes';
 import { ARCHETYPES, KLIMAAT_KANS, KLIMATEN, NAAMDELEN, PER_FAMILIE } from './archetypes';
@@ -11,7 +12,11 @@ import { ARCHETYPES, KLIMAAT_KANS, KLIMATEN, NAAMDELEN, PER_FAMILIE } from './ar
 export interface GerolDimensie extends Dimensie {
   sites: number;
   regel?: string; // optionele shift-regel ("long night", "acid rain")
+  profiel: Profiel; // bij een keuze in het niets: veilig, normaal of rijk (zie genereerKeuzes)
+  plek: string; // waar de schijf neerkomt ("edge of their territory")
 }
+// Een keuze tussen werelden: veilig = rustige landing en een reparatie, maar weinig; rijk = veel extra startkapitaal, maar het land is al kwaad.
+export type Profiel = 'veilig' | 'normaal' | 'rijk';
 
 const REGELS: { regel: string; klimaat?: Klimaat[] }[] = [
   { regel: 'long night: the fog closes in', klimaat: ['kristaltoendra', 'zoutzee'] },
@@ -69,7 +74,7 @@ export function genereerDimensie(seed: number, nummer: number, opties: { familie
   return rol(seed, nummer, opties.familie ?? fam[nummer - 1], vorige.slice(-2), opties.archetype);
 }
 
-function rol(seed: number, nummer: number, f: Familie, vermijd: Archetype[], gedwongen?: Archetype): GerolDimensie {
+function rol(seed: number, nummer: number, f: Familie, vermijd: Archetype[], gedwongen?: Archetype, profiel: Profiel = 'normaal'): GerolDimensie {
   if (gedwongen) f = ARCHETYPES[gedwongen].familie;
   const r = stroom(dimSeed(seed, nummer));
 
@@ -98,7 +103,8 @@ function rol(seed: number, nummer: number, f: Familie, vermijd: Archetype[], ged
 
   // 5. unieke grondstoffen: 1 of 2 uit de archetypelijst
   const pool = [...info.uniek];
-  const aantal = pool.length > 1 && r() < 0.6 ? 2 : 1;
+  const tweeWorp = pool.length > 1 ? r() : 1;
+  const aantal = pool.length > 1 && (profiel === 'rijk' || (profiel === 'normaal' && tweeWorp < 0.6)) ? 2 : 1;
   const uniek = [];
   for (let i = 0; i < aantal; i++) uniek.push(pool.splice(Math.floor(r() * pool.length), 1)[0]);
   for (const u of uniek) aanbod.push({ goed: u.id, gewicht: +(0.8 + r() * 1.0).toFixed(2) });
@@ -109,7 +115,9 @@ function rol(seed: number, nummer: number, f: Familie, vermijd: Archetype[], ged
   if (loot.length === 0) loot.push({ ...info.loot[info.loot.length - 1] });
 
   // Landing (voor de bijbehorende Wrath): wordt later een echte plek op de kaart; nu alleen het getal.
-  const plek = weeg(r, info.beginWrathPlekken, p => p.gewicht);
+  // veilig landt in de rustigste plekken, rijk midden in het land (dat is kwaad, maar daar ligt het meeste)
+  const plekken = profiel === 'normaal' ? info.beginWrathPlekken : [...info.beginWrathPlekken].sort((a, b) => (profiel === 'veilig' ? 1 : -1) * (a.wrath[0] - b.wrath[0])).slice(0, 2);
+  const plek = weeg(r, plekken, p => p.gewicht);
   const opening = Math.round(plek.wrath[0] + r() * (plek.wrath[1] - plek.wrath[0]) + (nummer - 1) * 2); // dieper in de run = kwader
 
   // Sites: bijzondere werelden hebben er weinig (maar groot), beschavingen en wildernis meer. Dieper in de run: meer.
@@ -131,7 +139,9 @@ function rol(seed: number, nummer: number, f: Familie, vermijd: Archetype[], ged
     loot,
     kaart: info.kaart,
     beginWrath: Math.min(70, opening),
-    sterkte: +(1 + (nummer - 1) * 0.12).toFixed(2),
+    sterkte: +(1 + (nummer - 1) * 0.12 + (profiel === 'rijk' ? 0.2 : profiel === 'veilig' ? -0.08 : 0)).toFixed(2),
+    profiel,
+    plek: plek.plek,
     sites,
     regel,
   };
@@ -152,4 +162,18 @@ export function genereerRun(seed: number, aantal = 8): GerolDimensie[] {
   const uit: GerolDimensie[] = [];
   for (let n = 1; n <= aantal; n++) uit.push(rol(seed, n, fam[n - 1], uit.slice(-2).map(d => d.archetype)));
   return uit;
+}
+
+// De keuze in het niets voor dimensie `nummer`: drie werelden uit drie families die echt anders zijn.
+// Index 0 = veilig, 1 = normaal (precies wat de generator zonder keuze zou rollen), 2 = rijk. `huidig` = het type waar je nu staat.
+export const KEUZE_NORMAAL = 1;
+export function genereerKeuzes(seed: number, nummer: number, huidig?: Archetype): GerolDimensie[] {
+  const norm = genereerDimensie(seed, nummer);
+  const anders = (['beschaving', 'wildernis', 'bijzonder'] as Familie[]).filter(f => f !== norm.familie);
+  const vermijd: Archetype[] = [FINALE_TYPE, norm.archetype, ...(huidig ? [huidig] : [])]; // de finale-vijand komt alleen als finale
+  const wissel = hash01(dimSeed(seed, nummer)) < 0.5;
+  const [veiligFam, rijkFam] = wissel ? [anders[1], anders[0]] : [anders[0], anders[1]];
+  const veilig = rol(seed ^ 0x51ed270b, nummer, veiligFam, vermijd, undefined, 'veilig');
+  const rijk = rol(seed ^ 0x2545f491, nummer, rijkFam, [...vermijd, veilig.archetype], undefined, 'rijk');
+  return [veilig, norm, rijk];
 }

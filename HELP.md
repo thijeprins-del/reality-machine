@@ -106,6 +106,9 @@ wat je hebt, en zijn recepten met iconen. Klik op een gebouw in de wereld en het
 - Civilizations with their own raiders: `?type=antiquity` (legionaries, charioteers), `?type=medieval` (knights, archers), `?type=industrial` (steam soldiers, steam machines). Add `&wrath=60` to see them quickly.
 - More raiders: `?type=modern` (police and tanks), `?type=monsters` (claw beasts, slime crawlers: few, tough, hard bites), `?type=hordes` (bison and antelope stampede: many, fast, soft).
 
+## The fork in the void
+From shift 4 on, when the stream comes the clock stops and you choose between three worlds (click or press 1-3). Each card shows a glimpse of the landing: world type, where you land, danger (Wrath at landing), resources and a bonus. A quiet drift repairs the machine but is thin on resources, a rich world hands you extra supplies but the land is already angry.
+
 ## A full run
 - A run is 8 shifts plus a finale. Shifts 1 to 3 are always Stone age, Bugs and Giants; 4 to 8 are rolled; the finale starts at WRATHFUL.
 - You win by getting through the stream of the finale. You lose if the machine is not charged (100% power, 50% integrity) when a stream comes, or if its integrity hits 0.

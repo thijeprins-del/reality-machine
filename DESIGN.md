@@ -221,6 +221,13 @@ Energie gaat om keuzes, niet om alles overeind houden. Er is geen zekering en ge
 - Slopen geeft de bouwkosten terug. Regels in `src/ratten/industrie.ts` en `src/ratten/werk.ts`, beeld en bouwbalk in
   `src/ratten/bouwen.ts`, getallen in `economies/schroot.json`.
 
+## De splitsing in het niets (Thije, 20 nov)
+- Na de stream van shift 3 en verder (tot en met de sprong naar shift 8) staat de tijd stil en kies je uit drie werelden: `genereerKeuzes` in `src/land/genereer.ts`.
+  Elke kaart laat een glimp zien: wereldsoort, waar je landt, gevaar (Wrath en kracht bij de landing), wat de vijand doet, grondstoffen, loot en bonus.
+- De drie verschillen echt: **veilig** (rustigste landingsplek, kracht -0,08, de machine herstelt `BONUS_REPARATIE`, maar één unieke grondstof), **normaal** (precies wat de generator zonder keuze rolde) en **rijk** (midden in het land: hoge Wrath, kracht +0,2, twee unieke grondstoffen en `BONUS_KAPITAAL` van het startkapitaal extra).
+  Elke optie komt uit een andere familie; het type van de finale komt hier niet voor. Getallen in `src/data/run.ts`.
+- Testhaak: `SPEL.staat.keuze` is gezet zolang de speler kiest; `SPEL.kies(0..2)` kiest. `SPEL.stream()` slaat de keuze over (normaal).
+
 ## Open
 - Tegen de computer (aanname) of tweespeler op één scherm?
 - Energie en heelheid: hoeveel nodig per stream?

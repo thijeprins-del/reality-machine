@@ -26,3 +26,9 @@ export interface Uitkomst {
   gewonnen: boolean;
   reden: string;
 }
+
+// De keuze in het niets: vanaf deze dimensie kies je uit drie werelden (de drie kerndimensies en de finale staan vast).
+export const KEUZE_VANAF = KERN_DIMENSIES.length + 1;
+// De veilige wereld repareert de machine zoveel bij de landing; de rijke geeft dit deel van het startkapitaal van de economie er nog bij.
+export const BONUS_REPARATIE = 25;
+export const BONUS_KAPITAAL = 0.75;
