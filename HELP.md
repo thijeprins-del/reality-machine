@@ -106,6 +106,10 @@ wat je hebt, en zijn recepten met iconen. Klik op een gebouw in de wereld en het
 - Civilizations with their own raiders: `?type=antiquity` (legionaries, charioteers), `?type=medieval` (knights, archers), `?type=industrial` (steam soldiers, steam machines). Add `&wrath=60` to see them quickly.
 - More raiders: `?type=modern` (police and tanks), `?type=monsters` (claw beasts, slime crawlers: few, tough, hard bites), `?type=hordes` (bison and antelope stampede: many, fast, soft).
 
+## Shift rules
+
+From dimension 4 on, a dimension can have a rule that changes how it plays (shown under the run line): LOW GRAVITY (rats and raiders move faster), HIGH GRAVITY (rats slow, raiders slowed less), NIGHT (dark, less sight with fog on, raiders appear closer), RAIN (rats slower, the machine mends at half speed). The finale always has the STORM: night and rain together, and raiders come faster. Shortcuts: `?finale=1` (straight to the finale, power always charged) and `?rule=low|high|night|rain|storm` (rule of the first world, e.g. `?type=stone&rule=night`).
+
 ## A full run
 - A run is 8 shifts plus a finale. Shifts 1 to 3 are always Stone age, Bugs and Giants; 4 to 8 are rolled; the finale starts at WRATHFUL.
 - You win by getting through the stream of the finale. You lose if the machine is not charged (100% power, 50% integrity) when a stream comes, or if its integrity hits 0.

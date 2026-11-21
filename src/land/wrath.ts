@@ -9,6 +9,10 @@ import type { SpelStaat } from '../kern/spel';
 import { volgende } from '../kern/toeval';
 import { genereerDimensie, type GerolDimensie } from './genereer';
 import { ARCHETYPES } from './archetypes';
+import { CONDITIES, type ConditieInfo } from '../data/regels';
+
+// De regel van de dimensie waar je nu in staat (data/regels.ts); zonder regel is alles 1.
+export const regelVan = (s: { land?: { dim: GerolDimensie } }): ConditieInfo | null => (s.land?.dim.conditie ? CONDITIES[s.land.dim.conditie] : null);
 
 export interface Overvaller {
   id: number;
@@ -73,12 +77,12 @@ export function overval(s: SpelStaat, aantal: number): void {
     let x = k.ring.x, y = k.ring.y;
     for (let poging = 0; poging < 40; poging++) {
       const hoek = hoek0 + (volgende(s) - 0.5) * 0.9;
-      const af = k.ring.r + OVERVAL_AFSTAND - poging * 0.4;
+      const af = k.ring.r + OVERVAL_AFSTAND * (regelVan(s)?.afstand ?? 1) - poging * 0.4;
       const px = k.ring.x + Math.cos(hoek) * af, py = k.ring.y + Math.sin(hoek) * af;
       if (px > 1 && py > 1 && px < k.breed - 1 && py < k.diep - 1 && vrijOp(k.lopen, px, py)) { x = px; y = py; break; }
     }
     const maxHp = OVERVAL_HP * l.dim.sterkte * (stijl?.hp ?? 1);
-    l.raiders.push({ id: l.volgendId++, soort: sprites[l.volgendId % sprites.length], x, y, hp: maxHp, maxHp, kijkt: 1, snelheid: OVERVAL_SNELHEID * (stijl?.snelheid ?? 1), schade: OVERVAL_SCHADE * (stijl?.schade ?? 1) });
+    l.raiders.push({ id: l.volgendId++, soort: sprites[l.volgendId % sprites.length], x, y, hp: maxHp, maxHp, kijkt: 1, snelheid: OVERVAL_SNELHEID * (stijl?.snelheid ?? 1) * (regelVan(s)?.overvaller ?? 1), schade: OVERVAL_SCHADE * (stijl?.schade ?? 1) });
   }
 }
 
@@ -103,7 +107,7 @@ export function stapLand(s: SpelStaat, sec: number): void {
     l.raidIn -= sec;
     if (l.raidIn <= 0) {
       overval(s, stijl?.vast ?? Math.max(1, Math.round(raid.aantal * (stijl?.aantal ?? 1) * Math.sqrt(l.dim.sterkte))));
-      l.raidIn = raid.elke * (stijl?.elke ?? 1);
+      l.raidIn = raid.elke * (stijl?.elke ?? 1) * (regelVan(s)?.elke ?? 1);
     }
   } else l.raidIn = Math.max(l.raidIn, EERSTE_OVERVAL_SEC);
 
@@ -131,7 +135,7 @@ export function stapLand(s: SpelStaat, sec: number): void {
 
   // de machine herstelt rustig zodra niemand hem raakt
   l.heelRust = raakt ? 0 : l.heelRust + sec;
-  if (l.heelRust > 5 && m.heelheid < m.maxHeelheid) m.heelheid = Math.min(m.maxHeelheid, m.heelheid + HEEL_HERSTEL_PER_SEC * sec);
+  if (l.heelRust > 5 && m.heelheid < m.maxHeelheid) m.heelheid = Math.min(m.maxHeelheid, m.heelheid + HEEL_HERSTEL_PER_SEC * (regelVan(s)?.herstel ?? 1) * sec);
 }
 
 // Dimensie n van deze seed, met eventueel een afgedwongen type (alleen de eerste dimensie via de URL).
