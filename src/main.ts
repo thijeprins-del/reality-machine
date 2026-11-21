@@ -5,6 +5,8 @@ import { maakBesturing } from './kern/besturing';
 import { versieTekst } from './kern/omgeving';
 import { beeldKlaar, markeer, maakOverlay, rapport, zetExtra } from './kern/prestatie';
 import { maakBalk } from './kern/scherm';
+import { maakWeer } from './kern/weer';
+import { regelVan } from './land/wrath';
 import { nieuwSpel, kanVroegSpringen, machineKlaar, restTijd, seedUitAdres, startUitAdres, stap, stream, vroegStream, type SpelStaat } from './kern/spel';
 import { FINALE, RUN_SHIFTS } from './data/run';
 import { WRATH_MAX, WRATH_STADIA } from './data/wrath';
@@ -92,6 +94,7 @@ async function start(): Promise<void> {
 
   markeer('ui ready');
   maakOverlay();
+  const weer = maakWeer();
   zetExtra(() => ({ ...beeld.statistiek(), muizen: staat.werkers.length }));
   app.ticker.add((t) => {
     const t0 = performance.now();
@@ -99,6 +102,7 @@ async function start(): Promise<void> {
     stap(staat, RATTEN, sec);
     besturing.werk(sec);
     beeld.werk(sec, besturing.selectie);
+    weer.werk(staat, sec);
     paneel.werk(sec);
     const rest = Math.ceil(restTijd(staat));
     const kan = kanVroegSpringen(staat);
@@ -115,6 +119,7 @@ async function start(): Promise<void> {
       staat.onderweg > 0
         ? `In the void · on the way to ${dimensieKleur(staat.dimensie).naam}`
         : `Dimension ${staat.dimensie} · ${dimensieKleur(staat.dimensie).naam} · stream in ${Math.floor(rest / 60)}:${String(rest % 60).padStart(2, '0')}`,
+      regelRegel(staat),
       wrathRegel(staat),
       `Machine: power ${Math.floor((100 * staat.machine.energie) / staat.machine.maxEnergie)}% · integrity ${Math.floor(staat.machine.heelheid)}%${rest <= 60 && staat.onderweg <= 0 && !staat.start?.gratisStroom && (staat.machine.energie < staat.machine.maxEnergie || staat.machine.heelheid < 50) ? ' · <b style="color:#ff3030">NOT READY FOR THE STREAM: you lose if it comes now</b>' : ' (needs 100% power and 50% integrity at the stream)'}`,
       `${RATTEN.naam}: ${staat.werkers.length} (${bezig} working) · selected ${besturing.selectie.size}`,
@@ -142,6 +147,11 @@ function toonEinde(s: SpelStaat): HTMLElement {
   document.body.appendChild(d);
   return d;
 }
+
+const regelRegel = (s: SpelStaat): string => {
+  const r = regelVan(s);
+  return r && s.onderweg <= 0 ? `Rule <b style="color:${r.kleur}">${r.naam}</b> · ${r.tekst}` : '';
+};
 
 const wrathRegel = (s: SpelStaat): string => {
   const l = s.land, st = stadium(l.wrath), nr = stadiumNummer(l.wrath);

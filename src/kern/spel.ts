@@ -5,8 +5,9 @@ import { werkMist, type Kijker } from './mist';
 import { meet } from './prestatie';
 import { HEEL_MIN_STREAM } from '../data/wrath';
 import { FINALE, FINALE_TYPE, FINALE_WRATH, KERN_DIMENSIES, type Uitkomst } from '../data/run';
-import { nieuwLand, rolDimensie, stapLand, typeUitTekst, type LandStaat } from '../land/wrath';
+import { nieuwLand, regelVan, rolDimensie, stapLand, typeUitTekst, type LandStaat } from '../land/wrath';
 import type { Archetype } from './types';
+import { conditieUitTekst, type Conditie } from '../data/regels';
 import { hash01 } from './toeval';
 import { wereldType } from './wereldtypes';
 import type { Soort, Machine, Voorraad } from './types';
@@ -37,6 +38,7 @@ export interface Start {
   wrath?: number; // Wrath bij de eerste landing
   shift?: number; // begin in deze dimensie in plaats van de eerste
   wereld?: string; // ?world=: wereldtype van de eerste dimensie (id van een bestand in worldtypes/)
+  conditie?: Conditie; // ?rule=: shift-regel van de eerste dimensie (low, high, night, rain, storm)
   gratisStroom?: boolean; // ?power=free: de machine telt altijd als opgeladen (om de hele run te kunnen testen)
 }
 
@@ -77,7 +79,9 @@ export function nieuwSpel(seed: number, f: Soort, start: Start = {}): SpelStaat 
     werkers,
     land: undefined as unknown as LandStaat,
   };
-  st.land = nieuwLand(st, gerold(seed, eerste, start.type), start.wrath ?? (eerste === FINALE ? FINALE_WRATH : undefined));
+  const basis = gerold(seed, eerste, start.type);
+  const eerstDim = start.conditie ? { ...basis, conditie: start.conditie } : basis; // een kopie: de cache blijft zoals gerold
+  st.land = nieuwLand(st, eerstDim, start.wrath ?? (eerste === FINALE ? FINALE_WRATH : undefined));
   st.start = start;
   return st;
 }
@@ -96,7 +100,7 @@ export function stap(s: SpelStaat, f: Soort, sec: number): void {
     f.trucje.opTik?.(s, sec);
     return;
   }
-  stapWerkers(s, f.eenheden, sec);
+  stapWerkers(s, f.eenheden, sec, regelVan(s)?.muis ?? 1);
   werkMist(s.kaart.mist, sec, () => kijkers(s));
   f.trucje.opTik?.(s, sec);
   stapLand(s, sec);
@@ -172,7 +176,8 @@ function verhuis(s: SpelStaat): void {
 // Wie de wereld ziet: de machine (de hele ring en een stuk eromheen) en elke eenheid.
 function kijkers(s: SpelStaat): Kijker[] {
   const r = s.kaart.ring;
-  return [{ x: r.x, y: r.y, r: r.r + MIST_ZICHT_MACHINE }, ...s.werkers.map((w) => ({ x: w.x, y: w.y, r: MIST_ZICHT_MUIS }))];
+  const z = regelVan(s)?.zicht ?? 1; // 's nachts zie je minder ver
+  return [{ x: r.x, y: r.y, r: r.r + MIST_ZICHT_MACHINE * z }, ...s.werkers.map((w) => ({ x: w.x, y: w.y, r: MIST_ZICHT_MUIS * z }))];
 }
 
 export function restTijd(s: SpelStaat): number {
@@ -199,5 +204,10 @@ export function startUitAdres(): Start {
   if (wereld && wereldType(wereld)) start.wereld = wereld;
   else if (wereld) console.warn(`?world=${wereld} is unknown; use the id of a file in worldtypes/`);
   if (sh !== null && Number.isFinite(Number(sh))) start.shift = Number(sh);
+  // ?finale=1 springt naar de laatste dimensie, op volle stroom
+  if (p.get('finale') !== null && p.get('finale') !== '0') { start.shift = FINALE; start.gratisStroom = true; }
+  const regel = conditieUitTekst(p.get('rule'));
+  if (p.get('rule') && !regel) console.warn(`?rule=${p.get('rule')} is unknown; use low, high, night, rain or storm`);
+  if (regel) start.conditie = regel;
   return start;
 }

@@ -4,12 +4,15 @@
 import type { Archetype, Dimensie, Familie, GedeeldeGrondstof, GrondstofAanbod, Klimaat } from '../kern/types';
 import { hash01 } from '../kern/toeval';
 import { wereldTypeVoor } from '../kern/wereldtypes';
+import { EERSTE_MET_REGEL, KANS_CONDITIE, KOMT_VOOR, type Conditie } from '../data/regels';
+import { FINALE } from '../data/run';
 import { ARCHETYPES, KLIMAAT_KANS, KLIMATEN, NAAMDELEN, PER_FAMILIE } from './archetypes';
 
 // Wat de generator er bovenop geeft: aantal sites (dorpen, nesten, hopen) en een optionele regel voor deze dimensie.
 // Nog niet in kern/types.ts: komt daar pas als het spel het leest.
 export interface GerolDimensie extends Dimensie {
   sites: number;
+  conditie?: Conditie; // de shift-regel die echt iets doet (data/regels.ts): zwaartekracht, nacht, regen, storm
   regel?: string; // optionele shift-regel ("long night", "acid rain")
 }
 
@@ -118,6 +121,10 @@ function rol(seed: number, nummer: number, f: Familie, vermijd: Archetype[], ged
   const passend = REGELS.filter(x => !x.klimaat || x.klimaat.includes(klimaat));
   const regel = r() < 0.4 && passend.length ? kies(r, passend).regel : undefined;
 
+  // Conditie: eigen stroom, zodat de rest van de dimensie hetzelfde blijft. Kerndimensies: geen; de finale: altijd de storm.
+  const rc = stroom(dimSeed(seed, nummer) ^ 0x5eed);
+  const conditie: Conditie | undefined = nummer === FINALE ? 'storm' : nummer >= EERSTE_MET_REGEL && rc() < KANS_CONDITIE ? kies(rc, KOMT_VOOR) : undefined;
+
   return {
     nummer,
     seed: dimSeed(seed, nummer),
@@ -133,6 +140,7 @@ function rol(seed: number, nummer: number, f: Familie, vermijd: Archetype[], ged
     beginWrath: Math.min(70, opening),
     sterkte: +(1 + (nummer - 1) * 0.12).toFixed(2),
     sites,
+    conditie,
     regel,
   };
 }

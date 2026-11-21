@@ -221,6 +221,9 @@ Energie gaat om keuzes, niet om alles overeind houden. Er is geen zekering en ge
 - Slopen geeft de bouwkosten terug. Regels in `src/ratten/industrie.ts` en `src/ratten/werk.ts`, beeld en bouwbalk in
   `src/ratten/bouwen.ts`, getallen in `economies/schroot.json`.
 
+## Shift-regels (Thije, 21 nov)
+Een dimensie vanaf nummer 4 heeft in 60% van de gevallen een regel (`src/data/regels.ts`, gerold in `src/land/genereer.ts` met een eigen toevalsstroom): laag (muizen ×1.4, overvallers ×1.25), hoog (muizen ×0.7, overvallers ×0.85), nacht (donker beeld, mist-zicht ×0.5, overvallers verschijnen op 0.6× afstand) en regen (muizen ×0.85, machineherstel ×0.5). De kerndimensies 1-3 hebben er geen. De finale (dimensie 9) heeft altijd `storm`: nacht en regen samen en overvallen 0.8× zo traag (dus vaker). De kern leest de regel via `regelVan(s)` (`src/land/wrath.ts`); het weer tekent `src/kern/weer.ts`. URL: `?finale=1`, `?rule=`.
+
 ## Open
 - Tegen de computer (aanname) of tweespeler op één scherm?
 - Energie en heelheid: hoeveel nodig per stream?

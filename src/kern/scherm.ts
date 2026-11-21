@@ -8,7 +8,7 @@ export function maakBalk(): { zet(regels: string[]): void } {
   let vorige = '';
   return {
     zet(regels) {
-      const html = regels.map((r) => `<div>${r}</div>`).join('');
+      const html = regels.filter(Boolean).map((r) => `<div>${r}</div>`).join('');
       if (html !== vorige) balk.innerHTML = vorige = html;
     },
   };

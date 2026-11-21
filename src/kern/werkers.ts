@@ -85,7 +85,8 @@ export function stuur(s: WerkStaat, ids: number[], kol: number, rij: number): vo
   });
 }
 
-export function stapWerkers(s: WerkStaat, soorten: EenheidSoort[], sec: number): void {
+// `snelheid`: maal de loopsnelheid (shift-regel: zwaartekracht, regen).
+export function stapWerkers(s: WerkStaat, soorten: EenheidSoort[], sec: number, snelheid = 1): void {
   for (const w of s.werkers) {
     const soort = soorten.find((e) => e.soort === w.soort);
     if (!soort) continue;
@@ -94,7 +95,7 @@ export function stapWerkers(s: WerkStaat, soorten: EenheidSoort[], sec: number):
       continue;
     }
     if (w.taak === 'rust') continue;
-    if (beweeg(s, w, soort.snelheid * sec)) aangekomen(s, w);
+    if (beweeg(s, w, soort.snelheid * snelheid * sec)) aangekomen(s, w);
   }
 }
 
