@@ -13,6 +13,7 @@ import { hoogteOp, tegelOnder } from './terrein';
 export interface Besturing {
   selectie: Set<number>;
   werk(sec: number): void;
+  kijkNaar(kol: number, rij: number): void; // camera naar deze tegel (minikaart)
 }
 
 // Scherm (in de wereld-container) naar de tegel eronder, op vlakke grond. Met heuvels: tegelOnder in terrein.ts.
@@ -293,6 +294,12 @@ export function maakBesturing(
 
   return {
     selectie,
+    kijkNaar(kol, rij) {
+      const p = naarScherm(kol, rij, hoogteOp(staat().kaart, kol, rij));
+      cam.x = p.x;
+      cam.y = p.y;
+      zet();
+    },
     werk(sec) {
       // nieuwe wereld: de schijf ligt nu op andere tegels, en de camera gaat mee zodat hij op dezelfde plek in beeld blijft
       const nu = staat().kaart.machine;

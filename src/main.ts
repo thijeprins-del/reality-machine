@@ -5,6 +5,7 @@ import { maakBesturing } from './kern/besturing';
 import { versieTekst } from './kern/omgeving';
 import { beeldKlaar, markeer, maakOverlay, rapport, zetExtra } from './kern/prestatie';
 import { maakBalk } from './kern/scherm';
+import { maakMinikaart } from './kern/minikaart';
 import { nieuwSpel, kanVroegSpringen, machineKlaar, restTijd, seedUitAdres, startUitAdres, stap, stream, vroegStream, type SpelStaat } from './kern/spel';
 import { FINALE, RUN_SHIFTS } from './data/run';
 import { WRATH_MAX, WRATH_STADIA } from './data/wrath';
@@ -76,6 +77,7 @@ async function start(): Promise<void> {
     stuur(staat, ids, kol, rij),
   beeld.bewerker,
   );
+  const minikaart = maakMinikaart(beeld.wereld, () => staat, (kol, rij) => besturing.kijkNaar(kol, rij));
   let eind: HTMLElement | null = null;
   const balk = maakBalk();
   // SHIFT: spring nu al. Is de machine niet klaar, dan eerst een tweede klik (anders ben je de run kwijt).
@@ -99,6 +101,7 @@ async function start(): Promise<void> {
     stap(staat, RATTEN, sec);
     besturing.werk(sec);
     beeld.werk(sec, besturing.selectie);
+    minikaart.werk(sec);
     paneel.werk(sec);
     const rest = Math.ceil(restTijd(staat));
     const kan = kanVroegSpringen(staat);
