@@ -4,7 +4,7 @@ import { Assets, BlurFilter, ColorMatrixFilter, Container, Graphics, Matrix, Rec
 import { naarScherm, TEGEL_B, TEGEL_H } from './iso';
 import { dimensieKleur, DIMENSIE_DUUR_SEC, hoogteTint, HOOGTE_MIN, HOOGTE_PX, SCHIJF_HOOGTE, SPRONG_SEC, THUIS, type DimensieWereld } from '../data/dimensies';
 import { tekenDebug } from './debugbeeld';
-import { MIST_ONBEKEND, MIST_VERKEND, MIST_ZICHT } from './mist';
+import { MIST_ONBEKEND, MIST_VERKEND, MIST_ZICHT, mistStand } from './mist';
 import { meet } from './prestatie';
 import { klepHoeken, opKlep, opSchijf, schijfStraal, type Blok, type Kaart } from './kaart';
 import type { SpelStaat } from './spel';
@@ -391,8 +391,7 @@ export class WereldBeeld {
   // Mist: één pixel per tegel in een canvas, schuin over de wereld gelegd met dezelfde schuine as als het rooster.
   // Lineair uitgerekt, dus de randen lopen zacht. Alleen opnieuw tekenen als de mist veranderde.
   private mistLaag = new Container();
-  // Mist staat voorlopig uit (Thije, 17 nov), zodat je de werelden makkelijk ziet. Terug met ?fog=1 (of ?mist=aan).
-  private mistAan = ((q) => q.get('fog') === '1' || q.get('mist') === 'aan')(new URLSearchParams(location.search));
+  // Mist staat standaard uit (Thije, 17 nov); aan/uit via mistStand (?fog=1, toets F of knop FOG, zie mist.ts).
   private mistCanvas: HTMLCanvasElement | null = null;
   private mistTex: Texture | null = null;
   private mistVoor: object | null = null; // voor welke kaart het canvas gemaakt is
@@ -400,7 +399,7 @@ export class WereldBeeld {
   private mistPixels: ImageData | null = null;
   // De mist staat uit voor de testgereedschappen (F1 raster, F2 terreinbewerker): daar wil je het hele land zien.
   private mistActief(): boolean {
-    return this.mistAan && !this.debugAan && !this.staat.klokStil;
+    return mistStand.aan && !this.debugAan && !this.staat.klokStil;
   }
   private werkMistBeeld(): void {
     const s = this.staat, k = s.kaart, m = k.mist;
@@ -647,9 +646,9 @@ export class WereldBeeld {
       if (!st) this.overvallers.set(o.id, (st = this.maak(o.soort, true)));
       const hup = Math.sin(this.t * 10 + o.id * 3) > 0.3 ? PIXEL : 0;
       this.zetEenheid(st, o.x, o.y, o.kijkt, hup);
-      // zichtbaar alleen als het stuk land niet in de mist ligt
+      // zichtbaar alleen als het stuk land niet in de mist ligt (of als er geen mist is)
       const mi = this.staat.kaart.mist, zicht = mi.toestand[Math.round(o.y) * mi.breed + Math.round(o.x)] === MIST_ZICHT;
-      for (const d of st.delen) d.visible = zicht;
+      for (const d of st.delen) d.visible = zicht || !this.mistActief();
     }
   }
 

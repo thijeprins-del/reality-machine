@@ -71,3 +71,18 @@ export function verkend(m: Mist, kol: number, rij: number): boolean {
   if (kol < 0 || rij < 0 || kol >= m.breed || rij >= m.diep) return false;
   return m.toestand[Math.floor(rij) * m.breed + Math.floor(kol)] !== MIST_ONBEKEND;
 }
+
+// Staat de mist aan? Standaard uit (Thije, 17 nov). Aan met ?fog=1 (of ?mist=aan), of met de toets F / knop FOG;
+// ?fog=0 dwingt uit. De keuze blijft in de browser staan, zodat hij niet bij elke start opnieuw gezet hoeft.
+const MIST_SLEUTEL = 'rm-fog';
+function leesMistKeuze(): boolean {
+  const q = new URLSearchParams(location.search);
+  if (q.get('fog') === '1' || q.get('mist') === 'aan') return true;
+  if (q.get('fog') === '0' || q.get('mist') === 'uit') return false;
+  try { return localStorage.getItem(MIST_SLEUTEL) === '1'; } catch { return false; }
+}
+export const mistStand = { aan: leesMistKeuze() };
+export function zetMistAan(aan: boolean): void {
+  mistStand.aan = aan;
+  try { localStorage.setItem(MIST_SLEUTEL, aan ? '1' : '0'); } catch { /* geen opslag: ook goed */ }
+}
