@@ -34,7 +34,7 @@ export const OVERVAL_BEREIK = 3.2; // tegels vanaf het midden van de machine
 export const VERDEDIG_STRAAL = 2.5;
 export const VERDEDIG_SCHADE = 0.3; // per muis per seconde
 export const OVERVAL_AFSTAND = 24; // zo ver buiten de ring komen ze vandaan
-export const EERSTE_OVERVAL_SEC = 20; // na de landing duurt het even voor de eerste komt
+// De rust na de landing voor de eerste overval staat per shift in data/run.ts (ESCALATIE).
 
 // De machine herstelt rustig als er niemand in de buurt is, en de stream vraagt minimaal zoveel heelheid.
 export const HEEL_HERSTEL_PER_SEC = 0.3;

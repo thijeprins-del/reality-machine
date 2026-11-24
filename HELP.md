@@ -16,7 +16,7 @@ zout en vlecht je balken van kelp. Het bouwmenu toont wat je in deze wereld kunt
 Je voorraad en de gebouwen binnen de ring gaan mee naar de volgende wereld en blijven werken.
 
 ## De gele ring en de stream
-Om je machine ligt een gele ring van geverfde streepjes. Elke vijf minuten komt de stream: alles binnen de ring springt naar
+Om je machine ligt een gele ring van geverfde streepjes. Elke drie en een halve tot vijf minuten komt de stream (de eerste werelden zijn korter): alles binnen de ring springt naar
 een nieuwe wereld, met andere kleuren en nieuwe grondstoffen. Wat buiten de ring ligt, blijft achter. Binnen de ring
 bouw je. De sprong lukt alleen als de machine op dat moment volle stroom krijgt: dan slaat de bliksem in de ring, wordt
 je land uit de wereld gerukt en landt het na een paar tellen in het niets in de volgende wereld. Geen volle stroom:
@@ -101,6 +101,7 @@ wat je hebt, en zijn recepten met iconen. Klik op een gebouw in de wereld en het
 - Every dimension has a Wrath meter, 0 to 100, in 5 stages: CALM, WARY, HOSTILE, ENRAGED, WRATHFUL. The landing sets the starting value.
 - Taking resources from the land raises Wrath. Leave it alone for 10 seconds and it slowly calms down.
 - From WARY on, natives raid your machine. Rats close to a raider fight back, so sending every rat out to mine leaves the machine open. Raiders damage the machine; the stream needs at least 50% machine health.
+- The deeper you go, the meaner the land: raids come in bigger groups and faster, the first world gives you a minute of peace, and a part of the Wrath you left behind is still there when you land.
 - Fog of war is off for now. `?fog=1` brings it back.
 - Test shortcuts in the address bar: `?world=zoutzee` (the world type of the first world: roestduin, kristaltoendra, gifwoud, magmaveld, zoutzee, aarde), `?type=stone` (also antiquity, medieval, industrial, modern, scifi, bugs, monsters, hordes, giants, aliens, tentacle), `?wrath=80`, `?shift=4` (start in dimension 4), `?seed=123`. Combine them: `?factie=ratten&type=stone&wrath=60`.
 - Civilizations with their own raiders: `?type=antiquity` (legionaries, charioteers), `?type=medieval` (knights, archers), `?type=industrial` (steam soldiers, steam machines). Add `&wrath=60` to see them quickly.
