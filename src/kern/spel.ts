@@ -1,10 +1,10 @@
-import { DIMENSIE_DUUR_SEC, economieVan, zetWereldBron, MIST_ZICHT_MACHINE, MIST_ZICHT_MUIS, SPRONG_SEC } from '../data/dimensies';
+import { economieVan, zetWereldBron, MIST_ZICHT_MACHINE, MIST_ZICHT_MUIS, SPRONG_SEC } from '../data/dimensies';
 import { zetActieveEconomie } from './economie';
 import { binnenRing, maakKaart, type Kaart } from './kaart';
 import { werkMist, type Kijker } from './mist';
 import { meet } from './prestatie';
 import { HEEL_MIN_STREAM } from '../data/wrath';
-import { FINALE, FINALE_TYPE, FINALE_WRATH, KERN_DIMENSIES, type Uitkomst } from '../data/run';
+import { dimensieDuur, FINALE, FINALE_TYPE, FINALE_WRATH, KERN_DIMENSIES, WRATH_ERFENIS, type Uitkomst } from '../data/run';
 import { nieuwLand, rolDimensie, stapLand, typeUitTekst, type LandStaat } from '../land/wrath';
 import type { Archetype } from './types';
 import { hash01 } from './toeval';
@@ -40,6 +40,7 @@ export interface Start {
   gratisStroom?: boolean; // ?power=free: de machine telt altijd als opgeladen (om de hele run te kunnen testen)
 }
 
+const WRATH_MAX_START = 75; // zo hoog kan een landing hooguit beginnen (de finale zit er zelf boven)
 const dimCache = new Map<string, ReturnType<typeof rolDimensie>>();
 function gerold(seed: number, nummer: number, type?: Archetype) {
   // De run: de drie kerndimensies staan vast, de finale ook; de rest rolt de generator.
@@ -102,8 +103,8 @@ export function stap(s: SpelStaat, f: Soort, sec: number): void {
   stapLand(s, sec);
   if (s.machine.heelheid <= 0) { verlies(s, 'The reality machine was torn apart by the land.'); return; }
   if (!s.klokStil) s.tijd += sec;
-  while (s.tijd >= DIMENSIE_DUUR_SEC) {
-    s.tijd -= DIMENSIE_DUUR_SEC;
+  while (s.tijd >= dimensieDuur(s.dimensie)) {
+    s.tijd -= dimensieDuur(s.dimensie);
     // Alleen met volle stroom en genoeg heelheid op dat moment haal je de stream; anders is de run voorbij.
     if (!klaarVoorStream(s)) { s.gemist += 1; verlies(s, `The stream came at dimension ${s.dimensie} and the machine was not ready (power ${Math.floor(s.machine.energie)}/${s.machine.maxEnergie}, integrity ${Math.floor(s.machine.heelheid)}).`); return; }
     if (s.dimensie >= FINALE) { s.uitkomst = { gewonnen: true, reden: 'The last stream carried your disc out of the Hostile Land.' }; return; }
@@ -117,7 +118,7 @@ export const kanVroegSpringen = (s: SpelStaat): boolean => !s.uitkomst && s.onde
 export const machineKlaar = (s: SpelStaat): boolean => klaarVoorStream(s);
 export function vroegStream(s: SpelStaat): boolean {
   if (!kanVroegSpringen(s)) return false;
-  s.tijd = DIMENSIE_DUUR_SEC; // de volgende stap handelt de stream af, met dezelfde controle als altijd
+  s.tijd = dimensieDuur(s.dimensie); // de volgende stap handelt de stream af, met dezelfde controle als altijd
   return true;
 }
 
@@ -134,7 +135,9 @@ export function stream(s: SpelStaat, f?: Soort): void {
     s.economieen.push(eco.id);
     for (const [g, n] of Object.entries(eco.start)) s.voorraad[g] = (s.voorraad[g] ?? 0) + (n ?? 0);
   }
-  s.land = nieuwLand(s, gerold(s.seed, s.dimensie), s.dimensie === FINALE ? FINALE_WRATH : undefined); // de landing zet het beginpunt van Wrath
+  // de landing zet het beginpunt van Wrath; een deel van de Wrath van de vorige wereld gaat mee (escalatie)
+  const dim = gerold(s.seed, s.dimensie);
+  s.land = nieuwLand(s, dim, s.dimensie === FINALE ? FINALE_WRATH : Math.min(WRATH_MAX_START, Math.max(dim.beginWrath, s.land.wrath * WRATH_ERFENIS)));
   f?.trucje.opStream?.(s);
 }
 
@@ -176,7 +179,7 @@ function kijkers(s: SpelStaat): Kijker[] {
 }
 
 export function restTijd(s: SpelStaat): number {
-  return Math.max(0, DIMENSIE_DUUR_SEC - s.tijd);
+  return Math.max(0, dimensieDuur(s.dimensie) - s.tijd);
 }
 
 export function seedUitAdres(): number {

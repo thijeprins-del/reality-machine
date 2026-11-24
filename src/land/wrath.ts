@@ -1,9 +1,10 @@
 // Wrath en de overvallen van het land. Alleen regels, geen tekenwerk. Toeval via de seed (volgende() uit kern/toeval).
 import {
-  EERSTE_OVERVAL_SEC, HEEL_HERSTEL_PER_SEC, OVERVAL_AFSTAND, OVERVAL_BEREIK, OVERVAL_HP, OVERVAL_SCHADE, OVERVAL_SNELHEID, VERDEDIG_SCHADE,
+  HEEL_HERSTEL_PER_SEC, OVERVAL_AFSTAND, OVERVAL_BEREIK, OVERVAL_HP, OVERVAL_SCHADE, OVERVAL_SNELHEID, VERDEDIG_SCHADE,
   VERDEDIG_STRAAL, WRATH_KALMEER_PER_SEC, WRATH_MAX, WRATH_PER_GOED, WRATH_PER_OVERVALLER_WEG, WRATH_RUST_NA, WRATH_STADIA, WRATH_VLOER,
   type WrathStadium,
 } from '../data/wrath';
+import { escalatie } from '../data/run';
 import { vrijOp } from '../kern/routes';
 import type { SpelStaat } from '../kern/spel';
 import { volgende } from '../kern/toeval';
@@ -50,7 +51,7 @@ export function nieuwLand(s: SpelStaat, dim: GerolDimensie, wrath = dim.beginWra
   const st = stadium(w);
   return {
     dim, wrath: w, vloer: w * WRATH_VLOER, rest: totaalRest(s), rust: 0,
-    raidIn: st.raid ? Math.min(st.raid.elke, EERSTE_OVERVAL_SEC) : EERSTE_OVERVAL_SEC, raiders: [], volgendId: 1, heelRust: 99, klok: 0,
+    raidIn: st.raid ? Math.min(st.raid.elke, escalatie(dim.nummer).eerste) : escalatie(dim.nummer).eerste, raiders: [], volgendId: 1, heelRust: 99, klok: 0,
   };
 }
 
@@ -98,14 +99,15 @@ export function stapLand(s: SpelStaat, sec: number): void {
 
   // overvallen volgens het stadium
   const stijl = aanvalVan(l.dim.archetype);
+  const druk = escalatie(l.dim.nummer).druk;
   const raid = l.wrath >= (stijl?.stilTot ?? 0) ? stadium(l.wrath).raid : null;
   if (raid) {
     l.raidIn -= sec;
     if (l.raidIn <= 0) {
-      overval(s, stijl?.vast ?? Math.max(1, Math.round(raid.aantal * (stijl?.aantal ?? 1) * Math.sqrt(l.dim.sterkte))));
-      l.raidIn = raid.elke * (stijl?.elke ?? 1);
+      overval(s, stijl?.vast ?? Math.max(1, Math.round(raid.aantal * (stijl?.aantal ?? 1) * druk * Math.sqrt(l.dim.sterkte))));
+      l.raidIn = (raid.elke * (stijl?.elke ?? 1)) / Math.sqrt(druk);
     }
-  } else l.raidIn = Math.max(l.raidIn, EERSTE_OVERVAL_SEC);
+  } else l.raidIn = Math.max(l.raidIn, escalatie(l.dim.nummer).eerste);
 
   // overvallers lopen naar de machine; muizen vlakbij slaan terug
   const mx = k.machine.x + k.machine.breed / 2 - 0.5, my = k.machine.y + k.machine.diep / 2 - 0.5;

@@ -2,7 +2,8 @@
 // De factie levert de plaatjes (SoortBeeld); de kern weet niet welke factie het is.
 import { Assets, BlurFilter, ColorMatrixFilter, Container, Graphics, Matrix, Rectangle, Sprite, Texture } from 'pixi.js';
 import { naarScherm, TEGEL_B, TEGEL_H } from './iso';
-import { dimensieKleur, DIMENSIE_DUUR_SEC, hoogteTint, HOOGTE_MIN, HOOGTE_PX, SCHIJF_HOOGTE, SPRONG_SEC, THUIS, type DimensieWereld } from '../data/dimensies';
+import { dimensieDuur } from '../data/run';
+import { dimensieKleur, hoogteTint, HOOGTE_MIN, HOOGTE_PX, SCHIJF_HOOGTE, SPRONG_SEC, THUIS, type DimensieWereld } from '../data/dimensies';
 import { tekenDebug } from './debugbeeld';
 import { MIST_ONBEKEND, MIST_VERKEND, MIST_ZICHT } from './mist';
 import { meet } from './prestatie';
@@ -524,7 +525,7 @@ export class WereldBeeld {
     const m = machineTop(k);
 
     // aanloop: de laatste 12 seconden voor de stream
-    const rest = DIMENSIE_DUUR_SEC - s.tijd;
+    const rest = dimensieDuur(s.dimensie) - s.tijd;
     const aan = s.onderweg > 0 ? 0 : Math.max(0, 1 - rest / 12);
     let duister = 0;
     if (aan > 0) {

@@ -3,7 +3,7 @@ import { economie, type Economie } from '../kern/economie';
 import type { TegelSet } from '../kern/tegels';
 import { WERELDTYPES, wereldType, type WereldType } from '../kern/wereldtypes';
 
-export const DIMENSIE_DUUR_SEC = 300; // 5 minuten per wereld (Thije, 3 nov)
+// De duur van een wereld staat per dimensie in data/run.ts (dimensieDuur).
 
 // De sprong: de schijf wordt uit de wereld gerukt, hangt even in het niets, en landt dan in de volgende.
 // Zo lang staat de tijd en het werk stil (het stroomnet loopt door).

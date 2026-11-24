@@ -26,7 +26,7 @@
       { "id": "kever", "folder": "insecten", "width": 30, "height": 20, "anchorX": 15, "anchorY": 17 },
       { "id": "mier", "folder": "insecten", "width": 26, "height": 16, "anchorX": 13, "anchorY": 14 }
     ],
-    "attack": { "every": 0.7, "count": 2.5, "hp": 0.35, "speed": 1.6, "damage": 0.5 }
+    "attack": { "every": 0.8, "count": 2.0, "hp": 0.35, "speed": 1.6, "damage": 0.5 }
   },
   "residents": [
     { "id": "insecten-otter-0", "folder": "insecten", "width": 96, "height": 96, "anchorX": 47, "anchorY": 82 },

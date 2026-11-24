@@ -3,8 +3,8 @@
 Nog een skelet. Werk dit bij bij elke grote regelwijziging.
 
 ## Kern
-- Een dimensie duurt **5 minuten** (`src/data/dimensies.ts`, Thije 3 nov), daarna komt de stream
-  (sprong naar de volgende dimensie).
+- Een dimensie duurt 3,5 tot 5 minuten (`DIMENSIE_DUUR` in `src/data/run.ts`: 210, 240, 240, 270, 270, 300, 300, 300 s en
+  de finale 300 s; een hele run is zo'n 41 minuten), daarna komt de stream (sprong naar de volgende dimensie).
 - **De transportring** (2 nov): een slecht geverfde, matte gele stippellijn om de machine (straal 14 tegels: binnen de
   ring bouw je). Je land is een grove schijf die iets buiten de ring steekt, lomp in elke wereld geplakt (rotswand,
   schaduw, naad, klemmen). Alles binnen de ring springt mee; daarbuiten liggen de grondstoffen, en die blijven achter.
@@ -220,6 +220,21 @@ Energie gaat om keuzes, niet om alles overeind houden. Er is geen zekering en ge
 - **Stream**: alles buiten de ring blijft achter; je krijgt de bouwkosten terug. Binnen de ring blijft alles staan.
 - Slopen geeft de bouwkosten terug. Regels in `src/ratten/industrie.ts` en `src/ratten/werk.ts`, beeld en bouwbalk in
   `src/ratten/bouwen.ts`, getallen in `economies/schroot.json`.
+
+## Balans en escalatie per shift (24 nov)
+- **Escalatie** (`ESCALATIE` in `src/data/run.ts`): per dimensie een `druk` (aantal overvallers per overval, het interval wordt
+  gedeeld door de wortel ervan) van 0,55 in shift 1 naar 1,0 in shift 4 en 1,6 in de finale, plus een rustpauze na de landing
+  voor de eerste overval van 60 s (shift 1) naar 15 s (finale). Boven op de sterkte van de dimensie (hp en Wrath-winst).
+- **Erfenis**: bij een landing blijft 30% van de Wrath van de vorige wereld in het land hangen (`WRATH_ERFENIS`), nooit
+  onder de worp van de dimensie, hooguit 75. De finale begint altijd op 80.
+- **Balansloper** `npm run balans` (`scripts/balans.mjs`, na `npm run build`): speelt alle 12 typen op een vaste seedset
+  (1, 2, 3) met vier scripts (guard = rats thuis, greedy = alles mijnen, split, active = half mijnen en half achter de
+  overvallers aan) en print per type en shift hoe vaak de run verloren ging en hoe heel de machine bleef. `--run` speelt
+  hele runs. Opties: `--seeds= --shifts= --types= --policies=`. De stroom staat gratis (we meten overvallen, niet de economie).
+- **Doelen**: wie actief verdedigt overleeft shift 1-7 vrijwel altijd; wie stilstaat of alles laat mijnen verliest vanaf shift 4-5;
+  shift 8 en de finale kunnen ook een goede speler de run kosten (een hele run met het active-script wint ongeveer twee van de drie).
+- Bijgesteld: monsters (hp 4,0 naar 3,0, schade 2,5 naar 1,8), insecten (minder en iets trager vaker: aantal 2,5 naar 2,0), reuzen
+  (wakker vanaf Wrath 45, vaker).
 
 ## Open
 - Tegen de computer (aanname) of tweespeler op één scherm?
