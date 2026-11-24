@@ -13,6 +13,7 @@ import { geefWrath, overval, stadium, stadiumNummer } from './land/wrath';
 import { stuur } from './kern/werkers';
 import { WereldBeeld } from './kern/wereldbeeld';
 import { rattenBeeld } from './ratten/beeld';
+import { maakGeluidKnop, speel, werkGeluid } from './kern/geluid';
 
 declare global {
   interface Window {
@@ -72,8 +73,10 @@ async function start(): Promise<void> {
   await beeld.laad();
   markeer('world ready');
   app.stage.addChild(beeld.wereld);
-  const besturing = maakBesturing(app, beeld.wereld, () => staat, (z) => beeld.zoom(z), (ids, kol, rij) =>
-    stuur(staat, ids, kol, rij),
+  const besturing = maakBesturing(app, beeld.wereld, () => staat, (z) => beeld.zoom(z), (ids, kol, rij) => {
+    stuur(staat, ids, kol, rij);
+    speel.opdracht();
+  },
   beeld.bewerker,
   );
   let eind: HTMLElement | null = null;
@@ -91,6 +94,7 @@ async function start(): Promise<void> {
   const paneel = (await import('./ratten/paneel')).maakPaneel(() => staat, beeld);
 
   markeer('ui ready');
+  maakGeluidKnop();
   maakOverlay();
   zetExtra(() => ({ ...beeld.statistiek(), muizen: staat.werkers.length }));
   app.ticker.add((t) => {
@@ -103,6 +107,7 @@ async function start(): Promise<void> {
     const rest = Math.ceil(restTijd(staat));
     const kan = kanVroegSpringen(staat);
     const klaar = machineKlaar(staat);
+    werkGeluid(staat, klaar);
     const wapen = performance.now() < gewapend && !klaar;
     shift.disabled = !kan;
     shift.className = klaar ? '' : 'nietklaar';
