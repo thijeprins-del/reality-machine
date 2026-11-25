@@ -22,6 +22,9 @@ bouw je. De sprong lukt alleen als de machine op dat moment volle stroom krijgt:
 je land uit de wereld gerukt en landt het na een paar tellen in het niets in de volgende wereld. Geen volle stroom:
 stream gemist.
 
+## Tutorial en menu
+Het startscherm heeft PLAY en HOW TO PLAY. De eerste keer dat je speelt zie je eerst de uitleg in één scherm: neem (take), Wrath stijgt, verdedig, SHIFT. **P** of de knop PAUSE (P) pauzeert; in het pauzemenu kun je de uitleg opnieuw lezen of de run herstarten. `?menu=0` slaat het startscherm over.
+
 ## Besturing
 - **Slepen** met de linkermuisknop: ratten selecteren. Met **shift** erbij. **Dubbelklik**: alle ratten in beeld.
 - **Rechtsklik** op een veld grondstoffen: de geselecteerde ratten gaan graven en sjouwen alles naar de opslag.
