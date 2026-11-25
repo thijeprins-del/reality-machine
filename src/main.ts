@@ -5,6 +5,7 @@ import { maakBesturing } from './kern/besturing';
 import { versieTekst } from './kern/omgeving';
 import { beeldKlaar, markeer, maakOverlay, rapport, zetExtra } from './kern/prestatie';
 import { maakBalk } from './kern/scherm';
+import { maakMenu } from './kern/menu';
 import { nieuwSpel, kanVroegSpringen, machineKlaar, restTijd, seedUitAdres, startUitAdres, stap, stream, vroegStream, type SpelStaat } from './kern/spel';
 import { FINALE, RUN_SHIFTS } from './data/run';
 import { WRATH_MAX, WRATH_STADIA } from './data/wrath';
@@ -76,7 +77,8 @@ async function start(): Promise<void> {
     stuur(staat, ids, kol, rij),
   beeld.bewerker,
   );
-  let eind: HTMLElement | null = null;
+  let eind = false;
+  const menu = maakMenu({ overslaan: adres.get('menu') === '0' });
   const balk = maakBalk();
   // SHIFT: spring nu al. Is de machine niet klaar, dan eerst een tweede klik (anders ben je de run kwijt).
   const shift = document.createElement('button');
@@ -88,6 +90,11 @@ async function start(): Promise<void> {
     gewapend = 0;
     vroegStream(staat);
   });
+  const pauzeknop = document.createElement('button');
+  pauzeknop.id = 'pauzeknop';
+  pauzeknop.textContent = 'PAUSE (P)';
+  pauzeknop.addEventListener('click', () => menu.pauze(true));
+  document.body.append(pauzeknop);
   const paneel = (await import('./ratten/paneel')).maakPaneel(() => staat, beeld);
 
   markeer('ui ready');
@@ -96,7 +103,7 @@ async function start(): Promise<void> {
   app.ticker.add((t) => {
     const t0 = performance.now();
     const sec = Math.min(0.1, t.deltaMS / 1000);
-    stap(staat, RATTEN, sec);
+    if (!menu.open) stap(staat, RATTEN, sec);
     besturing.werk(sec);
     beeld.werk(sec, besturing.selectie);
     paneel.werk(sec);
@@ -109,6 +116,7 @@ async function start(): Promise<void> {
     shift.textContent = wapen ? 'NOT READY: CLICK AGAIN TO LOSE' : staat.dimensie >= FINALE ? 'SHIFT (END RUN)' : 'SHIFT NOW';
     shift.title = 'Jump to the next dimension now instead of waiting for the stream. Same rules: the machine needs full power and enough integrity.';
     shift.style.left = `${document.getElementById('balk')!.offsetWidth + 8}px`;
+    pauzeknop.style.left = `${shift.offsetLeft + shift.offsetWidth + 6}px`;
     const bezig = staat.werkers.filter((w) => w.taak !== 'rust').length;
     balk.zet([
       staat.dimensie >= FINALE ? '<b style="color:#ff3030">FINALE</b> · hold out until the machine charges one last time' : `Run: shift ${staat.dimensie} of ${RUN_SHIFTS} + finale`,
@@ -119,28 +127,18 @@ async function start(): Promise<void> {
       `Machine: power ${Math.floor((100 * staat.machine.energie) / staat.machine.maxEnergie)}% · integrity ${Math.floor(staat.machine.heelheid)}%${rest <= 60 && staat.onderweg <= 0 && !staat.start?.gratisStroom && (staat.machine.energie < staat.machine.maxEnergie || staat.machine.heelheid < 50) ? ' · <b style="color:#ff3030">NOT READY FOR THE STREAM: you lose if it comes now</b>' : ' (needs 100% power and 50% integrity at the stream)'}`,
       `${RATTEN.naam}: ${staat.werkers.length} (${bezig} working) · selected ${besturing.selectie.size}`,
     ]);
-    if (staat.uitkomst && !eind) eind = toonEinde(staat);
+    if (staat.uitkomst && !eind) { eind = true; toonEinde(staat, menu); }
     markeer('first frame');
     beeldKlaar(t.deltaMS, performance.now() - t0);
   });
 }
 
 // Het eind van de run: gewonnen of verloren, met een knop voor een nieuwe run.
-function toonEinde(s: SpelStaat): HTMLElement {
+function toonEinde(s: SpelStaat, menu: ReturnType<typeof maakMenu>): void {
   const u = s.uitkomst!;
-  const d = document.createElement('div');
-  d.id = 'eind';
-  d.style.cssText = 'position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(5,6,8,.88);color:#e8e8e0;font:16px monospace;text-align:center;padding:24px;z-index:50';
-  d.innerHTML = `<h1 style="margin:0;font-size:40px;color:${u.gewonnen ? '#6fcf6f' : '#ff3030'}">${u.gewonnen ? 'YOU MADE IT' : 'RUN OVER'}</h1>
-    <p style="max-width:520px;margin:0">${u.reden}</p>
-    <p style="margin:0;color:#9a9a90">Reached ${s.dimensie >= FINALE ? 'the finale' : `shift ${s.dimensie} of ${RUN_SHIFTS}`} · ${s.land.dim.naam}</p>`;
-  const b = document.createElement('button');
-  b.textContent = 'NEW RUN';
-  b.style.cssText = 'font:inherit;padding:10px 24px;background:#1d1e1c;color:#9dff2e;border:2px solid #9dff2e;cursor:pointer';
-  b.onclick = () => { const p = new URLSearchParams(location.search); p.delete('seed'); p.delete('shift'); location.search = p.toString(); };
-  d.appendChild(b);
-  document.body.appendChild(d);
-  return d;
+  menu.toonEinde(u.gewonnen ? 'YOU MADE IT' : 'RUN OVER', u.gewonnen ? '#6fcf6f' : '#ff3030', u.reden,
+    `Reached ${s.dimensie >= FINALE ? 'the finale' : `shift ${s.dimensie} of ${RUN_SHIFTS}`} · ${s.land.dim.naam}`,
+    () => { const p = new URLSearchParams(location.search); p.delete('seed'); p.delete('shift'); location.search = p.toString(); });
 }
 
 const wrathRegel = (s: SpelStaat): string => {
